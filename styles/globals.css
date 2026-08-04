@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: #009B77;
+    --color-primary-light: #00b88d;
+    --color-primary-dark: #007a5e;
+    --color-secondary: #00205B;
+    --color-accent: #FFC72C;
+    --color-background: #F5F5DC;
+    --color-surface: #F8F9FA;
+    --color-warning: #FD7E14;
+    --color-success: #198754;
+    --color-error: #DC3545;
+    --color-info: #0DCAF0;
+    --radius-sm: 0.25rem;
+    --radius: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.25rem;
+    --transition-base: 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
+    --transition-medium: 200ms cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+
+  * {
+    @apply border-gray-200;
+  }
+
+  body {
+    @apply bg-background text-gray-900 antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  html[dir="rtl"] body {
+    font-family: 'Cairo', system-ui, sans-serif;
+  }
+
+  html[dir="ltr"] body {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+  }
+
+  .card {
+    @apply bg-white rounded-lg border border-gray-100 shadow-card;
+  }
+
+  .card-header {
+    @apply px-6 py-4 border-b border-gray-100;
+  }
+
+  .card-body {
+    @apply p-6;
+  }
+}
+
+@layer utilities {
+  .rtl\:mirror {
+    @apply [dir="rtl"]:scale-x-[-1];
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.gray.300') transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: theme('colors.gray.300');
+    border-radius: 3px;
+  }
+}
