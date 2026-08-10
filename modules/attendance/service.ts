@@ -9,8 +9,8 @@ export const attendanceService = {
     return api.get<{ data: Attendance[]; total: number }>(`/attendance?${query.toString()}`);
   },
 
-  clockIn: (employeeId: string) =>
-    api.post<Attendance>('/attendance', { action: 'clock-in', employeeId }),
+  clockIn: (employeeId: string, location?: { lat: number; lng: number } | null) =>
+    api.post<Attendance>('/attendance', { action: 'clock-in', employeeId, location: location ?? null }),
 
   clockOut: (employeeId: string) =>
     api.post<Attendance>('/attendance', { action: 'clock-out', employeeId }),

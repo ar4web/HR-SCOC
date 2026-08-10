@@ -57,11 +57,7 @@ export function FormBuilder({
   const [errors, setErrors] = React.useState<Record<string, string>>({});
 
   const handleChange = (name: string, value: string) => {
-    setValues((prev) => {
-      const next = { ...prev, [name]: value };
-      onValuesChange?.(next);
-      return next;
-    });
+    setValues((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -69,6 +65,7 @@ export function FormBuilder({
         return next;
       });
     }
+    onValuesChange?.({ ...values, [name]: value });
   };
 
   const validate = (): boolean => {
@@ -86,14 +83,14 @@ export function FormBuilder({
         continue;
       }
       if (field.validation) {
-        if (field.validation.minLength && value.length < field.validation.minLength) {
+        if (field.validation.minLength && value !== '' && value.length < field.validation.minLength) {
           newErrors[field.name] = t(
             `Minimum ${field.validation.minLength} characters`,
             `الحد الأدنى ${field.validation.minLength} أحرف`,
             locale
           );
         }
-        if (field.validation.maxLength && value.length > field.validation.maxLength) {
+        if (field.validation.maxLength && value !== '' && value.length > field.validation.maxLength) {
           newErrors[field.name] = t(
             `Maximum ${field.validation.maxLength} characters`,
             `الحد الأقصى ${field.validation.maxLength} أحرف`,
@@ -102,6 +99,23 @@ export function FormBuilder({
         }
         if (field.validation.pattern && value && !field.validation.pattern.test(value)) {
           newErrors[field.name] = t('Invalid format', 'تنسيق غير صحيح', locale);
+        }
+        if (field.type === 'number') {
+          const num = value === '' ? Number.NaN : Number(value);
+          if (typeof field.validation.min === 'number' && value !== '' && (Number.isNaN(num) || num < field.validation.min)) {
+            newErrors[field.name] = t(
+              `Minimum value is ${field.validation.min}`,
+              `الحد الأدنى للقيمة ${field.validation.min}`,
+              locale
+            );
+          }
+          if (typeof field.validation.max === 'number' && value !== '' && (Number.isNaN(num) || num > field.validation.max)) {
+            newErrors[field.name] = t(
+              `Maximum value is ${field.validation.max}`,
+              `الحد الأقصى للقيمة ${field.validation.max}`,
+              locale
+            );
+          }
         }
       }
     }

@@ -133,6 +133,34 @@ export interface Document {
   uploadedAt: string;
 }
 
+export type LifecycleType = 'onboarding' | 'offboarding';
+export type LifecycleStatus = 'draft' | 'in_progress' | 'completed' | 'cancelled';
+export type LifecycleTaskStatus = 'pending' | 'done';
+
+export interface LifecycleTask {
+  id: string;
+  name: string;
+  nameAr?: string;
+  status: LifecycleTaskStatus;
+  completedAt?: string;
+}
+
+export interface EmployeeLifecycle {
+  id: string;
+  companyId: string;
+  employeeId: string;
+  type: LifecycleType;
+  status: LifecycleStatus;
+  tasks: LifecycleTask[];
+  dueDate?: string;
+  notes?: string;
+  createdBy?: string;
+  startedAt?: string;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Employee {
   id: string;
   employeeId: string;
@@ -160,8 +188,24 @@ export interface Employee {
   emergencyContact: EmergencyContact;
   status: EmployeeStatus;
   documents: Document[];
+  sponsorName?: string;
+  sponsorId?: string;
+  annualVacationDays?: number;
+  vacationBalance?: number;
+  endOfServiceAllowance?: number;
+  probationEndDate?: string;
+  workPermitExpiry?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ColumnPickerColumn {
+  key: string;
+  label: string;
+  labelAr: string;
+  group: string;
+  groupAr: string;
+  defaultVisible?: boolean;
 }
 
 export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
@@ -194,6 +238,8 @@ export interface Attendance {
   clockOut?: string;
   status: AttendanceStatus;
   notes?: string;
+  location?: { lat: number; lng: number } | null;
+  hoursWorked?: number;
 }
 
 export type PayrollStatus = 'draft' | 'processing' | 'completed' | 'cancelled';
@@ -215,6 +261,8 @@ export interface Payroll {
   companyId: string;
   period: string;
   employeeId: string;
+  employeeName?: string;
+  employeeDisplayId?: string;
   salary: SalaryInfo;
   deductions: Deduction[];
   additions: Addition[];
@@ -222,6 +270,17 @@ export interface Payroll {
   netPay: number;
   status: PayrollStatus;
   processedAt?: string;
+  timesheet?: PayrollTimesheet;
+}
+
+export interface PayrollTimesheet {
+  daysWorked: number;
+  dailyRate: number;
+  basePay: number;
+  otHours: number;
+  otRate: number;
+  otPay: number;
+  grossPay: number;
 }
 
 export interface GOSIRate {
@@ -252,12 +311,40 @@ export interface GOSIBreakdown {
   total: number;
 }
 
+export interface MessageAttachment {
+  type: 'image' | 'file';
+  name: string;
+  url: string;
+  size?: number;
+}
+
+export interface MessageReaction {
+  emoji: string;
+  userIds: string[];
+}
+
 export interface Message {
   id: string;
   senderId: string;
   senderName: string;
+  recipientId?: string;
+  channelId?: string;
   content: string;
+  attachment?: MessageAttachment;
   timestamp: string;
+  reactions?: MessageReaction[];
+  editedAt?: string;
+  deletedAt?: string;
+}
+
+export interface Channel {
+  id: string;
+  name: string;
+  description?: string;
+  companyId: string;
+  memberIds: string[];
+  createdBy: string;
+  createdAt: string;
 }
 
 export type AnnouncementPriority = 'normal' | 'high' | 'urgent';
@@ -319,4 +406,149 @@ export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   message?: string;
+}
+
+// To-Do module
+export type TodoPriority = 'low' | 'medium' | 'high';
+export type TodoStatus = 'pending' | 'in_progress' | 'completed';
+
+export interface Todo {
+  id: string;
+  title: string;
+  description?: string;
+  priority: TodoPriority;
+  status: TodoStatus;
+  dueDate?: string;
+  category?: string;
+  assignee?: string;
+  ownerId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Document module
+export type DocumentCategory =
+  | 'contract'
+  | 'id_iqama'
+  | 'passport'
+  | 'visa'
+  | 'certificate'
+  | 'insurance'
+  | 'vehicle'
+  | 'real_estate'
+  | 'license'
+  | 'other';
+
+export interface HRDocument {
+  id: string;
+  name: string;
+  nameAr?: string;
+  category: DocumentCategory;
+  description?: string;
+  fileName?: string;
+  fileSize?: number;
+  expiryDate?: string;
+  remindDaysBefore: number;
+  owner?: string;
+  department?: string;
+  uploadedBy: string;
+  uploadedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Email module
+export type EmailTemplateCategory =
+  | 'welcome'
+  | 'leave_approved'
+  | 'leave_rejected'
+  | 'leave_pending'
+  | 'payroll'
+  | 'announcement'
+  | 'expense'
+  | 'document_reminder'
+  | 'onboarding'
+  | 'offboarding';
+
+export interface EmailOutbox {
+  id: string;
+  companyId: string;
+  toName?: string;
+  toEmail: string;
+  subject: string;
+  body: string;
+  templateId?: string;
+  status: 'queued' | 'sent' | 'failed';
+  error?: string;
+  sentAt?: string;
+  createdAt: string;
+  createdBy?: string;
+}
+
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  nameAr: string;
+  category: EmailTemplateCategory;
+  subject: string;
+  subjectAr: string;
+  body: string;
+  bodyAr: string;
+  variables: string[];
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmailSettings {
+  provider: 'smtp' | 'gmail';
+  fromName: string;
+  fromEmail: string;
+  replyTo?: string;
+  smtpHost: string;
+  smtpPort: number;
+  smtpUser: string;
+  smtpPassword?: string;
+  encryption: 'none' | 'tls' | 'ssl';
+  gmailClientId?: string;
+  gmailClientSecret?: string;
+  gmailRedirectUri?: string;
+  gmail?: {
+    connected: boolean;
+    accountEmail?: string;
+    accountName?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    expiresAt?: number;
+  };
+  enabled: boolean;
+  updatedAt?: string;
+}
+
+// Expense module
+export type ExpenseStatus = 'pending' | 'approved' | 'rejected' | 'reimbursed';
+export type PaymentMethod = 'cash' | 'card' | 'bank_transfer' | 'mobile_payment' | 'other';
+
+export interface Expense {
+  id: string;
+  date: string;
+  amount: number;
+  category: string;
+  description: string;
+  paymentMethod: PaymentMethod;
+  vendor?: string;
+  status: ExpenseStatus;
+  receiptNumber?: string;
+  requestedBy: string;
+  reimbursedAt?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  nameAr: string;
+  icon?: string;
 }

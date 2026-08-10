@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useLanguageStore } from '@/stores/language-store';
 import { useNotifications } from '@/engines/notification-engine';
 import { t, formatDate } from '@/lib/utils';
-import { Bell, CheckCheck, Info, CheckCircle, AlertTriangle, AlertCircle, Loader2 } from 'lucide-react';
+import { Bell, CheckCheck, Info, CheckCircle, AlertTriangle, AlertCircle } from 'lucide-react';
 import { NotificationType } from '@/types';
 
 const typeMeta: Record<NotificationType, { icon: React.ElementType; classes: string }> = {
@@ -56,14 +56,14 @@ export function NotificationsDropdown() {
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[10px] font-bold text-white">
+          <span className="absolute -top-0.5 -right-0.5 rtl:right-auto rtl:left-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[10px] font-bold text-white">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-12 z-50 w-80 sm:w-96 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-modal animate-fade-in">
+        <div className="absolute right-0 rtl:right-auto rtl:left-0 top-12 z-50 w-80 sm:w-96 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-modal animate-fade-in">
           <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
             <p className="text-sm font-semibold text-gray-900">
               {t('Notifications', 'الإشعارات', language)}

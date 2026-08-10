@@ -1,5 +1,29 @@
 import { api } from '@/lib/api';
+import { employees, addEmployee, updateEmployee as updateEmployeeRecord } from '@/lib/mock-data';
 import { Employee } from '@/types';
+
+export function getAllEmployees(): Employee[] {
+  return Array.from(employees.values()).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+}
+
+export function getEmployeeById(id: string): Employee | undefined {
+  return employees.get(id);
+}
+
+export function createEmployee(
+  data: Omit<Employee, 'id' | 'employeeId' | 'createdAt' | 'updatedAt'>
+): Employee {
+  return addEmployee(data);
+}
+
+export function updateEmployee(
+  id: string,
+  data: Partial<Omit<Employee, 'id' | 'employeeId' | 'createdAt' | 'updatedAt' | 'companyId'>>
+): Employee | null {
+  return updateEmployeeRecord(id, data);
+}
 
 export const employeeService = {
   list: (params?: { page?: number; pageSize?: number; search?: string; department?: string; status?: string }) => {

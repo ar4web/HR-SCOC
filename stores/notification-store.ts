@@ -1,6 +1,20 @@
 import { create } from 'zustand';
 import { Notification } from '@/types';
 
+export const markReadRemote = (id: string) =>
+  fetch('/api/notifications', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, read: true }),
+  }).catch(() => null);
+
+export const markAllReadRemote = () =>
+  fetch('/api/notifications', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ markAll: true }),
+  }).catch(() => null);
+
 interface NotificationState {
   notifications: Notification[];
   unreadCount: number;
@@ -9,9 +23,10 @@ interface NotificationState {
   setNotifications: (notifications: Notification[]) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
+  clearNotifications: () => void;
 }
 
-export const useNotificationStore = create<NotificationState>((set, get) => ({
+export const useNotificationStore = create<NotificationState>((set) => ({
   notifications: [],
   unreadCount: 0,
   isLoading: false,
@@ -32,6 +47,12 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   },
 
   markAsRead: (id) => {
+    const token = localStorage.getItem('scos_token');
+    fetch('/api/notifications', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ id, read: true }),
+    }).catch(() => null);
     set((state) => {
       const target = state.notifications.find((n) => n.id === id);
       if (!target || target.read) return state;
@@ -45,9 +66,19 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   },
 
   markAllAsRead: () => {
+    const token = localStorage.getItem('scos_token');
+    fetch('/api/notifications', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ markAll: true }),
+    }).catch(() => null);
     set((state) => ({
       notifications: state.notifications.map((n) => ({ ...n, read: true })),
       unreadCount: 0,
     }));
+  },
+
+  clearNotifications: () => {
+    set({ notifications: [], unreadCount: 0 });
   },
 }));

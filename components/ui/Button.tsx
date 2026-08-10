@@ -21,8 +21,8 @@ export function Button({
     secondary: 'bg-secondary text-white hover:bg-secondary-700 focus-ring',
     outline: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus-ring',
     ghost: 'text-gray-600 hover:bg-gray-100 focus-ring',
-    warning: 'bg-warning text-white hover:bg-orange-600 focus-ring',
-    danger: 'bg-error text-white hover:bg-red-700 focus-ring',
+    warning: 'bg-warning text-white hover:bg-warning-dark focus-ring',
+    danger: 'bg-error text-white hover:bg-error-dark focus-ring',
   };
 
   const sizes = {

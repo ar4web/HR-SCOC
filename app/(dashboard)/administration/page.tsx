@@ -1,13 +1,21 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/stores/auth-store';
 import { useLanguageStore } from '@/stores/language-store';
+import { hasPermission } from '@/lib/rbac';
+import { DashboardTile } from '@/components/ui/DashboardTile';
+import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { DataTable, Column } from '@/engines/table-engine';
 import { adminService, AuditLog } from '@/modules/administration/service';
+import { api } from '@/lib/api';
+import { ModuleSettingsMenu } from '@/components/module-settings/ModuleSettingsMenu';
 import { User, UserRole, Language } from '@/types';
 import { t, formatDate } from '@/lib/utils';
-import { Shield, Activity, Users, ClipboardList, UserPlus, Trash2, X } from 'lucide-react';
+import { downloadCsv } from '@/lib/csv';
+import { Shield, Activity, Users, ClipboardList, UserPlus, Trash2, X, Download, RotateCcw } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -27,6 +35,8 @@ const roleColors: Record<UserRole, string> = {
 };
 
 export default function AdministrationPage() {
+  const router = useRouter();
+  const { user } = useAuthStore();
   const { language, dir } = useLanguageStore();
   const { addToast } = useToast();
   const [users, setUsers] = React.useState<User[]>([]);
@@ -44,8 +54,12 @@ export default function AdministrationPage() {
   });
 
   React.useEffect(() => {
+    if (!hasPermission(user?.role, 'user:manage')) {
+      router.replace('/');
+      return;
+    }
     loadData();
-  }, []);
+  }, [user, router]);
 
   const loadData = async () => {
     setLoading(true);
@@ -58,21 +72,57 @@ export default function AdministrationPage() {
     setLoading(false);
   };
 
+  const exportAuditCsv = () => {
+    downloadCsv(
+      auditLogs.map((a) => ({
+        id: a.id,
+        user: a.userName,
+        action: a.action,
+        details: a.details,
+        timestamp: a.timestamp,
+      })),
+      `audit-log-${new Date().toISOString().slice(0, 10)}.csv`
+    );
+  };
+
+  const handleResetDemo = async () => {
+    const confirmed = window.confirm(
+      t(
+        'Reset all demo data to default state? This cannot be undone.',
+        'إعادة تعيين جميع بيانات العرض إلى الحالة الافتراضية؟ لا يمكن التراجع عن هذا.',
+        language
+      )
+    );
+    if (!confirmed) return;
+    setSaving(true);
+    const res = await api.post('/administration/reset', {});
+    setSaving(false);
+    if (res.success) {
+      addToast({ type: 'success', title: t('Demo data reset', 'تمت إعادة تعيين بيانات العرض', language) });
+      loadData();
+    } else {
+      addToast({ type: 'error', title: res.error || t('Reset failed', 'فشلت إعادة التعيين', language) });
+    }
+  };
+
   const handleAddUser = async () => {
     if (!form.name.trim() || !form.email.trim()) {
       addToast({ type: 'error', title: t('Name and email are required', 'الاسم والبريد الإلكتروني مطلوبان', language) });
       return;
     }
     setSaving(true);
-    const res = await adminService.createUser(form);
-    setSaving(false);
-    if (res.success && res.data) {
-      addToast({ type: 'success', title: t('User created successfully', 'تم إنشاء المستخدم بنجاح', language) });
-      setShowAddModal(false);
-      setForm({ name: '', nameAr: '', email: '', role: 'employee', language: 'en' });
-      loadData();
-    } else {
-      addToast({ type: 'error', title: res.error || t('Failed to create user', 'فشل إنشاء المستخدم', language) });
+    try {
+      const res = await adminService.createUser(form);
+      if (res.success && res.data) {
+        addToast({ type: 'success', title: t('User created successfully', 'تم إنشاء المستخدم بنجاح', language) });
+        setShowAddModal(false);
+        setForm({ name: '', nameAr: '', email: '', role: 'employee', language: 'en' });
+        loadData();
+      } else {
+        addToast({ type: 'error', title: res.error || t('Failed to create user', 'فشل إنشاء المستخدم', language) });
+      }
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -102,11 +152,12 @@ export default function AdministrationPage() {
   };
 
   const userColumns: Column<User>[] = [
-    { key: 'name', header: t('Name', 'الاسم', language) },
-    { key: 'email', header: 'Email' },
+    { key: 'name', header: 'Name', headerAr: 'الاسم' },
+    { key: 'email', header: 'Email', headerAr: 'البريد الإلكتروني' },
     {
       key: 'role',
-      header: t('Role', 'الدور', language),
+      header: 'Role',
+      headerAr: 'الدور',
       render: (u) => (
         <div className="flex items-center gap-2">
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${roleColors[u.role]}`}>
@@ -131,7 +182,8 @@ export default function AdministrationPage() {
     },
     {
       key: 'language',
-      header: t('Language', 'اللغة', language),
+      header: 'Language',
+      headerAr: 'اللغة',
       render: (u) => <span className="capitalize text-sm">{u.language === 'ar' ? 'العربية' : 'English'}</span>,
     },
     {
@@ -151,72 +203,57 @@ export default function AdministrationPage() {
   ];
 
   const auditColumns: Column<AuditLog>[] = [
-    { key: 'userName', header: t('User', 'المستخدم', language) },
-    { key: 'action', header: t('Action', 'الإجراء', language) },
-    { key: 'details', header: t('Details', 'التفاصيل', language) },
+    { key: 'userName', header: 'User', headerAr: 'المستخدم' },
+    { key: 'action', header: 'Action', headerAr: 'الإجراء' },
+    { key: 'details', header: 'Details', headerAr: 'التفاصيل' },
     {
       key: 'timestamp',
-      header: t('Date', 'التاريخ', language),
-      render: (l) => formatDate(l.timestamp),
+      header: 'Date',
+      headerAr: 'التاريخ',
+      render: (l) => formatDate(l.timestamp, language),
     },
   ];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {t('Administration', 'الإدارة', language)}
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {t('User management and system monitoring', 'إدارة المستخدمين ومراقبة النظام', language)}
-        </p>
-      </div>
+      <PageHeader
+        title={t('Administration', 'الإدارة', language)}
+        subtitle={t('User management and system monitoring', 'إدارة المستخدمين ومراقبة النظام', language)}
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardBody className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Users className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{users.length}</p>
-              <p className="text-sm text-gray-500">{t('Users', 'المستخدمون', language)}</p>
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-info/10 flex items-center justify-center">
-              <Activity className="h-6 w-6 text-info" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{auditLogs.length}</p>
-              <p className="text-sm text-gray-500">{t('Audit Logs', 'سجلات التدقيق', language)}</p>
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-warning/10 flex items-center justify-center">
-              <Shield className="h-6 w-6 text-warning" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{users.filter((u) => u.role === 'admin').length}</p>
-              <p className="text-sm text-gray-500">{t('Admins', 'المديرون', language)}</p>
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-success/10 flex items-center justify-center">
-              <ClipboardList className="h-6 w-6 text-success" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{users.filter((u) => u.role === 'employee').length}</p>
-              <p className="text-sm text-gray-500">{t('Employees', 'الموظفون', language)}</p>
-            </div>
-          </CardBody>
-        </Card>
+        <DashboardTile
+          icon={Users}
+          label={t('Users', 'المستخدمون', language)}
+          value={String(users.length)}
+          iconClassName="bg-primary/10 text-primary"
+          chip={users.length > 0 ? t('accounts', 'حساب', language) : undefined}
+          chipClassName="bg-primary/10 text-primary"
+        />
+        <DashboardTile
+          icon={Activity}
+          label={t('Audit Logs', 'سجلات التدقيق', language)}
+          value={String(auditLogs.length)}
+          iconClassName="bg-info/10 text-info"
+          chip={auditLogs.length > 0 ? t('events', 'حدث', language) : undefined}
+          chipClassName="bg-info/10 text-info"
+        />
+        <DashboardTile
+          icon={Shield}
+          label={t('Admins', 'المديرون', language)}
+          value={String(users.filter((u) => u.role === 'admin').length)}
+          iconClassName="bg-warning/10 text-warning"
+          chip={users.length > 0 ? `${Math.round((users.filter((u) => u.role === 'admin').length / users.length) * 100)}%` : undefined}
+          chipClassName="bg-warning/10 text-warning"
+        />
+        <DashboardTile
+          icon={ClipboardList}
+          label={t('Employees', 'الموظفون', language)}
+          value={String(users.filter((u) => u.role === 'employee').length)}
+          iconClassName="bg-success/10 text-success"
+          chip={users.length > 0 ? `${Math.round((users.filter((u) => u.role === 'employee').length / users.length) * 100)}%` : undefined}
+          chipClassName="bg-success/10 text-success"
+        />
       </div>
 
       <Card>
@@ -229,7 +266,7 @@ export default function AdministrationPage() {
                   tab === 'users' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                <Users className="h-4 w-4 inline mr-1" />
+                <Users className="h-4 w-4 inline me-1" />
                 {t('Users', 'المستخدمون', language)}
               </button>
               <button
@@ -238,16 +275,29 @@ export default function AdministrationPage() {
                   tab === 'audit' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                <Activity className="h-4 w-4 inline mr-1" />
+                <Activity className="h-4 w-4 inline me-1" />
                 {t('Audit Log', 'سجل التدقيق', language)}
               </button>
             </div>
             {tab === 'users' && (
-              <Button onClick={() => setShowAddModal(true)}>
-                <UserPlus className="h-4 w-4" />
-                {t('Add User', 'إضافة مستخدم', language)}
+              <>
+                <Button onClick={() => setShowAddModal(true)} title={t('Add User', 'إضافة مستخدم', language)} aria-label={t('Add User', 'إضافة مستخدم', language)}>
+                  <UserPlus className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" onClick={handleResetDemo} disabled={saving} title={t('Reset Demo', 'إعادة تعيين', language)} aria-label={t('Reset Demo', 'إعادة تعيين', language)}>
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+            {tab === 'audit' && (
+              <Button variant="ghost" onClick={exportAuditCsv} title={t('Export CSV', 'تصدير CSV', language)} aria-label={t('Export CSV', 'تصدير CSV', language)}>
+                <Download className="h-4 w-4" />
               </Button>
             )}
+            <ModuleSettingsMenu
+              module={t('Administration', 'الإدارة', language)}
+              onExport={tab === 'audit' ? exportAuditCsv : undefined}
+            />
           </div>
         </CardHeader>
         <CardBody>
@@ -354,8 +404,8 @@ export default function AdministrationPage() {
               <Button variant="ghost" onClick={() => setShowAddModal(false)}>
                 {t('Cancel', 'إلغاء', language)}
               </Button>
-              <Button onClick={handleAddUser} disabled={saving}>
-                {saving ? t('Saving...', 'جارٍ الحفظ...', language) : t('Create User', 'إنشاء مستخدم', language)}
+              <Button onClick={handleAddUser} loading={saving}>
+                {t('Create User', 'إنشاء مستخدم', language)}
               </Button>
             </div>
           </div>

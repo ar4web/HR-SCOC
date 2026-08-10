@@ -7,6 +7,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Toggle } from '@/components/ui/Toggle';
 import { t } from '@/lib/utils';
+import PageHeader from '@/components/layout/PageHeader';
 import { useToast } from '@/components/ui/Toast';
 import { settingsService } from '@/modules/settings/service';
 import { Clock, Save } from 'lucide-react';
@@ -23,11 +24,12 @@ const weekDays = [
 
 export default function WorkWeekPage() {
   const { language } = useLanguageStore();
-  const { company } = useCompanyStore();
+  const { company, updateSettings } = useCompanyStore();
   const [weekendDays, setWeekendDays] = React.useState<number[]>([5, 6]);
   const [startHour, setStartHour] = React.useState('09:00');
   const { addToast } = useToast();
   const [endHour, setEndHour] = React.useState('18:00');
+  const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
     if (company) {
@@ -44,27 +46,32 @@ export default function WorkWeekPage() {
   };
 
   const handleSave = async () => {
-    const [hoursRes, weekendRes] = await Promise.all([
-      settingsService.update('working-hours', { start: startHour, end: endHour }),
-      settingsService.update('weekend', weekendDays),
-    ]);
-    if (hoursRes.success && weekendRes.success) {
-      addToast({ type: 'success', title: t('Work week settings saved!', 'تم حفظ إعدادات أسبوع العمل!', language) });
-    } else {
-      addToast({ type: 'error', title: t('Failed to save settings', 'فشل حفظ الإعدادات', language) });
+    setSaving(true);
+    try {
+      const [hoursRes, weekendRes] = await Promise.all([
+        settingsService.update('working-hours', { start: startHour, end: endHour }),
+        settingsService.update('weekend', weekendDays),
+      ]);
+      if (hoursRes.success && weekendRes.success) {
+        await updateSettings({
+          workingHours: { start: startHour, end: endHour },
+          weekendDays,
+        });
+        addToast({ type: 'success', title: t('Work week settings saved!', 'تم حفظ إعدادات أسبوع العمل!', language) });
+      } else {
+        addToast({ type: 'error', title: t('Failed to save settings', 'فشل حفظ الإعدادات', language) });
+      }
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {t('Work Week Settings', 'إعدادات أسبوع العمل', language)}
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {t('Configure working days and hours', 'تكوين أيام وساعات العمل', language)}
-        </p>
-      </div>
+      <PageHeader
+        title={t('Work Week Settings', 'إعدادات أسبوع العمل', language)}
+        subtitle={t('Configure working days and hours', 'تكوين أيام وساعات العمل', language)}
+      />
 
       <Card>
         <CardHeader className="flex items-center gap-3">
@@ -128,9 +135,8 @@ export default function WorkWeekPage() {
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={handleSave}>
+        <Button onClick={handleSave} loading={saving} title={t('Save Settings', 'حفظ الإعدادات', language)} aria-label={t('Save Settings', 'حفظ الإعدادات', language)}>
           <Save className="h-4 w-4" />
-          {t('Save Settings', 'حفظ الإعدادات', language)}
         </Button>
       </div>
     </div>

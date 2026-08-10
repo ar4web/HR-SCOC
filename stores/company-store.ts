@@ -12,7 +12,7 @@ interface CompanyState {
   updateSettings: (settings: Partial<CompanySettings>) => Promise<{ success: boolean; error?: string }>;
 }
 
-export const useCompanyStore = create<CompanyState>((set, get) => ({
+export const useCompanyStore = create<CompanyState>((set) => ({
   company: null,
   isLoading: true,
 

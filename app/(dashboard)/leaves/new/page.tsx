@@ -4,7 +4,6 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguageStore } from '@/stores/language-store';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { FormBuilder, FormField } from '@/engines/form-engine';
 import { api } from '@/lib/api';
 import { Employee } from '@/types';
@@ -14,6 +13,13 @@ import { CalendarDays, ArrowLeft } from 'lucide-react';
 
 const LEAVE_TYPES = ['annual', 'sick', 'unpaid', 'emergency'] as const;
 
+interface PolicyHint {
+  type: string;
+  daysPerYear: number;
+  paid: boolean;
+  carryoverDays?: number;
+}
+
 export default function NewLeavePage() {
   const router = useRouter();
   const { language, dir } = useLanguageStore();
@@ -22,9 +28,19 @@ export default function NewLeavePage() {
   const [employees, setEmployees] = React.useState<Employee[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [values, setValues] = React.useState<Record<string, string>>({});
+  const [policies, setPolicies] = React.useState<PolicyHint[]>([]);
 
   React.useEffect(() => {
     loadEmployees();
+    api.get<{ policies?: PolicyHint[]; leavePolicies?: PolicyHint[]; data?: PolicyHint[] } | PolicyHint[]>('/settings/leave-policies')
+      .then((res) => {
+        if (res.success && res.data) {
+          setPolicies(
+            Array.isArray(res.data) ? res.data : res.data.policies || res.data.leavePolicies || res.data.data || []
+          );
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const loadEmployees = async () => {
@@ -47,8 +63,8 @@ export default function NewLeavePage() {
     [
       {
         name: 'employeeId',
-        label: t('Employee', 'الموظف', language),
-        labelAr: t('Employee', 'الموظف', language),
+        label: 'Employee',
+        labelAr: 'الموظف',
         type: 'select',
         required: true,
         options: employees.map((emp) => ({
@@ -58,8 +74,8 @@ export default function NewLeavePage() {
       },
       {
         name: 'type',
-        label: t('Leave Type', 'نوع الإجازة', language),
-        labelAr: t('Leave Type', 'نوع الإجازة', language),
+        label: 'Leave Type',
+        labelAr: 'نوع الإجازة',
         type: 'select',
         options: LEAVE_TYPES.map((type) => ({
           value: type,
@@ -70,15 +86,15 @@ export default function NewLeavePage() {
     [
       {
         name: 'startDate',
-        label: t('Start Date', 'تاريخ البداية', language),
-        labelAr: t('Start Date', 'تاريخ البداية', language),
+        label: 'Start Date',
+        labelAr: 'تاريخ البداية',
         type: 'date',
         required: true,
       },
       {
         name: 'endDate',
-        label: t('End Date', 'تاريخ النهاية', language),
-        labelAr: t('End Date', 'تاريخ النهاية', language),
+        label: 'End Date',
+        labelAr: 'تاريخ النهاية',
         type: 'date',
         required: true,
       },
@@ -86,11 +102,11 @@ export default function NewLeavePage() {
     [
       {
         name: 'reason',
-        label: t('Reason', 'السبب', language),
-        labelAr: t('Reason', 'السبب', language),
+        label: 'Reason',
+        labelAr: 'السبب',
         type: 'textarea',
-        placeholder: t('Enter reason for leave...', 'أدخل سبب الإجازة...', language),
-        placeholderAr: t('Enter reason for leave...', 'أدخل سبب الإجازة...', language),
+        placeholder: 'Enter reason for leave...',
+        placeholderAr: 'أدخل سبب الإجازة...',
       },
     ],
   ];
@@ -98,6 +114,14 @@ export default function NewLeavePage() {
   const handleSubmit = async (data: Record<string, string>) => {
     if (!data.employeeId) {
       addToast({ type: 'warning', title: t('Please select an employee', 'الرجاء اختيار موظف', language) });
+      return;
+    }
+    if (!data.startDate || !data.endDate) {
+      addToast({ type: 'warning', title: t('Please select start and end dates', 'الرجاء اختيار تاريخي البداية والنهاية', language) });
+      return;
+    }
+    if (new Date(data.endDate) < new Date(data.startDate)) {
+      addToast({ type: 'warning', title: t('End date cannot be before start date', 'تاريخ النهاية لا يمكن أن يكون قبل تاريخ البداية', language) });
       return;
     }
     setSaving(true);
@@ -127,15 +151,15 @@ export default function NewLeavePage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div className="flex items-center gap-4">
-        <button onClick={() => router.back()} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+        <button onClick={() => router.back()} className="shrink-0 p-2 rounded-lg hover:bg-gray-100 transition-colors">
           <ArrowLeft className={`h-5 w-5 text-gray-600 ${dir === 'rtl' ? 'rotate-180' : ''}`} />
         </button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-xl font-bold text-gray-900 sm:text-2xl">
             {t('Request Leave', 'طلب إجازة', language)}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="truncate text-sm text-gray-500 mt-1">
             {t('Submit a new leave request', 'تقديم طلب إجازة جديد', language)}
           </p>
         </div>
@@ -159,23 +183,34 @@ export default function NewLeavePage() {
             </div>
           )}
 
+          {values.type && (() => {
+            const policy = policies.find((p) => p.type === values.type);
+            if (!policy) return null;
+            const paidText = policy.paid
+              ? t('Paid', 'مدفوعة', language)
+              : t('Unpaid', 'غير مدفوعة', language);
+            return (
+              <div className="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-100 text-sm text-blue-800">
+                <span className="font-medium">
+                  {t('Policy', 'السياسة', language)}:
+                </span>{' '}
+                {paidText} · {language === 'ar' ? `${policy.daysPerYear} يوم / سنة` : `${policy.daysPerYear} days / year`}
+                {policy.carryoverDays ? ` · ${t('Carryover', 'ترحيل', language)}: ${policy.carryoverDays}` : ''}
+              </div>
+            );
+          })()}
+
           <FormBuilder
             fields={fields}
             locale={language}
             onSubmit={handleSubmit}
-            submitLabel={t('Submit Request', 'تقديم الطلب', language)}
-            submitLabelAr={t('Submit Request', 'تقديم الطلب', language)}
+            submitLabel="Submit Request"
+            submitLabelAr="تقديم الطلب"
             loading={saving}
             onValuesChange={setValues}
           />
         </CardBody>
       </Card>
-
-      <div className="flex justify-end gap-3">
-        <Button variant="outline" type="button" onClick={() => router.back()}>
-          {t('Cancel', 'إلغاء', language)}
-        </Button>
-      </div>
     </div>
   );
 }

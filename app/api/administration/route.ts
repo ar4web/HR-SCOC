@@ -9,8 +9,19 @@ import {
   removeUser,
 } from '@/lib/admin-engine';
 import { UserRole } from '@/types';
+import { authFromRequest, hasPermission } from '@/lib/rbac';
+export const dynamic = 'force-dynamic';
+
+function adminOnly(req: Request): boolean {
+  const auth = authFromRequest(req);
+  return !!auth && hasPermission(auth.role, 'user:manage');
+}
 
 export async function GET(req: Request) {
+  if (!adminOnly(req)) {
+    return NextResponse.json({ error: 'Forbidden: admin only' }, { status: 403 });
+  }
+
   const { searchParams } = new URL(req.url);
   const type = searchParams.get('type') || 'users';
 
@@ -22,6 +33,10 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  if (!adminOnly(req)) {
+    return NextResponse.json({ error: 'Forbidden: admin only' }, { status: 403 });
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -50,6 +65,10 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  if (!adminOnly(req)) {
+    return NextResponse.json({ error: 'Forbidden: admin only' }, { status: 403 });
+  }
+
   let body: { userId?: string; role?: UserRole; name?: string; nameAr?: string; language?: 'en' | 'ar' };
   try {
     body = await req.json();
@@ -78,6 +97,10 @@ export async function PUT(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  if (!adminOnly(req)) {
+    return NextResponse.json({ error: 'Forbidden: admin only' }, { status: 403 });
+  }
+
   const { searchParams } = new URL(req.url);
   const userId = searchParams.get('id');
 

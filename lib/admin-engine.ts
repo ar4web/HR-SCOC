@@ -1,10 +1,13 @@
 import { users, auditLogs, addAuditLog as createAuditLog, addUser as createUser, updateUser, deleteUser } from '@/lib/mock-data';
 import { User, UserRole, AuditLog } from '@/types';
+import { hashPassword } from '@/lib/passwords';
 
 export type { AuditLog };
 
 export function getUsers(): (User & { password?: string })[] {
-  return Array.from(users.values()).map(({ password, ...u }) => u);
+  return Array.from(users.values()).map((entry) =>
+    Object.fromEntries(Object.entries(entry).filter(([key]) => key !== 'password')) as User
+  );
 }
 
 export function getAuditLogs(): AuditLog[] {
@@ -41,7 +44,7 @@ export function addUserToCompany(input: CreateUserInput): { user?: User; error?:
     role: input.role,
     language: input.language,
     companyId: 'demo-company',
-    password: input.password || 'Password123!',
+    password: input.password ? hashPassword(input.password) : hashPassword('Password123!'),
   });
   return { user };
 }

@@ -27,7 +27,8 @@ export function Toggle({ checked, onCheckedChange, disabled, label, description 
         <Switch.Thumb
           className={cn(
             'block w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-150',
-            'data-[state=checked]:translate-x-[22px] data-[state=unchecked]:translate-x-[2px]'
+            'data-[state=checked]:translate-x-[22px] data-[state=unchecked]:translate-x-[2px]',
+            'rtl:data-[state=checked]:-translate-x-[22px] rtl:data-[state=unchecked]:-translate-x-[2px]'
           )}
         />
       </Switch.Root>

@@ -7,6 +7,7 @@ import { useLanguageStore } from '@/stores/language-store';
 import { useModuleGate } from '@/hooks/useModuleGate';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
+import { FloatingChat } from '@/components/layout/FloatingChat';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, checkAuth, user } = useAuthStore();
@@ -38,7 +39,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <Header />
-          <main className="flex-1 overflow-y-auto p-6">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6">
             <div className="animate-pulse space-y-6">
               <div className="h-8 bg-gray-200 rounded w-3/4" />
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -62,8 +63,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <div className="animate-fade-in">{children}</div>
+        </main>
       </div>
+      <FloatingChat />
     </div>
   );
 }

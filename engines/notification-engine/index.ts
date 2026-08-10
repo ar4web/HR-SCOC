@@ -4,6 +4,7 @@ import React from 'react';
 import { useNotificationStore } from '@/stores/notification-store';
 import { useToast, ToastType } from '@/components/ui/Toast';
 import { Notification, NotificationType } from '@/types';
+import { api } from '@/lib/api';
 
 export interface NotifyOptions {
   userId: string;
@@ -41,17 +42,9 @@ export function useNotifications(): NotificationEngineValue {
   const { addToast } = useToast();
 
   const refresh = React.useCallback(async () => {
-    try {
-      const token = localStorage.getItem('scos_token');
-      const res = await fetch('/api/notifications', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (res.ok) {
-        const json = await res.json();
-        store.setNotifications(json.data || []);
-      }
-    } catch {
-      // ignore network failures
+    const res = await api.get<{ data: Notification[] }>('/notifications');
+    if (res.success && res.data?.data) {
+      store.setNotifications(res.data.data);
     }
   }, [store]);
 
@@ -88,9 +81,8 @@ export function useNotifications(): NotificationEngineValue {
   );
 
   const clearAll = React.useCallback(() => {
-    store.markAllAsRead();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    store.clearNotifications();
+  }, [store]);
 
   return {
     notifications: store.notifications,
@@ -102,12 +94,4 @@ export function useNotifications(): NotificationEngineValue {
     markAllAsRead: store.markAllAsRead,
     clearAll,
   };
-}
-
-export function useUnreadCount(): number {
-  return useNotificationStore((s) => s.unreadCount);
-}
-
-export function useNotification(id: string): Notification | undefined {
-  return useNotificationStore((s) => s.notifications.find((n) => n.id === id));
 }

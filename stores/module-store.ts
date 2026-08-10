@@ -18,6 +18,10 @@ const defaultStates: ModuleStates = {
   'payroll': true,
   'attendance': true,
   'communication': true,
+  'todo-management': true,
+  'document-management': true,
+  'email': true,
+  'expense-management': true,
   'reports': true,
   'administration': true,
 };

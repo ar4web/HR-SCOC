@@ -4,8 +4,10 @@ import React from 'react';
 import { useLanguageStore } from '@/stores/language-store';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { t, formatCurrency } from '@/lib/utils';
-import { CreditCard, Check, Download, AlertCircle } from 'lucide-react';
+import { t, formatCurrency, formatDate } from '@/lib/utils';
+import { CreditCard, Check, AlertCircle, History } from 'lucide-react';
+import { useToast } from '@/components/ui/Toast';
+import PageHeader from '@/components/layout/PageHeader';
 
 const plan = {
   name: 'Enterprise',
@@ -16,7 +18,6 @@ const plan = {
   employees: 100,
   storage: '10GB',
   status: 'active',
-  nextBilling: '2024-08-01',
   features: [
     { en: 'Up to 100 employees', ar: 'حتى 100 موظف' },
     { en: 'All HR modules included', ar: 'جميع وحدات الموارد البشرية مشمولة' },
@@ -31,17 +32,27 @@ const plan = {
 
 export default function BillingPage() {
   const { language } = useLanguageStore();
+  const { addToast } = useToast();
+
+  const nextBilling = (() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth() + 1, 1).toISOString();
+  })();
+
+  const handleInvoiceHistory = () => {
+    addToast({ type: 'info', title: t('Invoice history is a simulated feature', 'سجل الفواتير خاصية محاكاة لأغراض العرض', language) });
+  };
+
+  const handleUpgrade = () => {
+    addToast({ type: 'info', title: t('Plan upgrades are not available in this demo', 'ترقية الخطة غير متاحة في هذه النسخة التجريبية', language) });
+  };
 
   return (
     <div className="max-w-4xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {t('Billing & Subscription', 'الفواتير والاشتراك', language)}
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {t('Manage your plan and billing information', 'إدارة خطتك ومعلومات الفواتير', language)}
-        </p>
-      </div>
+      <PageHeader
+        title={t('Billing & Subscription', 'الفواتير والاشتراك', language)}
+        subtitle={t('Manage your plan and billing information', 'إدارة خطتك ومعلومات الفواتير', language)}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
@@ -77,7 +88,7 @@ export default function BillingPage() {
                   <p className="text-xs text-gray-500">{t('Storage', 'التخزين', language)}</p>
                 </div>
                 <div className="p-3 rounded-lg bg-gray-50 text-center">
-                  <p className="text-lg font-bold text-gray-900">{plan.nextBilling}</p>
+                  <p className="text-lg font-bold text-gray-900">{formatDate(nextBilling, language)}</p>
                   <p className="text-xs text-gray-500">{t('Next Billing', 'الفاتورة القادمة', language)}</p>
                 </div>
               </div>
@@ -125,11 +136,10 @@ export default function BillingPage() {
 
           <Card>
             <CardBody className="space-y-3">
-              <Button className="w-full" variant="outline">
-                <Download className="h-4 w-4" />
-                {t('Invoice History', 'سجل الفواتير', language)}
+              <Button className="w-full" variant="outline" onClick={handleInvoiceHistory} title={t('Invoice History', 'سجل الفواتير', language)} aria-label={t('Invoice History', 'سجل الفواتير', language)}>
+                <History className="h-4 w-4" />
               </Button>
-              <Button className="w-full" variant="ghost">
+              <Button className="w-full" variant="ghost" onClick={handleUpgrade}>
                 {t('Upgrade Plan', 'ترقية الخطة', language)}
               </Button>
             </CardBody>

@@ -51,6 +51,7 @@ export function useToast() {
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = React.useState<Toast[]>([]);
+  const timers = React.useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
   const addToast = React.useCallback((toast: Omit<Toast, 'id'>) => {
     const id = Math.random().toString(36).substring(2, 10);
@@ -58,22 +59,37 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts((prev) => [...prev, { ...toast, id }]);
 
     if (duration > 0) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
+        timers.current.delete(id);
         setToasts((prev) => prev.filter((t) => t.id !== id));
       }, duration);
+      timers.current.set(id, timer);
     }
 
     return id;
   }, []);
 
   const removeToast = React.useCallback((id: string) => {
+    const timer = timers.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      timers.current.delete(id);
+    }
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  React.useEffect(() => {
+    const current = timers.current;
+    return () => {
+      for (const timer of current.values()) clearTimeout(timer);
+      current.clear();
+    };
   }, []);
 
   return (
     <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-[100] flex flex-col-reverse gap-2 max-w-sm" role="status" aria-live="polite">
+      <div className="fixed top-4 right-4 rtl:right-auto rtl:left-4 z-[100] flex max-w-sm flex-col gap-2" role="status" aria-live="polite">
         {toasts.map((toast) => {
           const Icon = icons[toast.type];
           return (

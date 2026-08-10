@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { users } from '@/lib/mock-data';
+import { users, employees, persistData } from '@/lib/mock-data';
+import { encodeToken } from '@/lib/rbac';
+import { verifyPassword, shouldRehash, hashPassword } from '@/lib/passwords';
 
 export async function POST(req: Request) {
   const { email, password } = await req.json();
@@ -12,7 +14,7 @@ export async function POST(req: Request) {
   }
 
   const userEntry = Array.from(users.values()).find(
-    (u) => u.email === email && u.password === password
+    (u) => u.email === email && verifyPassword(password, u.password)
   );
 
   if (!userEntry) {
@@ -22,8 +24,22 @@ export async function POST(req: Request) {
     );
   }
 
-  const { password: _, ...user } = userEntry;
-  const token = btoa(JSON.stringify({ userId: user.id, email: user.email, exp: Date.now() + 86400000 }));
+  if (shouldRehash(userEntry.password)) {
+    users.set(userEntry.id, { ...userEntry, password: hashPassword(password) });
+    persistData();
+  }
+
+  const user = Object.fromEntries(
+    Object.entries(userEntry).filter(([key]) => key !== 'password')
+  );
+  const linkedEmployee = Array.from(employees.values()).find((e) => e.userId === user.id);
+  const token = encodeToken({
+    sub: user.id,
+    email: user.email,
+    role: user.role,
+    employeeId: linkedEmployee?.id,
+    companyId: user.companyId,
+  });
 
   return NextResponse.json({ user, token });
 }

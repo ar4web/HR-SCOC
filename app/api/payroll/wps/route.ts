@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
-import { getPayrolls, getWPSFile } from '@/lib/payroll-engine';
+import { getWPSFile } from '@/lib/payroll-engine';
+import { authFromRequest, hasPermission } from '@/lib/rbac';
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
+  const auth = authFromRequest(req);
+  if (!auth || !hasPermission(auth.role, 'payroll:manage')) {
+    return NextResponse.json({ error: 'Forbidden: Requires payroll:manage' }, { status: 403 });
+  }
+
   const { searchParams } = new URL(req.url);
   const period = searchParams.get('period');
 

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { users } from '@/lib/mock-data';
+import { decodeToken } from '@/lib/rbac';
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   const authHeader = req.headers.get('authorization');
@@ -8,15 +10,19 @@ export async function GET(req: Request) {
   }
 
   try {
-    const token = authHeader.slice(7);
-    const payload = JSON.parse(atob(token));
-    const userEntry = users.get(payload.userId);
+    const auth = decodeToken(authHeader.slice(7));
+    if (!auth) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
 
+    const userEntry = users.get(auth.sub);
     if (!userEntry) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const { password: _, ...user } = userEntry;
+    const user = Object.fromEntries(
+      Object.entries(userEntry).filter(([key]) => key !== 'password')
+    );
     return NextResponse.json({ user });
   } catch {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });

@@ -24,5 +24,10 @@ pnpm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# runtime data (DB + secrets)
+data/
+cookies.txt
+secret.key
+
 # macos
 .DS_Store

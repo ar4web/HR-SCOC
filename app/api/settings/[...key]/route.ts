@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCompany, updateCompanySettings } from '@/lib/mock-data';
 import { CompanySettings, WorkWeek, Holiday, LeavePolicy } from '@/types';
+import { authFromRequest, hasPermission } from '@/lib/rbac';
+export const dynamic = 'force-dynamic';
 
 type Context = { params: { key: string[] } };
 
@@ -13,7 +15,12 @@ const SETTING_SECTIONS: Record<string, keyof CompanySettings> = {
   overtime: 'overtimeRate',
 };
 
-export async function GET(_req: Request, { params }: Context) {
+export async function GET(req: Request, { params }: Context) {
+  const auth = authFromRequest(req);
+  if (!auth || !hasPermission(auth.role, 'settings:manage')) {
+    return NextResponse.json({ error: 'Forbidden: settings managers only' }, { status: 403 });
+  }
+
   const company = getCompany();
   if (!company) {
     return NextResponse.json({ error: 'Company not found' }, { status: 404 });
@@ -33,6 +40,11 @@ export async function GET(_req: Request, { params }: Context) {
 }
 
 export async function PUT(req: Request, { params }: Context) {
+  const auth = authFromRequest(req);
+  if (!auth || !hasPermission(auth.role, 'settings:manage')) {
+    return NextResponse.json({ error: 'Forbidden: HR/admin only' }, { status: 403 });
+  }
+
   const company = getCompany();
   if (!company) {
     return NextResponse.json({ error: 'Company not found' }, { status: 404 });

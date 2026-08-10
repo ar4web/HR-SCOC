@@ -5,10 +5,10 @@ import { useCompanyStore } from '@/stores/company-store';
 import { useLanguageStore } from '@/stores/language-store';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Toggle } from '@/components/ui/Toggle';
 import { t } from '@/lib/utils';
+import PageHeader from '@/components/layout/PageHeader';
 import { useToast } from '@/components/ui/Toast';
-import { Palette, Save, Upload } from 'lucide-react';
+import { Palette, Save } from 'lucide-react';
 
 const themePresets = [
   {
@@ -53,9 +53,26 @@ export default function BrandingPage() {
     }
   }, [company]);
 
-  const handleSave = () => {
-    updateBranding({ ...company!.branding, primaryColor: primary, secondaryColor: secondary, accentColor: accent });
-    addToast({ type: 'success', title: t('Branding updated!', 'تم تحديث العلامة التجارية!', language) });
+  const [saving, setSaving] = React.useState(false);
+
+  const handleSave = async () => {
+    if (!company) return;
+    setSaving(true);
+    try {
+      const result = await updateBranding({
+        ...company.branding,
+        primaryColor: primary,
+        secondaryColor: secondary,
+        accentColor: accent,
+      });
+      if (result?.success === false) {
+        addToast({ type: 'error', title: result.error || t('Failed to save branding', 'فشل حفظ العلامة التجارية', language) });
+        return;
+      }
+      addToast({ type: 'success', title: t('Branding updated!', 'تم تحديث العلامة التجارية!', language) });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const applyPreset = (preset: typeof themePresets[0]) => {
@@ -66,14 +83,10 @@ export default function BrandingPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {t('Branding & Themes', 'العلامة التجارية والسمات', language)}
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {t('Customize your company appearance', 'تخصيص مظهر شركتك', language)}
-        </p>
-      </div>
+      <PageHeader
+        title={t('Branding & Themes', 'العلامة التجارية والسمات', language)}
+        subtitle={t('Customize your company appearance', 'تخصيص مظهر شركتك', language)}
+      />
 
       <Card>
         <CardHeader className="flex items-center gap-3">
@@ -134,9 +147,8 @@ export default function BrandingPage() {
           </div>
 
           <div className="pt-4 flex gap-3">
-            <Button onClick={handleSave}>
+            <Button onClick={handleSave} loading={saving} title={t('Save Branding', 'حفظ العلامة التجارية', language)} aria-label={t('Save Branding', 'حفظ العلامة التجارية', language)}>
               <Save className="h-4 w-4" />
-              {t('Save Branding', 'حفظ العلامة التجارية', language)}
             </Button>
           </div>
         </CardBody>

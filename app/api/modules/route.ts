@@ -3,8 +3,15 @@ import { cookies } from 'next/headers';
 import { companies, moduleDefinitions, setModuleStates } from '@/lib/mock-data';
 import { ModuleStates } from '@/types';
 import { MODULE_STATES_COOKIE } from '@/lib/module-route-map';
+import { authFromRequest, hasPermission } from '@/lib/rbac';
+export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
+  const auth = authFromRequest(req);
+  if (!auth || !hasPermission(auth.role, 'settings:manage')) {
+    return NextResponse.json({ error: 'Forbidden: settings managers only' }, { status: 403 });
+  }
+
   const company = companies.get('demo-company');
   const states = company?.moduleStates ?? {};
 
@@ -50,6 +57,11 @@ function validateModuleStates(states: ModuleStates): string | null {
 }
 
 export async function PUT(req: Request) {
+  const auth = authFromRequest(req);
+  if (!auth || !hasPermission(auth.role, 'settings:manage')) {
+    return NextResponse.json({ error: 'Forbidden: settings managers only' }, { status: 403 });
+  }
+
   const company = companies.get('demo-company');
   if (!company) {
     return NextResponse.json({ error: 'Company not found' }, { status: 404 });

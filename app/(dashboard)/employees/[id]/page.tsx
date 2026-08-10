@@ -8,12 +8,13 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { DetailSkeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { EmployeeReport } from '@/components/employee-report/EmployeeReport';
 import { employeeService } from '@/modules/employee-management/service';
 import { ContractType, Employee } from '@/types';
-import { t, formatDate, formatCurrency, getContractTypeLabel, calculateAge } from '@/lib/utils';
+import { t, formatDate, formatCurrency, getContractTypeLabel, getGenderLabel, getMaritalStatusLabel, calculateAge } from '@/lib/utils';
 import { FormBuilder, FormField } from '@/engines/form-engine';
 import { useToast } from '@/components/ui/Toast';
-import { ArrowLeft, User, Mail, Phone, MapPin, Briefcase, DollarSign, Calendar, Heart, SearchX, Pencil, X } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, MapPin, Briefcase, DollarSign, Heart, SearchX, Pencil, X, Shield, Plane } from 'lucide-react';
 
 export default function EmployeeDetailPage() {
   const { id } = useParams();
@@ -25,85 +26,101 @@ export default function EmployeeDetailPage() {
   const [editing, setEditing] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
 
-  React.useEffect(() => {
-    loadEmployee();
-  }, [id]);
-
-  const loadEmployee = async () => {
+  const loadEmployee = React.useCallback(async () => {
     const res = await employeeService.getById(id as string);
     if (res.success && res.data) {
       setEmployee(res.data);
     }
     setLoading(false);
-  };
+  }, [id]);
+
+  React.useEffect(() => {
+    loadEmployee();
+  }, [loadEmployee]);
 
   const editFields: FormField[][] = [
     [
-      { name: 'fullName', label: t('Full Name', 'الاسم الكامل', language), labelAr: t('Full Name', 'الاسم الكامل', language), required: true },
-      { name: 'fullNameAr', label: t('Full Name (Arabic)', 'الاسم الكامل (عربي)', language), labelAr: t('Full Name (Arabic)', 'الاسم الكامل (عربي)', language) },
+      { name: 'fullName', label: 'Full Name', labelAr: 'الاسم الكامل', required: true },
+      { name: 'fullNameAr', label: 'Full Name (Arabic)', labelAr: 'الاسم الكامل (عربي)' },
     ],
     [
-      { name: 'email', label: t('Email', 'البريد الإلكتروني', language), labelAr: t('Email', 'البريد الإلكتروني', language), type: 'email' },
-      { name: 'phone', label: t('Phone', 'الهاتف', language), labelAr: t('Phone', 'الهاتف', language), type: 'tel' },
+      { name: 'email', label: 'Email', labelAr: 'البريد الإلكتروني', type: 'email' },
+      { name: 'phone', label: 'Phone', labelAr: 'الهاتف', type: 'tel' },
     ],
     [
-      { name: 'nationalId', label: t('Iqama / National ID', 'رقم الهوية / الإقامة', language), labelAr: t('Iqama / National ID', 'رقم الهوية / الإقامة', language), validation: { minLength: 10, maxLength: 10, pattern: /^\d{10}$/ } },
-      { name: 'nationality', label: t('Nationality', 'الجنسية', language), labelAr: t('Nationality', 'الجنسية', language) },
+      { name: 'nationalId', label: 'Iqama / National ID', labelAr: 'رقم الهوية / الإقامة', validation: { minLength: 10, maxLength: 10, pattern: /^\d{10}$/ } },
+      { name: 'nationality', label: 'Nationality', labelAr: 'الجنسية' },
     ],
     [
       {
         name: 'gender',
-        label: t('Gender', 'الجنس', language),
-        labelAr: t('Gender', 'الجنس', language),
+        label: 'Gender',
+        labelAr: 'الجنس',
         type: 'select',
         options: [
-          { value: 'male', label: t('Male', 'ذكر', language), labelAr: t('Male', 'ذكر', language) },
-          { value: 'female', label: t('Female', 'أنثى', language), labelAr: t('Female', 'أنثى', language) },
+          { value: 'male', label: 'Male', labelAr: 'ذكر' },
+          { value: 'female', label: 'Female', labelAr: 'أنثى' },
         ],
       },
       {
         name: 'maritalStatus',
-        label: t('Marital Status', 'الحالة الاجتماعية', language),
-        labelAr: t('Marital Status', 'الحالة الاجتماعية', language),
+        label: 'Marital Status',
+        labelAr: 'الحالة الاجتماعية',
         type: 'select',
         options: [
-          { value: 'single', label: t('Single', 'أعزب', language), labelAr: t('Single', 'أعزب', language) },
-          { value: 'married', label: t('Married', 'متزوج', language), labelAr: t('Married', 'متزوج', language) },
-          { value: 'divorced', label: t('Divorced', 'مطلق', language), labelAr: t('Divorced', 'مطلق', language) },
-          { value: 'widowed', label: t('Widowed', 'أرمل', language), labelAr: t('Widowed', 'أرمل', language) },
+          { value: 'single', label: 'Single', labelAr: 'أعزب' },
+          { value: 'married', label: 'Married', labelAr: 'متزوج' },
+          { value: 'divorced', label: 'Divorced', labelAr: 'مطلق' },
+          { value: 'widowed', label: 'Widowed', labelAr: 'أرمل' },
         ],
       },
     ],
     [
-      { name: 'department', label: t('Department', 'القسم', language), labelAr: t('Department', 'القسم', language), required: true },
-      { name: 'position', label: t('Position', 'المنصب', language), labelAr: t('المنصب', 'المنصب', language), required: true },
+      { name: 'department', label: 'Department', labelAr: 'القسم', required: true },
+      { name: 'position', label: 'Position', labelAr: 'المنصب', required: true },
     ],
     [
       {
         name: 'contractType',
-        label: t('Contract Type', 'نوع العقد', language),
-        labelAr: t('Contract Type', 'نوع العقد', language),
+        label: 'Contract Type',
+        labelAr: 'نوع العقد',
         type: 'select',
         options: [
-          { value: 'permanent', label: t('Permanent', 'دائم', language), labelAr: t('Permanent', 'دائم', language) },
-          { value: 'fixed_term', label: t('Fixed Term', 'محدد المدة', language), labelAr: t('Fixed Term', 'محدد المدة', language) },
-          { value: 'part_time', label: t('Part Time', 'دوام جزئي', language), labelAr: t('Part Time', 'دوام جزئي', language) },
-          { value: 'probation', label: t('Probation', 'تجريبي', language), labelAr: t('Probation', 'تجريبي', language) },
+          { value: 'permanent', label: 'Permanent', labelAr: 'دائم' },
+          { value: 'fixed_term', label: 'Fixed Term', labelAr: 'محدد المدة' },
+          { value: 'part_time', label: 'Part Time', labelAr: 'دوام جزئي' },
+          { value: 'probation', label: 'Probation', labelAr: 'تجريبي' },
         ],
       },
-      { name: 'hireDate', label: t('Hire Date', 'تاريخ التعيين', language), labelAr: t('Hire Date', 'تاريخ التعيين', language), type: 'date' },
+      { name: 'hireDate', label: 'Hire Date', labelAr: 'تاريخ التعيين', type: 'date' },
     ],
     [
-      { name: 'basicSalary', label: t('Basic Salary', 'الراتب الأساسي', language), labelAr: t('Basic Salary', 'الراتب الأساسي', language), type: 'number' },
-      { name: 'housingAllowance', label: t('Housing Allowance', 'بدل السكن', language), labelAr: t('Housing Allowance', 'بدل السكن', language), type: 'number' },
+      { name: 'basicSalary', label: 'Basic Salary', labelAr: 'الراتب الأساسي', type: 'number' },
+      { name: 'housingAllowance', label: 'Housing Allowance', labelAr: 'بدل السكن', type: 'number' },
     ],
     [
-      { name: 'transportAllowance', label: t('Transport Allowance', 'بدل النقل', language), labelAr: t('Transport Allowance', 'بدل النقل', language), type: 'number' },
-      { name: 'bankName', label: t('Bank Name', 'اسم البنك', language), labelAr: t('Bank Name', 'اسم البنك', language) },
+      { name: 'transportAllowance', label: 'Transport Allowance', labelAr: 'بدل النقل', type: 'number' },
+      { name: 'bankName', label: 'Bank Name', labelAr: 'اسم البنك' },
     ],
     [
-      { name: 'iban', label: t('IBAN', 'الآيبان', language), labelAr: t('IBAN', 'الآيبان', language), validation: { minLength: 24, maxLength: 24 } },
-      { name: 'city', label: t('City', 'المدينة', language), labelAr: t('City', 'المدينة', language) },
+      { name: 'iban', label: 'IBAN', labelAr: 'الآيبان', validation: { minLength: 24, maxLength: 24 } },
+      { name: 'city', label: 'City', labelAr: 'المدينة' },
+    ],
+    [
+      { name: 'sponsorName', label: 'Sponsor Name', labelAr: 'اسم الكفيل' },
+      { name: 'sponsorId', label: 'Sponsor ID', labelAr: 'رقم الكفيل' },
+    ],
+    [
+      { name: 'annualVacationDays', label: 'Annual Vacation Days', labelAr: 'إجازة سنوية (أيام)', type: 'number' },
+      { name: 'vacationBalance', label: 'Vacation Balance', labelAr: 'رصيد الإجازة', type: 'number' },
+    ],
+    [
+      { name: 'endOfServiceAllowance', label: 'End of Service Allowance', labelAr: 'نهاية الخدمة', type: 'number' },
+      { name: 'contractEndDate', label: 'Contract End Date', labelAr: 'انتهاء العقد', type: 'date' },
+    ],
+    [
+      { name: 'probationEndDate', label: 'Probation End Date', labelAr: 'انتهاء فترة التجربة', type: 'date' },
+      { name: 'workPermitExpiry', label: 'Work Permit Expiry', labelAr: 'انتهاء تصريح العمل', type: 'date' },
     ],
   ];
 
@@ -130,9 +147,17 @@ export default function EmployeeDetailPage() {
         transportation: parseFloat(values.transportAllowance) || 0,
         bankName: values.bankName || '',
         iban: values.iban || '',
-        bankAccount: values.iban || '',
+        bankAccount: values.iban || employee.salary.bankAccount,
       },
       address: { ...employee.address, city: values.city || '' },
+      sponsorName: values.sponsorName || '',
+      sponsorId: values.sponsorId || '',
+      annualVacationDays: parseInt(values.annualVacationDays) || employee.annualVacationDays || 30,
+      vacationBalance: parseInt(values.vacationBalance) ?? employee.vacationBalance,
+      endOfServiceAllowance: parseFloat(values.endOfServiceAllowance) || employee.endOfServiceAllowance || 0,
+      probationEndDate: values.probationEndDate || '',
+      workPermitExpiry: values.workPermitExpiry || '',
+      contractEndDate: values.contractEndDate || '',
     });
     setSaving(false);
     if (res.success) {
@@ -170,18 +195,18 @@ export default function EmployeeDetailPage() {
 
   return (
     <div className="max-w-4xl space-y-6">
-      <div className="flex items-center gap-4">
-        <button onClick={() => router.back()} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+        <button onClick={() => router.back()} className="shrink-0 p-2 rounded-lg hover:bg-gray-100 transition-colors rtl:rotate-180">
           <ArrowLeft className="h-5 w-5 text-gray-600" />
         </button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-xl font-bold text-gray-900 sm:text-2xl">
             {language === 'ar' ? employee.fullNameAr || employee.fullName : employee.fullName}
           </h1>
-          <p className="text-sm text-gray-500">{employee.employeeId} - {employee.position}</p>
+          <p className="truncate text-sm text-gray-500">{employee.employeeId} - {employee.position}</p>
         </div>
-        <Badge status={employee.status} locale={language} />
-        <div className="ms-auto flex items-center gap-2">
+        <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:flex-none sm:ms-auto sm:justify-end">
+          <Badge status={employee.status} locale={language} />
           {editing ? (
             <Button variant="outline" onClick={() => setEditing(false)}>
               <X className="h-4 w-4" />
@@ -206,8 +231,8 @@ export default function EmployeeDetailPage() {
               fields={editFields}
               locale={language}
               onSubmit={handleSave}
-              submitLabel={t('Save Changes', 'حفظ التغييرات', language)}
-              submitLabelAr={t('Save Changes', 'حفظ التغييرات', language)}
+              submitLabel="Save Changes"
+              submitLabelAr="حفظ التغييرات"
               loading={saving}
               defaultValues={{
                 fullName: employee.fullName,
@@ -228,12 +253,21 @@ export default function EmployeeDetailPage() {
                 bankName: employee.salary.bankName || '',
                 iban: employee.salary.iban || '',
                 city: employee.address.city,
+                sponsorName: employee.sponsorName || '',
+                sponsorId: employee.sponsorId || '',
+                annualVacationDays: String(employee.annualVacationDays ?? 30),
+                vacationBalance: String(employee.vacationBalance ?? ''),
+                endOfServiceAllowance: String(employee.endOfServiceAllowance ?? ''),
+                contractEndDate: employee.contractEndDate || '',
+                probationEndDate: employee.probationEndDate || '',
+                workPermitExpiry: employee.workPermitExpiry || '',
               }}
             />
           </CardBody>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 items-start">
+          <div className="xl:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="flex items-center gap-3">
             <User className="h-5 w-5 text-primary" />
@@ -246,15 +280,15 @@ export default function EmployeeDetailPage() {
             </div>
             <div className="flex justify-between py-1">
               <span className="text-sm text-gray-500">{t('Date of Birth', 'تاريخ الميلاد', language)}</span>
-              <span className="text-sm font-medium">{formatDate(employee.dateOfBirth)} ({calculateAge(employee.dateOfBirth)} years)</span>
+              <span className="text-sm font-medium">{formatDate(employee.dateOfBirth, language)} ({calculateAge(employee.dateOfBirth)} {t('years', 'سنة', language)})</span>
             </div>
             <div className="flex justify-between py-1">
               <span className="text-sm text-gray-500">{t('Gender', 'الجنس', language)}</span>
-              <span className="text-sm font-medium capitalize">{employee.gender}</span>
+              <span className="text-sm font-medium">{getGenderLabel(employee.gender, language)}</span>
             </div>
             <div className="flex justify-between py-1">
               <span className="text-sm text-gray-500">{t('Marital Status', 'الحالة الاجتماعية', language)}</span>
-              <span className="text-sm font-medium capitalize">{employee.maritalStatus}</span>
+              <span className="text-sm font-medium">{getMaritalStatusLabel(employee.maritalStatus, language)}</span>
             </div>
           </CardBody>
         </Card>
@@ -279,8 +313,26 @@ export default function EmployeeDetailPage() {
             </div>
             <div className="flex justify-between py-1">
               <span className="text-sm text-gray-500">{t('Hire Date', 'تاريخ التعيين', language)}</span>
-              <span className="text-sm font-medium">{formatDate(employee.hireDate)}</span>
+              <span className="text-sm font-medium">{formatDate(employee.hireDate, language)}</span>
             </div>
+            {employee.contractEndDate && (
+              <div className="flex justify-between py-1">
+                <span className="text-sm text-gray-500">{t('Contract End', 'انتهاء العقد', language)}</span>
+                <span className="text-sm font-medium">{formatDate(employee.contractEndDate, language)}</span>
+              </div>
+            )}
+            {employee.probationEndDate && (
+              <div className="flex justify-between py-1">
+                <span className="text-sm text-gray-500">{t('Probation End', 'انتهاء التجربة', language)}</span>
+                <span className="text-sm font-medium">{formatDate(employee.probationEndDate, language)}</span>
+              </div>
+            )}
+            {employee.workPermitExpiry && (
+              <div className="flex justify-between py-1">
+                <span className="text-sm text-gray-500">{t('Work Permit Expiry', 'انتهاء تصريح العمل', language)}</span>
+                <span className="text-sm font-medium">{formatDate(employee.workPermitExpiry, language)}</span>
+              </div>
+            )}
           </CardBody>
         </Card>
 
@@ -306,6 +358,12 @@ export default function EmployeeDetailPage() {
               <div className="flex justify-between py-1">
                 <span className="text-sm text-gray-500">{t('Other Allowances', 'بدلات أخرى', language)}</span>
                 <span className="text-sm font-medium">{formatCurrency(employee.salary.otherAllowances)}</span>
+              </div>
+            )}
+            {employee.endOfServiceAllowance != null && employee.endOfServiceAllowance > 0 && (
+              <div className="flex justify-between py-1">
+                <span className="text-sm text-gray-500">{t('End of Service', 'نهاية الخدمة', language)}</span>
+                <span className="text-sm font-medium">{formatCurrency(employee.endOfServiceAllowance)}</span>
               </div>
             )}
             <div className="flex justify-between py-1 border-t pt-3">
@@ -348,7 +406,50 @@ export default function EmployeeDetailPage() {
             </div>
           </CardBody>
         </Card>
+
+        <Card>
+          <CardHeader className="flex items-center gap-3">
+            <Shield className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold">{t('Sponsor', 'الكفيل', language)}</h2>
+          </CardHeader>
+          <CardBody className="space-y-3">
+            <div className="flex justify-between py-1">
+              <span className="text-sm text-gray-500">{t('Sponsor Name', 'اسم الكفيل', language)}</span>
+              <span className="text-sm font-medium">{employee.sponsorName || '—'}</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span className="text-sm text-gray-500">{t('Sponsor ID', 'رقم الكفيل', language)}</span>
+              <span className="text-sm font-medium">{employee.sponsorId || '—'}</span>
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex items-center gap-3">
+            <Plane className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold">{t('Leave', 'الإجازات', language)}</h2>
+          </CardHeader>
+          <CardBody className="space-y-3">
+            <div className="flex justify-between py-1">
+              <span className="text-sm text-gray-500">{t('Annual Vacation', 'إجازة سنوية', language)}</span>
+              <span className="text-sm font-medium">
+                {employee.annualVacationDays != null ? `${employee.annualVacationDays} ${t('days', 'يوم', language)}` : '—'}
+              </span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span className="text-sm text-gray-500">{t('Vacation Balance', 'رصيد الإجازة', language)}</span>
+              <span className={`text-sm font-medium ${employee.vacationBalance != null && employee.vacationBalance <= 5 ? 'text-error' : ''}`}>
+                {employee.vacationBalance != null ? `${employee.vacationBalance} ${t('days', 'يوم', language)}` : '—'}
+              </span>
+            </div>
+          </CardBody>
+        </Card>
         </div>
+
+        <div className="xl:col-span-1">
+          <EmployeeReport employeeId={id as string} />
+        </div>
+      </div>
       )}
     </div>
   );

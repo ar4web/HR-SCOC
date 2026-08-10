@@ -6,17 +6,20 @@
 
 @layer base {
   :root {
-    --color-primary: #009B77;
-    --color-primary-light: #00b88d;
-    --color-primary-dark: #007a5e;
-    --color-secondary: #00205B;
-    --color-accent: #FFC72C;
-    --color-background: #F5F5DC;
-    --color-surface: #F8F9FA;
-    --color-warning: #FD7E14;
-    --color-success: #198754;
-    --color-error: #DC3545;
-    --color-info: #0DCAF0;
+    --color-primary: 0 155 119;
+    --color-primary-light: 0 184 141;
+    --color-primary-dark: 0 122 94;
+    --color-secondary: 0 32 91;
+    --color-secondary-dark: 0 24 71;
+    --color-accent: 255 199 44;
+    --color-background: 244 242 235;
+    --color-surface: 240 239 232;
+    --color-warning: 253 126 20;
+    --color-warning-dark: 204 99 12;
+    --color-success: 25 135 84;
+    --color-error: 220 53 69;
+    --color-error-dark: 176 42 55;
+    --color-info: 13 202 240;
     --radius-sm: 0.25rem;
     --radius: 0.5rem;
     --radius-md: 0.75rem;
@@ -28,6 +31,12 @@
 
   * {
     @apply border-gray-200;
+  }
+
+  *,
+  *::before,
+  *::after {
+    border-color: #e3ded2;
   }
 
   body {
@@ -46,7 +55,7 @@
 
 @layer components {
   .focus-ring {
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#fdfcf8];
   }
 
   .card {
@@ -63,10 +72,6 @@
 }
 
 @layer utilities {
-  .rtl\:mirror {
-    @apply [dir="rtl"]:scale-x-[-1];
-  }
-
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: theme('colors.gray.300') transparent;
@@ -83,5 +88,49 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: theme('colors.gray.300');
     border-radius: 3px;
+  }
+
+  .bg-white {
+    background-color: #fdfcf8;
+  }
+
+  .hover\:bg-white:hover {
+    background-color: #fdfcf8;
+  }
+
+  .bg-gray-50 {
+    background-color: #f6f4ec;
+  }
+
+  .bg-gray-100 {
+    background-color: #f1ede2;
+  }
+
+  .hover\:bg-gray-50:hover {
+    background-color: #f1efe7;
+  }
+
+  .hover\:bg-gray-100:hover {
+    background-color: #eae6db;
+  }
+
+  .border-gray-100 {
+    border-color: #ece8dc;
+  }
+
+  .divide-gray-50 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #f4f2e9;
+  }
+
+  .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #ece8dc;
+  }
+
+  .text-gray-900 {
+    color: #33383e;
+  }
+
+  .text-gray-700 {
+    color: #4b5157;
   }
 }

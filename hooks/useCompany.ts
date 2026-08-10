@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 
 export function useCompany() {
   const { user } = useAuthStore();
-  const { company, isLoading, setCompany, fetchCompany } = useCompanyStore();
+  const { company, isLoading, fetchCompany } = useCompanyStore();
 
   useEffect(() => {
     if (user && !company && !isLoading) {

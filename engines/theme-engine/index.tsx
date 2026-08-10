@@ -21,23 +21,27 @@ const DEFAULT_BRANDING: Branding = {
   theme: 'light',
 };
 
-function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+function hexToRgb(hex: string): string | null {
   const match = hex.replace('#', '');
   const full = match.length === 3 ? match.split('').map((c) => c + c).join('') : match;
   if (!/^[0-9a-fA-F]{6}$/.test(full)) return null;
   const num = parseInt(full, 16);
-  return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+  return `${(num >> 16) & 255} ${(num >> 8) & 255} ${num & 255}`;
 }
 
 function shade(hex: string, percent: number): string {
-  const rgb = hexToRgb(hex);
+  const rgb = hexToRgb(hex)?.split(' ').map(Number);
   if (!rgb) return hex;
   const t = percent < 0 ? 0 : 255;
   const p = Math.abs(percent);
-  const r = Math.round((t - rgb.r) * p) + rgb.r;
-  const g = Math.round((t - rgb.g) * p) + rgb.g;
-  const b = Math.round((t - rgb.b) * p) + rgb.b;
+  const r = Math.round((t - rgb[0]) * p) + rgb[0];
+  const g = Math.round((t - rgb[1]) * p) + rgb[1];
+  const b = Math.round((t - rgb[2]) * p) + rgb[2];
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+}
+
+function toRgbTriplet(hex: string): string {
+  return hexToRgb(hex) || '0 155 119';
 }
 
 function resolveDark(theme: ThemeVariant): boolean {
@@ -117,11 +121,12 @@ function applyBrandingVars(branding: Branding) {
     ...DEFAULT_BRANDING,
     ...branding,
   };
-  root.style.setProperty('--color-primary', effective.primaryColor);
-  root.style.setProperty('--color-primary-light', shade(effective.primaryColor, 0.15));
-  root.style.setProperty('--color-primary-dark', shade(effective.primaryColor, -0.2));
-  root.style.setProperty('--color-secondary', effective.secondaryColor);
-  root.style.setProperty('--color-accent', effective.accentColor);
+  root.style.setProperty('--color-primary', toRgbTriplet(effective.primaryColor));
+  root.style.setProperty('--color-primary-light', toRgbTriplet(shade(effective.primaryColor, 0.15)));
+  root.style.setProperty('--color-primary-dark', toRgbTriplet(shade(effective.primaryColor, -0.2)));
+  root.style.setProperty('--color-secondary', toRgbTriplet(effective.secondaryColor));
+  root.style.setProperty('--color-secondary-dark', toRgbTriplet(shade(effective.secondaryColor, -0.2)));
+  root.style.setProperty('--color-accent', toRgbTriplet(effective.accentColor));
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) {
     meta.setAttribute('content', effective.primaryColor);

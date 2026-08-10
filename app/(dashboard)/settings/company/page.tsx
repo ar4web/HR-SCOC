@@ -7,6 +7,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { t } from '@/lib/utils';
+import PageHeader from '@/components/layout/PageHeader';
 import { useToast } from '@/components/ui/Toast';
 import { Building2, Save } from 'lucide-react';
 
@@ -21,6 +22,8 @@ export default function CompanyProfilePage() {
     industry: '',
   });
 
+  const [saving, setSaving] = React.useState(false);
+
   React.useEffect(() => {
     if (company) {
       setForm({
@@ -33,16 +36,21 @@ export default function CompanyProfilePage() {
   }, [company]);
 
   const handleSave = async () => {
-    const res = await updateCompany({
-      name: form.name,
-      nameAr: form.nameAr,
-      taxNumber: form.taxNumber,
-      industry: form.industry,
-    });
-    if (res.success) {
-      addToast({ type: 'success', title: t('Company profile updated successfully!', 'تم تحديث بيانات الشركة بنجاح!', language) });
-    } else {
-      addToast({ type: 'error', title: res.error || t('Failed to update company', 'فشل تحديث بيانات الشركة', language) });
+    setSaving(true);
+    try {
+      const res = await updateCompany({
+        name: form.name,
+        nameAr: form.nameAr,
+        taxNumber: form.taxNumber,
+        industry: form.industry,
+      });
+      if (res.success) {
+        addToast({ type: 'success', title: t('Company profile updated successfully!', 'تم تحديث بيانات الشركة بنجاح!', language) });
+      } else {
+        addToast({ type: 'error', title: res.error || t('Failed to update company', 'فشل تحديث بيانات الشركة', language) });
+      }
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -50,14 +58,10 @@ export default function CompanyProfilePage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {t('Company Profile', 'الملف الشخصي للشركة', language)}
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {t('Manage your company information', 'إدارة معلومات شركتك', language)}
-        </p>
-      </div>
+      <PageHeader
+        title={t('Company Profile', 'الملف الشخصي للشركة', language)}
+        subtitle={t('Manage your company information', 'إدارة معلومات شركتك', language)}
+      />
 
       <Card>
         <CardHeader className="flex items-center gap-3">
@@ -97,9 +101,8 @@ export default function CompanyProfilePage() {
             />
           </div>
           <div className="pt-4">
-            <Button onClick={handleSave}>
+            <Button onClick={handleSave} loading={saving} title={t('Save Changes', 'حفظ التغييرات', language)} aria-label={t('Save Changes', 'حفظ التغييرات', language)}>
               <Save className="h-4 w-4" />
-              {t('Save Changes', 'حفظ التغييرات', language)}
             </Button>
           </div>
         </CardBody>

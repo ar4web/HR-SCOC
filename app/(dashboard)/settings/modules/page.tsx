@@ -7,6 +7,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Toggle } from '@/components/ui/Toggle';
 import { Button } from '@/components/ui/Button';
 import { t } from '@/lib/utils';
+import PageHeader from '@/components/layout/PageHeader';
 import { useToast } from '@/components/ui/Toast';
 import { Puzzle, Save, AlertTriangle } from 'lucide-react';
 
@@ -16,6 +17,7 @@ export default function ModulesPage() {
   const [localStates, setLocalStates] = React.useState<Record<string, boolean>>({});
   const { addToast } = useToast();
   const [warning, setWarning] = React.useState<string | null>(null);
+  const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
     setLocalStates({ ...moduleStates });
@@ -64,29 +66,30 @@ export default function ModulesPage() {
   };
 
   const handleSave = async () => {
-    for (const [moduleId, enabled] of Object.entries(localStates)) {
-      const current = moduleStates[moduleId];
-      if (current !== enabled) {
-        const result = await toggleModule(moduleId, enabled);
-        if (!result.success) {
-          addToast({ type: 'error', title: result.error || 'Error' });
-          return;
+    setSaving(true);
+    try {
+      for (const [moduleId, enabled] of Object.entries(localStates)) {
+        const current = moduleStates[moduleId];
+        if (current !== enabled) {
+          const result = await toggleModule(moduleId, enabled);
+          if (!result.success) {
+            addToast({ type: 'error', title: result.error || t('Failed to save modules', 'فشل حفظ إعدادات الوحدات', language) });
+            return;
+          }
         }
       }
+      addToast({ type: 'success', title: t('Module settings saved!', 'تم حفظ إعدادات الوحدات!', language) });
+    } finally {
+      setSaving(false);
     }
-    addToast({ type: 'success', title: t('Module settings saved!', 'تم حفظ إعدادات الوحدات!', language) });
   };
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {t('Module Management', 'إدارة الوحدات', language)}
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {t('Enable or disable system modules', 'تفعيل أو تعطيل وحدات النظام', language)}
-        </p>
-      </div>
+      <PageHeader
+        title={t('Module Management', 'إدارة الوحدات', language)}
+        subtitle={t('Enable or disable system modules', 'تفعيل أو تعطيل وحدات النظام', language)}
+      />
 
       {warning && (
         <div className="flex items-start gap-3 p-4 rounded-lg bg-warning/10 border border-warning/20" role="alert">
@@ -139,9 +142,8 @@ export default function ModulesPage() {
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={handleSave}>
+        <Button onClick={handleSave} loading={saving} title={t('Save Changes', 'حفظ التغييرات', language)} aria-label={t('Save Changes', 'حفظ التغييرات', language)}>
           <Save className="h-4 w-4" />
-          {t('Save Changes', 'حفظ التغييرات', language)}
         </Button>
       </div>
     </div>

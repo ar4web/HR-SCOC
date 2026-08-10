@@ -13,16 +13,17 @@ export function formatEmployeeId(index: number): string {
   return `EMP${String(index).padStart(6, '0')}`;
 }
 
-export function formatCurrency(amount: number, currency = 'SAR'): string {
-  return new Intl.NumberFormat('en-SA', {
-    style: 'currency',
-    currency,
+export function formatCurrency(amount: number): string {
+  const num = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
+  return `${num} ﷼`;
 }
 
 export function formatDate(date: string, locale: 'en' | 'ar' = 'en'): string {
   const d = new Date(date);
+  if (isNaN(d.getTime())) return date;
   return d.toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-GB', {
     year: 'numeric',
     month: 'short',
@@ -41,10 +42,6 @@ export function calculateAge(birthDate: string): number {
   return age;
 }
 
-export function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export function getStatusColor(status: string): string {
   const map: Record<string, string> = {
     active: 'text-success bg-success/10',
@@ -54,9 +51,16 @@ export function getStatusColor(status: string): string {
     pending: 'text-warning bg-warning/10',
     approved: 'text-success bg-success/10',
     rejected: 'text-error bg-error/10',
+    cancelled: 'text-gray-500 bg-gray-100',
     present: 'text-success bg-success/10',
     late: 'text-warning bg-warning/10',
     absent: 'text-error bg-error/10',
+    half_day: 'text-info bg-info/10',
+    overtime: 'text-info bg-info/10',
+    reimbursed: 'text-success bg-success/10',
+    draft: 'text-gray-500 bg-gray-100',
+    processing: 'text-info bg-info/10',
+    completed: 'text-success bg-success/10',
   };
   return map[status] || 'text-gray-500 bg-gray-100';
 }
@@ -75,6 +79,12 @@ export function getStatusLabel(status: string, locale: 'en' | 'ar' = 'en'): stri
       present: 'Present',
       late: 'Late',
       absent: 'Absent',
+      half_day: 'Half Day',
+      overtime: 'Overtime',
+      reimbursed: 'Reimbursed',
+      draft: 'Draft',
+      processing: 'Processing',
+      completed: 'Completed',
     },
     ar: {
       active: 'نشط',
@@ -88,9 +98,85 @@ export function getStatusLabel(status: string, locale: 'en' | 'ar' = 'en'): stri
       present: 'حاضر',
       late: 'متأخر',
       absent: 'غائب',
+      half_day: 'نصف يوم',
+      overtime: 'عمل إضافي',
+      reimbursed: 'مُعاد صرفه',
+      draft: 'مسودة',
+      processing: 'قيد المعالجة',
+      completed: 'مكتمل',
     },
   };
   return labels[locale]?.[status] || status;
+}
+
+export function getPriorityLabel(priority: string, locale: 'en' | 'ar' = 'en'): string {
+  const labels: Record<string, Record<string, string>> = {
+    en: { low: 'Low', medium: 'Medium', high: 'High', normal: 'Normal', urgent: 'Urgent' },
+    ar: { low: 'منخفضة', medium: 'متوسطة', high: 'عالية', normal: 'عادية', urgent: 'عاجلة' },
+  };
+  return labels[locale]?.[priority] || priority;
+}
+
+export function getPaymentMethodLabel(method: string, locale: 'en' | 'ar' = 'en'): string {
+  const labels: Record<string, Record<string, string>> = {
+    en: {
+      cash: 'Cash',
+      card: 'Card',
+      bank_transfer: 'Bank Transfer',
+      mobile_payment: 'Mobile Payment',
+      other: 'Other',
+    },
+    ar: {
+      cash: 'نقدي',
+      card: 'بطاقة',
+      bank_transfer: 'تحويل بنكي',
+      mobile_payment: 'دفع جوال',
+      other: 'أخرى',
+    },
+  };
+  return labels[locale]?.[method] || method;
+}
+
+export function getGenderLabel(gender: string, locale: 'en' | 'ar' = 'en'): string {
+  const labels: Record<string, Record<string, string>> = {
+    en: { male: 'Male', female: 'Female' },
+    ar: { male: 'ذكر', female: 'أنثى' },
+  };
+  return labels[locale]?.[gender] || gender;
+}
+
+export function getMaritalStatusLabel(status: string, locale: 'en' | 'ar' = 'en'): string {
+  const labels: Record<string, Record<string, string>> = {
+    en: { single: 'Single', married: 'Married', divorced: 'Divorced', widowed: 'Widowed' },
+    ar: { single: 'أعزب', married: 'متزوج', divorced: 'مطلق', widowed: 'أرمل' },
+  };
+  return labels[locale]?.[status] || status;
+}
+
+export function getReligionLabel(religion: string, locale: 'en' | 'ar' = 'en'): string {
+  const labels: Record<string, Record<string, string>> = {
+    en: { muslim: 'Muslim', other: 'Other' },
+    ar: { muslim: 'مسلم', other: 'أخرى' },
+  };
+  return labels[locale]?.[religion] || religion;
+}
+
+export function getRoleLabel(role: string, locale: 'en' | 'ar' = 'en'): string {
+  const labels: Record<string, Record<string, string>> = {
+    en: { admin: 'Administrator', hr_manager: 'HR Manager', manager: 'Manager', employee: 'Employee' },
+    ar: { admin: 'مدير النظام', hr_manager: 'مدير موارد بشرية', manager: 'مدير', employee: 'موظف' },
+  };
+  return labels[locale]?.[role] || role.replace('_', ' ');
+}
+
+export function daysUntil(date?: string): number | null {
+  if (!date) return null;
+  const target = new Date(date);
+  if (isNaN(target.getTime())) return null;
+  target.setHours(0, 0, 0, 0);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return Math.round((target.getTime() - now.getTime()) / 86400000);
 }
 
 export function getLeaveTypeLabel(type: string, locale: 'en' | 'ar' = 'en'): string {

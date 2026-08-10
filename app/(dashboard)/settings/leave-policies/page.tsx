@@ -7,6 +7,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Toggle } from '@/components/ui/Toggle';
 import { t } from '@/lib/utils';
+import PageHeader from '@/components/layout/PageHeader';
 import { useToast } from '@/components/ui/Toast';
 import { settingsService } from '@/modules/settings/service';
 import { LeaveType, LeavePolicy } from '@/types';
@@ -25,9 +26,10 @@ const leaveTypeMeta: { type: LeaveType; en: string; ar: string; enDesc: string; 
 
 export default function LeavePoliciesPage() {
   const { language } = useLanguageStore();
-  const { company } = useCompanyStore();
+  const { company, updateSettings } = useCompanyStore();
   const { addToast } = useToast();
   const [policies, setPolicies] = React.useState<LeavePolicy[]>([]);
+  const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
     if (company) {
@@ -42,11 +44,17 @@ export default function LeavePoliciesPage() {
   };
 
   const handleSave = async () => {
-    const res = await settingsService.update('leave-policies', { policies });
-    if (res.success) {
-      addToast({ type: 'success', title: t('Leave policies saved!', 'تم حفظ سياسات الإجازات!', language) });
-    } else {
-      addToast({ type: 'error', title: t('Failed to save policies', 'فشل حفظ السياسات', language) });
+    setSaving(true);
+    try {
+      const res = await settingsService.update('leave-policies', { policies });
+      if (res.success) {
+        await updateSettings({ leavePolicies: policies });
+        addToast({ type: 'success', title: t('Leave policies saved!', 'تم حفظ سياسات الإجازات!', language) });
+      } else {
+        addToast({ type: 'error', title: t('Failed to save policies', 'فشل حفظ السياسات', language) });
+      }
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -59,26 +67,20 @@ export default function LeavePoliciesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {t('Leave Policies', 'سياسات الإجازات', language)}
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {t('Configure annual entitlements and approval rules for each leave type', 'تكوين الاستحقاقات السنوية وقواعد الموافقة لكل نوع إجازة', language)}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleReset}>
-            <RotateCcw className="h-4 w-4" />
-            {t('Reset', 'إعادة تعيين', language)}
-          </Button>
-          <Button onClick={handleSave}>
-            <Save className="h-4 w-4" />
-            {t('Save Policies', 'حفظ السياسات', language)}
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title={t('Leave Policies', 'سياسات الإجازات', language)}
+        subtitle={t('Configure annual entitlements and approval rules for each leave type', 'تكوين الاستحقاقات السنوية وقواعد الموافقة لكل نوع إجازة', language)}
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleReset} title={t('Reset', 'إعادة تعيين', language)} aria-label={t('Reset', 'إعادة تعيين', language)}>
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+            <Button onClick={handleSave} loading={saving} title={t('Save Policies', 'حفظ السياسات', language)} aria-label={t('Save Policies', 'حفظ السياسات', language)}>
+              <Save className="h-4 w-4" />
+            </Button>
+          </div>
+        }
+      />
 
       <Card>
         <CardHeader className="flex items-center gap-3">

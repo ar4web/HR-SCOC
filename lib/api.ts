@@ -51,6 +51,8 @@ async function request<T>(
 
     if (!options.method || options.method === 'GET') {
       cache.set(cacheKey, { data: result, timestamp: Date.now() });
+    } else {
+      clearApiCache();
     }
 
     return result;

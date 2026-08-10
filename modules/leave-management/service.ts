@@ -1,4 +1,4 @@
-import { leaves, addLeave } from '@/lib/mock-data';
+import { leaves, addLeave, persistData } from '@/lib/mock-data';
 import { LeaveRequest, LeaveStatus } from '@/types';
 
 export function getAllLeaves(): LeaveRequest[] {
@@ -29,5 +29,6 @@ export function updateLeaveStatus(id: string, status: LeaveStatus): LeaveRequest
   if (!leave) return undefined;
   leave.status = status;
   leave.updatedAt = new Date().toISOString();
+  persistData();
   return leave;
 }

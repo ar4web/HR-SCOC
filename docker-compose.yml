@@ -1,0 +1,18 @@
+services:
+  hr-app:
+    build: .
+    image: scos-hr:latest
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./data:/app/data
+
+volumes: {}

@@ -5,6 +5,7 @@ import { useLanguageStore } from '@/stores/language-store';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { calculateGOSI, GOSI_WAGE_CAP } from '@/lib/payroll-engine';
 import { t, formatCurrency } from '@/lib/utils';
+import PageHeader from '@/components/layout/PageHeader';
 import { Shield, Calculator, TrendingUp, Users } from 'lucide-react';
 
 export default function GOSIPage() {
@@ -16,14 +17,10 @@ export default function GOSIPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {t('GOSI Compliance Calculator', 'حاسبة التوافق مع التأمينات الاجتماعية', language)}
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {t('Calculate GOSI contribution breakdown and verify compliance with 2024 regulations', 'احسب تفاصيل الاشتراكات التأمينية وتأكد من التوافق مع أنظمة 2024', language)}
-        </p>
-      </div>
+      <PageHeader
+        title={t('GOSI Compliance Calculator', 'حاسبة التوافق مع التأمينات الاجتماعية', language)}
+        subtitle={t('Calculate GOSI contribution breakdown and verify compliance with 2024 regulations', 'احسب تفاصيل الاشتراكات التأمينية وتأكد من التوافق مع أنظمة 2024', language)}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-1">
@@ -37,7 +34,7 @@ export default function GOSIPage() {
             <CardBody className="space-y-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  {t('Monthly Wage (SAR)', 'الراتب الشهري (ر.س)', language)}
+                  {t('Monthly Wage (﷼)', 'الراتب الشهري (ر.س)', language)}
                 </label>
                 <input
                   type="number"
@@ -48,7 +45,7 @@ export default function GOSIPage() {
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  {t(`Contribution cap is SAR ${GOSI_WAGE_CAP.toLocaleString()} per month`, `سقف الاشتراك ${GOSI_WAGE_CAP.toLocaleString()} ريال شهرياً`, language)}
+                  {t(`Contribution cap is ${GOSI_WAGE_CAP.toLocaleString()} per month`, `سقف الاشتراك ${GOSI_WAGE_CAP.toLocaleString()} ريال شهرياً`, language)}
                 </p>
               </div>
 
@@ -195,7 +192,7 @@ export default function GOSIPage() {
             <ul className="list-disc ml-4 mt-2 space-y-1">
               <li>
                 {t(
-                  'GOSI contribution is 9% + 9% for the old-age insurance from 2024, with a monthly wage cap of SAR 45,000.',
+                  'GOSI contribution is 9% + 9% for the old-age insurance from 2024, with a monthly wage cap of ﷼45,000.',
                   'تبلغ نسبة اشتراك التأمينات 9% + 9% لتأمين الشيخوخة اعتباراً من 2024، مع سقف راتب شهري قدره 45,000 ريال.',
                   language
                 )}

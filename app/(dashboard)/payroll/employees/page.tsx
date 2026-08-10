@@ -7,7 +7,10 @@ import { Button } from '@/components/ui/Button';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { payrollService, SalaryUpdate } from '@/modules/payroll/service';
+import { useAuthStore } from '@/stores/auth-store';
+import { hasPermission } from '@/lib/rbac';
 import { t, formatCurrency } from '@/lib/utils';
+import PageHeader from '@/components/layout/PageHeader';
 import { Wallet, Save, X, Pencil, Landmark, Phone } from 'lucide-react';
 
 interface SalaryRow {
@@ -21,6 +24,8 @@ interface SalaryRow {
 
 export default function SalarySetupPage() {
   const { language } = useLanguageStore();
+  const { user } = useAuthStore();
+  const canManage = hasPermission(user?.role, 'payroll:manage');
   const { addToast } = useToast();
   const [rows, setRows] = React.useState<SalaryRow[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -83,22 +88,18 @@ export default function SalarySetupPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {t('Salary Setup', 'إعداد الرواتب', language)}
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {t('Configure salary components and bank details for each employee', 'تكوين مكونات الراتب والبيانات البنكية لكل موظف', language)}
-          </p>
-        </div>
-        <div className="text-right">
-          <div className="text-2xl font-bold text-primary">{formatCurrency(totalAll)}</div>
-          <div className="text-xs text-gray-400">
-            {t('Monthly Payroll Total', 'إجمالي الرواتب الشهرية', language)}
+      <PageHeader
+        title={t('Salary Setup', 'إعداد الرواتب', language)}
+        subtitle={t('Configure salary components and bank details for each employee', 'تكوين مكونات الراتب والبيانات البنكية لكل موظف', language)}
+        actions={
+          <div className="text-right">
+            <div className="text-xl font-bold text-primary sm:text-2xl">{formatCurrency(totalAll)}</div>
+            <div className="text-xs text-gray-400">
+              {t('Monthly Payroll Total', 'إجمالي الرواتب الشهرية', language)}
+            </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       <Card>
         <CardHeader className="flex items-center gap-3">
@@ -202,23 +203,24 @@ export default function SalarySetupPage() {
                         <td className="px-6 py-4 text-right">
                           {isEditing ? (
                             <div className="flex items-center justify-end gap-1.5">
-                              <Button size="sm" onClick={handleSave}>
+                              <Button size="sm" onClick={handleSave} title={t('Save', 'حفظ', language)} aria-label={t('Save', 'حفظ', language)}>
                                 <Save className="h-4 w-4" />
-                                {t('Save', 'حفظ', language)}
                               </Button>
-                              <Button size="sm" variant="ghost" onClick={cancelEdit}>
+                              <Button size="sm" variant="ghost" onClick={cancelEdit} title={t('Cancel', 'إلغاء', language)} aria-label={t('Cancel', 'إلغاء', language)}>
                                 <X className="h-4 w-4" />
-                                {t('Cancel', 'إلغاء', language)}
                               </Button>
+        
                             </div>
-                          ) : (
+                          ) : canManage ? (
                             <button
-                              onClick={() => startEdit(row)}
-                              className="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors"
-                              title={t('Edit salary', 'تعديل الراتب', language)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
+                                onClick={() => startEdit(row)}
+                                className="p-2 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/5 transition-colors"
+                                title={t('Edit salary', 'تعديل الراتب', language)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                            ) : (
+                            <span className="text-xs text-gray-300">{t('View only', 'عرض فقط', language)}</span>
                           )}
                         </td>
                       </tr>
@@ -232,7 +234,7 @@ export default function SalarySetupPage() {
       </Card>
 
       <div className="rounded-xl bg-primary/5 border border-primary/10 p-4 text-sm text-gray-600">
-        <Phone className="h-4 w-4 inline mr-1 text-primary" />
+        <Phone className="h-4 w-4 inline me-1 text-primary" />
         {t(
           'Inline editing lets you update basic, housing, transportation and other allowances. The total is computed automatically and used by the payroll engine when processing a period.',
           'يتيح التحرير المباشر تحديث الراتب الأساسي وبدل السكن والنقل والبدلات الأخرى. يتم احتساب الإجمالي تلقائياً واستخدامه في محرك الرواتب عند معالجة فترة معينة.',

@@ -7,6 +7,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { FormBuilder, FormField } from '@/engines/form-engine';
 import { employeeService } from '@/modules/employee-management/service';
+import { useCompanyStore } from '@/stores/company-store';
 import { t } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
 import { UserPlus, ArrowLeft } from 'lucide-react';
@@ -16,37 +17,28 @@ export default function NewEmployeePage() {
   const { language, dir } = useLanguageStore();
   const { addToast } = useToast();
   const [saving, setSaving] = React.useState(false);
+  const company = useCompanyStore((s) => s.company);
 
   const fields: FormField[][] = [
     [
-      {
-        name: 'firstName',
-        label: t('First Name', 'الاسم الأول', language),
-        labelAr: t('First Name', 'الاسم الأول', language),
-        required: true,
-      },
-      {
-        name: 'lastName',
-        label: t('Last Name', 'اسم العائلة', language),
-        labelAr: t('Last Name', 'اسم العائلة', language),
-        required: true,
-      },
+      { name: 'firstName', label: 'First Name', labelAr: 'الاسم الأول', required: true },
+      { name: 'lastName', label: 'Last Name', labelAr: 'اسم العائلة', required: true },
     ],
     [
-      { name: 'email', label: t('Email', 'البريد الإلكتروني', language), labelAr: t('Email', 'البريد الإلكتروني', language), type: 'email' },
-      { name: 'phone', label: t('Phone', 'الهاتف', language), labelAr: t('Phone', 'الهاتف', language), type: 'tel' },
+      { name: 'email', label: 'Email', labelAr: 'البريد الإلكتروني', type: 'email' },
+      { name: 'phone', label: 'Phone', labelAr: 'الهاتف', type: 'tel' },
     ],
     [
       {
         name: 'nationality',
-        label: t('Nationality', 'الجنسية', language),
-        labelAr: t('Nationality', 'الجنسية', language),
+        label: 'Nationality',
+        labelAr: 'الجنسية',
         placeholder: 'Saudi',
       },
       {
         name: 'nationalId',
-        label: t('Iqama / National ID', 'رقم الهوية / الإقامة', language),
-        labelAr: t('Iqama / National ID', 'رقم الهوية / الإقامة', language),
+        label: 'Iqama / National ID',
+        labelAr: 'رقم الهوية / الإقامة',
         required: true,
         validation: { minLength: 10, maxLength: 10, pattern: /^\d{10}$/ },
       },
@@ -54,81 +46,97 @@ export default function NewEmployeePage() {
     [
       {
         name: 'fullNameAr',
-        label: t('Full Name (Arabic)', 'الاسم الكامل (عربي)', language),
-        labelAr: t('Full Name (Arabic)', 'الاسم الكامل (عربي)', language),
+        label: 'Full Name (Arabic)',
+        labelAr: 'الاسم الكامل (عربي)',
       },
       {
         name: 'religion',
-        label: t('Religion', 'الديانة', language),
-        labelAr: t('Religion', 'الديانة', language),
+        label: 'Religion',
+        labelAr: 'الديانة',
         type: 'select',
         required: true,
         options: [
-          { value: 'muslim', label: t('Muslim', 'مسلم', language), labelAr: t('Muslim', 'مسلم', language) },
-          { value: 'other', label: t('Other', 'أخرى', language), labelAr: t('Other', 'أخرى', language) },
+          { value: 'muslim', label: 'Muslim', labelAr: 'مسلم' },
+          { value: 'other', label: 'Other', labelAr: 'أخرى' },
         ],
       },
     ],
     [
       {
         name: 'gender',
-        label: t('Gender', 'الجنس', language),
-        labelAr: t('Gender', 'الجنس', language),
+        label: 'Gender',
+        labelAr: 'الجنس',
         type: 'select',
         required: true,
         options: [
-          { value: 'male', label: t('Male', 'ذكر', language), labelAr: t('Male', 'ذكر', language) },
-          { value: 'female', label: t('Female', 'أنثى', language), labelAr: t('Female', 'أنثى', language) },
+          { value: 'male', label: 'Male', labelAr: 'ذكر' },
+          { value: 'female', label: 'Female', labelAr: 'أنثى' },
         ],
       },
       {
         name: 'maritalStatus',
-        label: t('Marital Status', 'الحالة الاجتماعية', language),
-        labelAr: t('Marital Status', 'الحالة الاجتماعية', language),
+        label: 'Marital Status',
+        labelAr: 'الحالة الاجتماعية',
         type: 'select',
         required: true,
         options: [
-          { value: 'single', label: t('Single', 'أعزب', language), labelAr: t('Single', 'أعزب', language) },
-          { value: 'married', label: t('Married', 'متزوج', language), labelAr: t('Married', 'متزوج', language) },
-          { value: 'divorced', label: t('Divorced', 'مطلق', language), labelAr: t('Divorced', 'مطلق', language) },
-          { value: 'widowed', label: t('Widowed', 'أرمل', language), labelAr: t('Widowed', 'أرمل', language) },
+          { value: 'single', label: 'Single', labelAr: 'أعزب' },
+          { value: 'married', label: 'Married', labelAr: 'متزوج' },
+          { value: 'divorced', label: 'Divorced', labelAr: 'مطلق' },
+          { value: 'widowed', label: 'Widowed', labelAr: 'أرمل' },
         ],
       },
     ],
     [
-      { name: 'dateOfBirth', label: t('Date of Birth', 'تاريخ الميلاد', language), labelAr: t('Date of Birth', 'تاريخ الميلاد', language), type: 'date' },
-      { name: 'city', label: t('City', 'المدينة', language), labelAr: t('City', 'المدينة', language) },
+      { name: 'dateOfBirth', label: 'Date of Birth', labelAr: 'تاريخ الميلاد', type: 'date' },
+      { name: 'city', label: 'City', labelAr: 'المدينة' },
     ],
     [
-      { name: 'department', label: t('Department', 'القسم', language), labelAr: t('Department', 'القسم', language), required: true },
-      { name: 'role', label: t('Role', 'الوظيفة', language), labelAr: t('Role', 'الوظيفة', language), required: true },
+      { name: 'department', label: 'Department', labelAr: 'القسم', required: true },
+      { name: 'role', label: 'Role', labelAr: 'الوظيفة', required: true },
     ],
     [
       {
         name: 'contractType',
-        label: t('Contract Type', 'نوع العقد', language),
-        labelAr: t('Contract Type', 'نوع العقد', language),
+        label: 'Contract Type',
+        labelAr: 'نوع العقد',
         type: 'select',
         required: true,
         options: [
-          { value: 'permanent', label: t('Permanent', 'دائم', language), labelAr: t('Permanent', 'دائم', language) },
-          { value: 'fixed_term', label: t('Fixed Term', 'محدد المدة', language), labelAr: t('Fixed Term', 'محدد المدة', language) },
-          { value: 'part_time', label: t('Part Time', 'دوام جزئي', language), labelAr: t('Part Time', 'دوام جزئي', language) },
-          { value: 'probation', label: t('Probation', 'تجريبي', language), labelAr: t('Probation', 'تجريبي', language) },
+          { value: 'permanent', label: 'Permanent', labelAr: 'دائم' },
+          { value: 'fixed_term', label: 'Fixed Term', labelAr: 'محدد المدة' },
+          { value: 'part_time', label: 'Part Time', labelAr: 'دوام جزئي' },
+          { value: 'probation', label: 'Probation', labelAr: 'تجريبي' },
         ],
       },
-      { name: 'hireDate', label: t('Hire Date', 'تاريخ التعيين', language), labelAr: t('Hire Date', 'تاريخ التعيين', language), type: 'date' },
+      { name: 'hireDate', label: 'Hire Date', labelAr: 'تاريخ التعيين', type: 'date' },
     ],
     [
-      { name: 'bankName', label: t('Bank Name', 'اسم البنك', language), labelAr: t('Bank Name', 'اسم البنك', language) },
-      { name: 'iban', label: t('IBAN', 'الآيبان', language), labelAr: t('IBAN', 'الآيبان', language), validation: { minLength: 24, maxLength: 24 } },
+      { name: 'bankName', label: 'Bank Name', labelAr: 'اسم البنك' },
+      { name: 'iban', label: 'IBAN', labelAr: 'الآيبان', validation: { minLength: 24, maxLength: 24 } },
     ],
     [
-      { name: 'basicSalary', label: t('Basic Salary', 'الراتب الأساسي', language), labelAr: t('Basic Salary', 'الراتب الأساسي', language), type: 'number', required: true },
-      { name: 'housingAllowance', label: t('Housing Allowance', 'بدل السكن', language), labelAr: t('Housing Allowance', 'بدل السكن', language), type: 'number' },
+      { name: 'basicSalary', label: 'Basic Salary', labelAr: 'الراتب الأساسي', type: 'number', required: true },
+      { name: 'housingAllowance', label: 'Housing Allowance', labelAr: 'بدل السكن', type: 'number' },
     ],
     [
-      { name: 'transportAllowance', label: t('Transport Allowance', 'بدل النقل', language), labelAr: t('Transport Allowance', 'بدل النقل', language), type: 'number' },
+      { name: 'transportAllowance', label: 'Transport Allowance', labelAr: 'بدل النقل', type: 'number' },
+      { name: 'endOfServiceAllowance', label: 'End of Service Allowance', labelAr: 'مبلغ نهاية الخدمة', type: 'number' },
+    ],
+    [
+      { name: 'sponsorName', label: 'Sponsor Name', labelAr: 'اسم الكفيل' },
+      { name: 'sponsorId', label: 'Sponsor ID', labelAr: 'رقم الكفيل' },
+    ],
+    [
+      { name: 'annualVacationDays', label: 'Annual Vacation Days', labelAr: 'إجازة سنوية (أيام)', type: 'number' },
+      { name: 'vacationBalance', label: 'Vacation Balance (days)', labelAr: 'رصيد الإجازة (أيام)', type: 'number' },
+    ],
+    [
+      { name: 'probationEndDate', label: 'Probation End Date', labelAr: 'انتهاء فترة التجربة', type: 'date' },
+      { name: 'workPermitExpiry', label: 'Work Permit Expiry', labelAr: 'انتهاء تصريح العمل', type: 'date' },
+    ],
+    [
+      { name: 'contractEndDate', label: 'Contract End Date', labelAr: 'انتهاء العقد', type: 'date' },
     ],
   ];
 
@@ -136,7 +144,7 @@ export default function NewEmployeePage() {
     setSaving(true);
 
     const data = {
-      companyId: 'demo-company',
+      companyId: company?.id || 'demo-company',
       fullName: `${values.firstName || ''} ${values.lastName || ''}`.trim(),
       fullNameAr: values.fullNameAr || '',
       email: values.email || '',
@@ -175,6 +183,14 @@ export default function NewEmployeePage() {
       },
       status: 'active' as const,
       documents: [],
+      sponsorName: values.sponsorName || '',
+      sponsorId: values.sponsorId || '',
+      annualVacationDays: parseInt(values.annualVacationDays) || 30,
+      vacationBalance: parseInt(values.vacationBalance) || 30,
+      endOfServiceAllowance: parseFloat(values.endOfServiceAllowance) || 0,
+      probationEndDate: values.probationEndDate || '',
+      workPermitExpiry: values.workPermitExpiry || '',
+      contractEndDate: values.contractEndDate || '',
     };
 
     const res = await employeeService.create(data);
@@ -193,17 +209,17 @@ export default function NewEmployeePage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6" dir={dir}>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-xl font-bold text-gray-900 sm:text-2xl">
             {t('Add Employee', 'إضافة موظف', language)}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="truncate text-sm text-gray-500 mt-1">
             {t('Register a new employee record', 'تسجيل سجل موظف جديد', language)}
           </p>
         </div>
-        <Button variant="outline" onClick={() => router.push('/employees')}>
-          <ArrowLeft className="h-4 w-4" />
+        <Button variant="outline" onClick={() => router.push('/employees')} className="shrink-0">
+          <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
           {t('Back', 'رجوع', language)}
         </Button>
       </div>
@@ -222,8 +238,8 @@ export default function NewEmployeePage() {
             fields={fields}
             locale={language}
             onSubmit={handleSubmit}
-            submitLabel={t('Save Employee', 'حفظ الموظف', language)}
-            submitLabelAr={t('Save Employee', 'حفظ الموظف', language)}
+            submitLabel="Save Employee"
+            submitLabelAr="حفظ الموظف"
             loading={saving}
           />
         </CardBody>

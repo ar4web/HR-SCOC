@@ -4,14 +4,18 @@ import React from 'react';
 import { useLanguageStore } from '@/stores/language-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { DashboardTile } from '@/components/ui/DashboardTile';
 import { Button } from '@/components/ui/Button';
 import { DataTable, Column } from '@/engines/table-engine';
 import { Badge } from '@/components/ui/Badge';
 import { attendanceService } from '@/modules/attendance/service';
+import { ModuleSettingsMenu } from '@/components/module-settings/ModuleSettingsMenu';
 import { employeeService } from '@/modules/employee-management/service';
 import { Attendance, Employee } from '@/types';
 import { t, formatDate } from '@/lib/utils';
-import { Clock, LogIn, LogOut, ClipboardList } from 'lucide-react';
+import PageHeader from '@/components/layout/PageHeader';
+import { downloadCsv } from '@/lib/csv';
+import { Clock, LogIn, LogOut, ClipboardList, UserCheck, AlarmClock, UserX, CalendarClock, Filter, MapPin, Download } from 'lucide-react';
 
 export default function AttendancePage() {
   const { language, dir } = useLanguageStore();
@@ -21,53 +25,167 @@ export default function AttendancePage() {
   const [loading, setLoading] = React.useState(true);
   const [clocking, setClocking] = React.useState(false);
   const [message, setMessage] = React.useState<string | null>(null);
+  const messageTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [dateFilter, setDateFilter] = React.useState('');
+  const [departmentFilter, setDepartmentFilter] = React.useState('all');
 
   React.useEffect(() => {
     loadRecords();
   }, []);
 
+  React.useEffect(() => {
+    return () => {
+      if (messageTimer.current) clearTimeout(messageTimer.current);
+    };
+  }, []);
+
+  const showMessage = (text: string) => {
+    setMessage(text);
+    if (messageTimer.current) clearTimeout(messageTimer.current);
+    messageTimer.current = setTimeout(() => setMessage(null), 3000);
+  };
+
   const loadRecords = async () => {
     setLoading(true);
-    const employeeId = user?.role === 'employee' ? user.id : undefined;
     const [recordsRes, empRes] = await Promise.all([
-      attendanceService.list({ employeeId }),
+      attendanceService.list({}),
       employeeService.list({ page: 1, pageSize: 1000 }),
     ]);
     if (recordsRes.success && recordsRes.data) setRecords(recordsRes.data.data);
     if (empRes.success && empRes.data) {
-      setEmployees(new Map(empRes.data.data.map((e) => [e.id, e])));
+      const empList = empRes.data.data;
+      setEmployees(new Map(empList.map((e) => [e.id, e])));
+      if (user?.role === 'employee') {
+        const mine = empList.find((e) => e.userId === user.id);
+        if (mine) {
+          const filtered = recordsRes.success && recordsRes.data ? recordsRes.data.data.filter((r) => r.employeeId === mine.id) : [];
+          setRecords(filtered);
+        } else {
+          setRecords([]);
+        }
+      }
     }
     setLoading(false);
   };
 
+  const getGeolocation = () =>
+    new Promise<{ lat: number; lng: number } | null>((resolve) => {
+      if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
+        resolve(null);
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: Number(pos.coords.latitude.toFixed(6)), lng: Number(pos.coords.longitude.toFixed(6)) }),
+        () => resolve(null),
+        { timeout: 5000, maximumAge: 60000 }
+      );
+    });
+
   const handleClockIn = async () => {
     setClocking(true);
-    const res = await attendanceService.clockIn(user?.id || '');
+    const geo = await getGeolocation();
+    const res = await attendanceService.clockIn(user?.id || '', geo);
     if (res.success) {
-      setMessage(t('Clocked in successfully!', 'تم تسجيل الحضور بنجاح!', language));
+      showMessage(
+        geo
+          ? t('Clocked in with GPS location!', 'تم تسجيل الحضور مع موقع GPS!', language)
+          : t('Clocked in successfully!', 'تم تسجيل الحضور بنجاح!', language)
+      );
       loadRecords();
     } else {
-      setMessage(res.error || '');
+      showMessage(res.error || '');
     }
     setClocking(false);
-    setTimeout(() => setMessage(null), 3000);
   };
 
   const handleClockOut = async () => {
     setClocking(true);
     const res = await attendanceService.clockOut(user?.id || '');
     if (res.success) {
-      setMessage(t('Clocked out successfully!', 'تم تسجيل الانصراف بنجاح!', language));
+      showMessage(t('Clocked out successfully!', 'تم تسجيل الانصراف بنجاح!', language));
       loadRecords();
     } else {
-      setMessage(res.error || '');
+      showMessage(res.error || '');
     }
     setClocking(false);
-    setTimeout(() => setMessage(null), 3000);
   };
 
   const today = new Date().toISOString().split('T')[0];
   const todayRecord = records.find((r) => r.date === today);
+
+  const filteredRecords = records.filter((r) => {
+    if (dateFilter && r.date !== dateFilter) return false;
+    if (departmentFilter !== 'all') {
+      const emp = employees.get(r.employeeId);
+      if (emp && emp.department !== departmentFilter) return false;
+    }
+    return true;
+  });
+
+  const exportCsv = () => {
+    downloadCsv(
+      filteredRecords.map((r) => {
+        const emp = employees.get(r.employeeId);
+        return {
+          id: r.id,
+          employee: emp ? `${emp.fullName} (${emp.employeeId})` : r.employeeId,
+          date: r.date,
+          clockIn: r.clockIn,
+          clockOut: r.clockOut || '',
+          hoursWorked: r.hoursWorked ?? '',
+          status: r.status,
+          notes: r.notes || '',
+        };
+      }),
+      `attendance-${new Date().toISOString().slice(0, 10)}.csv`
+    );
+  };
+
+  const presentCount = filteredRecords.filter((r) => r.status === 'present').length;
+  const lateCount = filteredRecords.filter((r) => r.status === 'late').length;
+  const absentCount = filteredRecords.filter((r) => r.status === 'absent' || r.status === 'half_day').length;
+  const totalShown = filteredRecords.length;
+
+  const departments = Array.from(
+    new Set(Array.from(employees.values()).map((e) => e.department).filter(Boolean))
+  ).sort();
+
+  const grandTotal = Math.max(1, presentCount + lateCount + absentCount);
+
+  const summaryCards = [
+    {
+      label: { en: 'Present', ar: 'حاضر' },
+      value: presentCount,
+      icon: UserCheck,
+      color: 'bg-success/10 text-success',
+      pct: Math.round((presentCount / grandTotal) * 100),
+      barColor: 'bg-success',
+    },
+    {
+      label: { en: 'Late', ar: 'متأخر' },
+      value: lateCount,
+      icon: AlarmClock,
+      color: 'bg-warning/10 text-warning',
+      pct: Math.round((lateCount / grandTotal) * 100),
+      barColor: 'bg-warning',
+    },
+    {
+      label: { en: 'Absent / Half Day', ar: 'غائب / نصف يوم' },
+      value: absentCount,
+      icon: UserX,
+      color: 'bg-error/10 text-error',
+      pct: Math.round((absentCount / grandTotal) * 100),
+      barColor: 'bg-error',
+    },
+    {
+      label: { en: 'Total Records', ar: 'إجمالي السجلات' },
+      value: totalShown,
+      icon: CalendarClock,
+      color: 'bg-info/10 text-info',
+      pct: 100,
+      barColor: 'bg-info',
+    },
+  ];
 
   const columns: Column<Attendance>[] = [
     {
@@ -86,12 +204,35 @@ export default function AttendancePage() {
         );
       },
     },
-    { key: 'date', header: t('Date', 'التاريخ', language), render: (r) => formatDate(r.date) },
-    { key: 'clockIn', header: t('Clock In', 'الحضور', language) },
+    { key: 'date', header: t('Date', 'التاريخ', language), render: (r) => formatDate(r.date, language) },
+    { key: 'clockIn', header: t('Clock In', 'الحضور', language), render: (r) => r.clockIn },
     {
       key: 'clockOut',
       header: t('Clock Out', 'الانصراف', language),
       render: (r) => r.clockOut || <span className="text-gray-400">--</span>,
+    },
+    {
+      key: 'hoursWorked',
+      header: t('Hours', 'الساعات', language),
+      render: (r) =>
+        r.hoursWorked != null ? (
+          <span className="font-medium text-gray-900">{r.hoursWorked.toFixed(2)}</span>
+        ) : (
+          <span className="text-gray-400">--</span>
+        ),
+    },
+    {
+      key: 'location',
+      header: t('Location', 'الموقع', language),
+      render: (r) =>
+        r.location ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+            <MapPin className="h-3 w-3" />
+            {r.location.lat.toFixed(4)}, {r.location.lng.toFixed(4)}
+          </span>
+        ) : (
+          <span className="text-gray-300">--</span>
+        ),
     },
     {
       key: 'status',
@@ -102,20 +243,69 @@ export default function AttendancePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {t('Attendance', 'الحضور والانصراف', language)}
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {t('Track attendance and working hours', 'تتبع الحضور والانصراف وساعات العمل', language)}
-        </p>
-      </div>
+      <PageHeader
+        title={t('Attendance', 'الحضور والانصراف', language)}
+        subtitle={t('Track attendance and working hours', 'تتبع الحضور والانصراف وساعات العمل', language)}
+      />
 
       {message && (
         <div className="p-3 rounded-lg bg-primary/10 text-primary text-sm animate-fade-in">
           {message}
         </div>
       )}
+
+      <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white border border-gray-200 p-3">
+        <Filter className="h-4 w-4 text-gray-400" />
+        <input
+          type="date"
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
+          aria-label={t('Filter by date', 'تصفية حسب التاريخ', language)}
+        />
+        <select
+          value={departmentFilter}
+          onChange={(e) => setDepartmentFilter(e.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-gray-700 focus:ring-2 focus:ring-primary"
+          aria-label={t('Filter by department', 'تصفية حسب القسم', language)}
+        >
+          <option value="all">{t('All Departments', 'كل الأقسام', language)}</option>
+          {departments.map((d) => (
+            <option key={d} value={d}>{d}</option>
+          ))}
+        </select>
+        {(dateFilter || departmentFilter !== 'all') && (
+          <button
+            onClick={() => {
+              setDateFilter('');
+              setDepartmentFilter('all');
+            }}
+            className="px-3 py-2 text-xs font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors"
+          >
+            {t('Clear', 'مسح', language)}
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {summaryCards.map((s) => {
+          const Icon = s.icon;
+          return (
+            <DashboardTile
+              key={s.label.en}
+              icon={Icon}
+              label={t(s.label.en, s.label.ar, language)}
+              value={String(s.value)}
+              chip={`${s.pct}%`}
+              chipClassName={s.color}
+              iconClassName={`${s.color} transition-transform group-hover:scale-110`}
+              pct={s.pct}
+              barClassName={s.barColor}
+              className="hover:-translate-y-0.5 hover:shadow-md"
+            />
+          );
+        })}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card>
@@ -132,6 +322,12 @@ export default function AttendancePage() {
                   {todayRecord?.clockIn
                     ? t(`Clocked in at ${todayRecord.clockIn}`, `تم تسجيل الحضور الساعة ${todayRecord.clockIn}`, language)
                     : t('Start your work day', 'ابدأ يوم عملك', language)}
+                  {todayRecord?.location && (
+                    <span className="ml-1.5 inline-flex items-center gap-0.5 text-success">
+                      <MapPin className="h-3 w-3" />
+                      GPS
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
@@ -141,11 +337,10 @@ export default function AttendancePage() {
               disabled={!!todayRecord?.clockIn}
               className="w-full"
               variant={todayRecord?.clockIn ? 'outline' : 'primary'}
+              title={todayRecord?.clockIn ? t('Already Clocked In', 'تم تسجيل الحضور', language) : t('Clock In', 'تسجيل حضور', language)}
+              aria-label={todayRecord?.clockIn ? t('Already Clocked In', 'تم تسجيل الحضور', language) : t('Clock In', 'تسجيل حضور', language)}
             >
               <LogIn className="h-4 w-4" />
-              {todayRecord?.clockIn
-                ? t('Already Clocked In', 'تم تسجيل الحضور', language)
-                : t('Clock In', 'تسجيل حضور', language)}
             </Button>
           </CardBody>
         </Card>
@@ -163,7 +358,12 @@ export default function AttendancePage() {
                 <p className="text-xs text-gray-500">
                   {todayRecord?.clockOut
                     ? t(`Clocked out at ${todayRecord.clockOut}`, `تم تسجيل الانصراف الساعة ${todayRecord.clockOut}`, language)
-                    : t('End your work day', 'أنهي يوم عملك', language)}
+                    : t('End your work day', 'أنهِ يوم عملك', language)}
+                  {todayRecord?.hoursWorked != null && (
+                    <span className="ml-1.5 font-medium text-warning">
+                      · {todayRecord.hoursWorked.toFixed(2)} {t('hrs', 'ساعات', language)}
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
@@ -173,11 +373,10 @@ export default function AttendancePage() {
               disabled={!todayRecord?.clockIn || !!todayRecord?.clockOut}
               className="w-full"
               variant={todayRecord?.clockOut ? 'outline' : 'warning'}
+              title={todayRecord?.clockOut ? t('Already Clocked Out', 'تم تسجيل الانصراف', language) : t('Clock Out', 'تسجيل انصراف', language)}
+              aria-label={todayRecord?.clockOut ? t('Already Clocked Out', 'تم تسجيل الانصراف', language) : t('Clock Out', 'تسجيل انصراف', language)}
             >
               <LogOut className="h-4 w-4" />
-              {todayRecord?.clockOut
-                ? t('Already Clocked Out', 'تم تسجيل الانصراف', language)
-                : t('Clock Out', 'تسجيل انصراف', language)}
             </Button>
           </CardBody>
         </Card>
@@ -210,15 +409,36 @@ export default function AttendancePage() {
           <h2 className="text-lg font-semibold">
             {t('Attendance Records', 'سجل الحضور', language)}
           </h2>
+          <div className="flex-1" />
+          <Button variant="ghost" size="sm" onClick={exportCsv} title={t('Export CSV', 'تصدير CSV', language)} aria-label={t('Export CSV', 'تصدير CSV', language)}>
+            <Download className="h-4 w-4" />
+          </Button>
+          <ModuleSettingsMenu
+            module={t('Attendance', 'الحضور', language)}
+            onExport={exportCsv}
+          />
         </CardHeader>
         <CardBody>
           <DataTable
             columns={columns}
-            data={records}
+            data={filteredRecords}
             loading={loading}
             locale={language}
             dir={dir}
             getRowKey={(r) => r.id}
+            filters={{
+              key: 'status',
+              label: 'Status',
+              labelAr: 'الحالة',
+              options: [
+                { value: 'present', label: 'Present', labelAr: 'حاضر' },
+                { value: 'late', label: 'Late', labelAr: 'متأخر' },
+                { value: 'absent', label: 'Absent', labelAr: 'غائب' },
+                { value: 'half_day', label: 'Half Day', labelAr: 'نصف يوم' },
+                { value: 'overtime', label: 'Overtime', labelAr: 'إضافي' },
+              ],
+              getValue: (r) => r.status,
+            }}
           />
         </CardBody>
       </Card>
