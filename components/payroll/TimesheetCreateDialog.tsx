@@ -34,6 +34,7 @@ export function TimesheetCreateDialog({ open, period, onPeriodChange, onUpload, 
   const [emps, setEmps] = React.useState<{ employeeId: string; fullName: string }[]>([]);
   const [selected, setSelected] = React.useState<string[]>([]);
   const [generating, setGenerating] = React.useState(false);
+  const empsLoadedRef = React.useRef(false);
 
   const uid = () => Math.random().toString(36).slice(2, 9);
   const blank = (): DraftRow => ({ uid: uid(), employeeId: '', date: '', clockIn: '08:00', clockOut: '17:00', breakHours: '1', otHours: '0' });
@@ -46,7 +47,8 @@ export function TimesheetCreateDialog({ open, period, onPeriodChange, onUpload, 
     if (!open) return;
     setRows([]);
     setSelected([]);
-    if (emps.length === 0) {
+    if (!empsLoadedRef.current) {
+      empsLoadedRef.current = true;
       employeeService.list({ pageSize: 200 }).then((res) => {
         const list = res?.data?.data;
         if (Array.isArray(list)) setEmps(list.map((e) => ({ employeeId: e.employeeId, fullName: e.fullName })));

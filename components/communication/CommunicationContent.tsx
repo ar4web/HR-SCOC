@@ -11,6 +11,7 @@ import { ModuleSettingsMenu } from '@/components/module-settings/ModuleSettingsM
 
 import { Channel, Message, MessageAttachment } from '@/types';
 import { clearApiCache } from '@/lib/api';
+import Image from 'next/image';
 import { t, formatDate, getPriorityLabel } from '@/lib/utils';
 import {
   MessageSquare, Megaphone, Send, Paperclip, Image as ImageIcon, Camera, Search,
@@ -449,9 +450,12 @@ export function CommunicationContent() {
               : mine ? 'bg-primary text-white rounded-br-md' : 'bg-white text-gray-800 border border-gray-100 rounded-bl-md'
           }`}>
             {!deleted && m.attachment?.type === 'image' && (
-              <img
+              <Image
                 src={m.attachment.url}
                 alt={m.attachment.name}
+                width={512}
+                height={512}
+                unoptimized
                 className="rounded-xl max-h-64 w-auto mb-2 cursor-pointer"
                 onClick={() => window.open(m.attachment!.url, '_blank')}
               />
@@ -787,7 +791,7 @@ export function CommunicationContent() {
                 {pendingAtt && (
                   <div className="flex items-center gap-2 mb-2 bg-gray-50 rounded-xl px-3 py-2">
                     {pendingAtt.type === 'image' ? (
-                      <img src={pendingAtt.url} alt={pendingAtt.name} className="h-10 w-10 rounded-lg object-cover" />
+                      <Image src={pendingAtt.url} alt={pendingAtt.name} width={40} height={40} unoptimized className="h-10 w-10 rounded-lg object-cover" />
                     ) : (
                       <FileText className="h-5 w-5 text-primary" />
                     )}

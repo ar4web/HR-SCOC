@@ -30,22 +30,12 @@ export default function AttendancePage() {
   const [departmentFilter, setDepartmentFilter] = React.useState('all');
 
   React.useEffect(() => {
-    loadRecords();
-  }, []);
-
-  React.useEffect(() => {
     return () => {
       if (messageTimer.current) clearTimeout(messageTimer.current);
     };
   }, []);
 
-  const showMessage = (text: string) => {
-    setMessage(text);
-    if (messageTimer.current) clearTimeout(messageTimer.current);
-    messageTimer.current = setTimeout(() => setMessage(null), 3000);
-  };
-
-  const loadRecords = async () => {
+  const loadRecords = React.useCallback(async () => {
     setLoading(true);
     const [recordsRes, empRes] = await Promise.all([
       attendanceService.list({}),
@@ -66,6 +56,16 @@ export default function AttendancePage() {
       }
     }
     setLoading(false);
+  }, [user]);
+
+  React.useEffect(() => {
+    loadRecords();
+  }, [loadRecords]);
+
+  const showMessage = (text: string) => {
+    setMessage(text);
+    if (messageTimer.current) clearTimeout(messageTimer.current);
+    messageTimer.current = setTimeout(() => setMessage(null), 3000);
   };
 
   const getGeolocation = () =>
