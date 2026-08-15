@@ -10,6 +10,7 @@ export const MODULE_ROUTE_MAP: Record<string, string> = {
   '/expenses': 'expense-management',
   '/reports': 'reports',
   '/administration': 'administration',
+  '/contracts': 'contracts',
 };
 
 export const MODULE_STATES_COOKIE = 'scos_modules';

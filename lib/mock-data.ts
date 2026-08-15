@@ -23,6 +23,7 @@ import {
   Expense,
   ExpenseCategory,
   MessageAttachment,
+  Contract,
 } from '@/types';
 import { generateId, formatEmployeeId } from './utils';
 import { loadPersistedData, savePersisted, PersistedState } from './persistence';
@@ -52,6 +53,7 @@ function persist(): void {
     emailSettings: { ...emailSettings },
     expenses: Array.from(expenses.values()),
     lifecycles: Array.from(lifecycles.values()),
+    contracts: Array.from(contracts.values()),
   };
   savePersisted(state);
 }
@@ -118,6 +120,7 @@ const demoCompany: Company = {
     'expense-management': true,
     'reports': true,
     'administration': true,
+    'contracts': false,
   },
   createdAt: '2020-01-01',
   updatedAt: '2024-01-01',
@@ -181,6 +184,9 @@ export let emailOutbox: Map<string, EmailOutbox> = new Map();
 export let expenses: Map<string, Expense> = new Map();
 
 export let lifecycles: Map<string, EmployeeLifecycle> = new Map();
+
+export let contracts: Map<string, Contract> = new Map();
+export let contractCounter = 0;
 
 export let departments: Department[] = [
   { id: 'dept-1', name: 'Engineering', nameAr: 'الهندسة', employeeCount: 0 },
@@ -312,6 +318,17 @@ export const moduleDefinitions: ModuleDefinition[] = [
     dependencies: [],
     enabled: true,
     route: '/administration',
+  },
+  {
+    id: 'contracts',
+    name: 'Contracts & Agreements',
+    nameAr: 'العقود والاتفاقيات',
+    description: 'Employment contracts, service agreements and NDAs with automatic expiry tracking and renewal-window alerts',
+    descriptionAr: 'عقود العمل واتفاقيات الخدمة واتفاقيات عدم الإفصاح مع تتبع انتهاء الصلاحية وتنبيهات التجديد',
+    icon: 'FileText',
+    dependencies: ['employee-management'],
+    enabled: false,
+    route: '/contracts',
   },
 ];
 
@@ -670,6 +687,40 @@ export function updateExpense(id: string, patch: Partial<Expense>): Expense | nu
 
 export function deleteExpense(id: string): boolean {
   const removed = expenses.delete(id);
+  persist();
+  return removed;
+}
+
+export function nextContractNo(): string {
+  contractCounter += 1;
+  return `CTR-${String(contractCounter).padStart(4, '0')}`;
+}
+
+export function addContract(data: Omit<Contract, 'id' | 'contractNo' | 'createdAt' | 'updatedAt'>): Contract {
+  const now = new Date().toISOString();
+  const c: Contract = {
+    ...data,
+    id: generateId(),
+    contractNo: nextContractNo(),
+    createdAt: now,
+    updatedAt: now,
+  };
+  contracts.set(c.id, c);
+  persist();
+  return c;
+}
+
+export function updateContract(id: string, patch: Partial<Contract>): Contract | null {
+  const c = contracts.get(id);
+  if (!c) return null;
+  const next = { ...c, ...patch, updatedAt: new Date().toISOString() };
+  contracts.set(id, next);
+  persist();
+  return next;
+}
+
+export function deleteContract(id: string): boolean {
+  const removed = contracts.delete(id);
   persist();
   return removed;
 }
@@ -1216,6 +1267,8 @@ export function resetDemoData(): void {
   emailOutbox = new Map();
   expenses = new Map();
   lifecycles = new Map();
+  contracts = new Map();
+  contractCounter = 0;
   seedDemoData();
   persistenceEnabled = true;
   persist();
@@ -1247,6 +1300,8 @@ export function ensureHydrated(): void {
     emailOutbox = new Map(persisted.emailOutbox?.map((o) => [o.id, o]) ?? []);
     expenses = new Map(persisted.expenses?.map((e) => [e.id, e]) ?? []);
     lifecycles = new Map(persisted.lifecycles?.map((l) => [l.id, l]) ?? []);
+    contracts = new Map(persisted.contracts?.map((c) => [c.id, c]) ?? []);
+    contractCounter = contracts.size;
     if (persisted.emailSettings) emailSettings = { ...persisted.emailSettings };
   } else {
     seedDemoData();

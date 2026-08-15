@@ -5,11 +5,13 @@ import { useLanguageStore } from '@/stores/language-store';
 import { useUIStore } from '@/stores/ui-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { hasPermission, Permission } from '@/lib/rbac';
+import { MODULE_ROUTE_MAP } from '@/lib/module-route-map';
+import { useModuleStore } from '@/stores/module-store';
 import { cn, t } from '@/lib/utils';
 import {
   LayoutDashboard, Users,
   BarChart, Settings, Shield, X,
-  ListTodo, FolderOpen, Mail, Receipt, Bell, AlarmClock, Rocket, Share2,
+  ListTodo, FolderOpen, Mail, Receipt, Bell, AlarmClock, Rocket, Share2, FileText,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -31,6 +33,7 @@ const links: NavLink[] = [
   { label: { en: 'Notifications', ar: 'الإشعارات' }, route: '/notifications', icon: Bell },
   { label: { en: 'Reminders', ar: 'التذكيرات' }, route: '/reminders', icon: AlarmClock },
   { label: { en: 'Lifecycle', ar: 'دورة الحياة' }, route: '/lifecycle', icon: Rocket },
+  { label: { en: 'Contracts', ar: 'العقود' }, route: '/contracts', icon: FileText, permission: 'contracts:read' },
   { label: { en: 'Org Chart', ar: 'الهيكل التنظيمي' }, route: '/organization', icon: Share2 },
   { label: { en: 'Administration', ar: 'الإدارة' }, route: '/administration', icon: Shield, permission: 'user:manage' },
 ];
@@ -40,7 +43,13 @@ export function Sidebar() {
   const { language } = useLanguageStore();
   const { mobileSidebarOpen, setMobileSidebarOpen } = useUIStore();
   const { user } = useAuthStore();
-  const visibleLinks = links.filter((l) => !l.permission || hasPermission(user?.role, l.permission));
+  const { moduleStates } = useModuleStore();
+  const visibleLinks = links.filter((l) => {
+    if (l.permission && !hasPermission(user?.role, l.permission)) return false;
+    const moduleId = MODULE_ROUTE_MAP[l.route];
+    if (moduleId && moduleStates[moduleId] === false) return false;
+    return true;
+  });
 
   return (
     <>

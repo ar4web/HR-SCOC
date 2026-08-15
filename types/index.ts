@@ -118,6 +118,38 @@ export interface ModuleDefinition {
   route: string;
 }
 
+export type ContractStatus = 'active' | 'expiring' | 'expired';
+export type AgreementType =
+  | 'employment'
+  | 'service'
+  | 'nda'
+  | 'vendor'
+  | 'client'
+  | 'contractor'
+  | 'partnership'
+  | 'lease'
+  | 'amendment';
+
+export interface Contract {
+  id: string;
+  contractNo: string;
+  contractType: AgreementType;
+  title: string;
+  partyA: string;
+  partyB: string;
+  employeeId?: string;
+  employeeName?: string;
+  startDate: string;
+  endDate: string;
+  renewalNoticeDays: number;
+  value: number;
+  currency: string;
+  status: ContractStatus;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Department {
   id: string;
   name: string;

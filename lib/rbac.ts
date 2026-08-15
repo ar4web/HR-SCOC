@@ -21,7 +21,9 @@ export type Permission =
   | 'expense:manage'
   | 'module:manage'
   | 'dashboard:read'
-  | 'reports:read';
+  | 'reports:read'
+  | 'contracts:read'
+  | 'contracts:write';
 
 const PERMISSION_ROLES: Record<Permission, UserRole[]> = {
   'employee:view_all': ['admin', 'hr_manager'],
@@ -37,6 +39,8 @@ const PERMISSION_ROLES: Record<Permission, UserRole[]> = {
   'module:manage': ['admin', 'hr_manager'],
   'dashboard:read': ['admin', 'hr_manager', 'manager', 'employee'],
   'reports:read': ['admin', 'hr_manager', 'manager'],
+  'contracts:read': ['admin', 'hr_manager', 'manager'],
+  'contracts:write': ['admin', 'hr_manager'],
 };
 
 export function hasPermission(role: UserRole | undefined, permission: Permission): boolean {

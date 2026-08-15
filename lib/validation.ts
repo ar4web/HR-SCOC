@@ -88,7 +88,7 @@ export const companyUpdateSchema = z.object({
     secondaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
     accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
     logo: z.string().max(500).optional(),
-  }).optional(),
+  }).passthrough().optional(),
 }).passthrough();
 
 export const messageSchema = z.object({

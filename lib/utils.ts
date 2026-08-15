@@ -21,6 +21,12 @@ export function formatCurrency(amount: number): string {
   return `${num} ﷼`;
 }
 
+export function formatNumber(amount: number): string {
+  return new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
 export function formatDate(date: string, locale: 'en' | 'ar' = 'en'): string {
   const d = new Date(date);
   if (isNaN(d.getTime())) return date;

@@ -24,6 +24,7 @@ const defaultStates: ModuleStates = {
   'expense-management': true,
   'reports': true,
   'administration': true,
+  'contracts': false,
 };
 
 export const useModuleStore = create<ModuleState>((set, get) => ({
