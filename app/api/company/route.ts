@@ -60,7 +60,7 @@ export async function PUT(req: Request) {
   }
 
   if (parsed.data.branding) {
-    updateCompanyBranding(parsed.data.branding as Branding);
+    updateCompanyBranding(parsed.data.branding as unknown as Branding);
     delete updated.branding;
   }
 
