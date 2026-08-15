@@ -14,6 +14,7 @@ import { EmailTemplate, EmailSettings, EmailTemplateCategory, Employee } from '@
 import { employeeService } from '@/modules/employee-management/service';
 import { t, formatDate } from '@/lib/utils';
 import { Mail, Plus, Trash2, Pencil, Send, Settings, LayoutTemplate, Search, Chrome, Inbox, SendHorizonal, Users, Save } from 'lucide-react';
+import * as Tabs from '@radix-ui/react-tabs';
 
 const templateCategories: { value: EmailTemplateCategory; en: string; ar: string }[] = [
   { value: 'welcome', en: 'Welcome', ar: 'ترحيب' },
@@ -34,10 +35,38 @@ function categoryLabel(value: string, locale: 'en' | 'ar'): string {
   return locale === 'ar' ? c.ar : c.en;
 }
 
+function EmailTabButton({
+  value,
+  icon: Icon,
+  label,
+}: {
+  value: string;
+  icon: React.ElementType;
+  label: string;
+}) {
+  return (
+    <Tabs.Trigger
+      value={value}
+      className="inline-flex items-center gap-2 border-b-2 border-transparent px-4 py-2.5 text-sm font-medium text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700 data-[state=active]:border-primary data-[state=active]:text-primary"
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </Tabs.Trigger>
+  );
+}
+
 export function EmailContent() {
   const { language } = useLanguageStore();
   const { user } = useAuthStore();
   const { addToast } = useToast();
+  const [activeTab, setActiveTab] = React.useState('settings');
+  const tabTouchedRef = React.useRef(false);
+  const autoInitRef = React.useRef(false);
+
+  const handleTabChange = (value: string) => {
+    tabTouchedRef.current = true;
+    setActiveTab(value);
+  };
   const [settings, setSettings] = React.useState<EmailSettings | null>(null);
   const [templates, setTemplates] = React.useState<EmailTemplate[]>([]);
   const [outbox, setOutbox] = React.useState<{ id: string; toEmail: string; toName?: string; subject: string; status: string; createdAt: string }[]>([]);
@@ -117,6 +146,14 @@ export function EmailContent() {
   React.useEffect(() => {
     load();
   }, [load]);
+
+  React.useEffect(() => {
+    if (autoInitRef.current) return;
+    if (!loading && settings) {
+      autoInitRef.current = true;
+      setActiveTab(settings.enabled ? 'compose' : 'settings');
+    }
+  }, [loading, settings]);
 
   const [delivering, setDelivering] = React.useState(false);
 
@@ -375,9 +412,15 @@ export function EmailContent() {
           <ModuleSettingsMenu module={t('Email', 'البريد الإلكتروني', language)} />
         </div>
       </div>
-      <div className="grid gap-6 lg:grid-cols-2">
+      <Tabs.Root value={activeTab} onValueChange={handleTabChange}>
+        <Tabs.List className="flex flex-wrap items-center gap-1 border-b border-gray-200">
+          <EmailTabButton value="settings" icon={Settings} label={t('Settings', 'الإعدادات', language)} />
+          <EmailTabButton value="compose" icon={SendHorizonal} label={t('Compose', 'إنشاء', language)} />
+          <EmailTabButton value="outbox" icon={Inbox} label={t('Outbox', 'صادر', language)} />
+          <EmailTabButton value="templates" icon={LayoutTemplate} label={t('Templates', 'القوالب', language)} />
+        </Tabs.List>
 
-        {/* ===== Left column: mail UI (Gmail + SMTP) ===== */}
+        <Tabs.Content value="settings" className="mt-6">
         <div className="flex flex-col min-w-0">
           {loading ? (
             <Card>
@@ -632,111 +675,9 @@ export function EmailContent() {
             </>
           )}
         </div>
+        </Tabs.Content>
 
-        {/* ===== Right column: templates ===== */}
-        <div className="space-y-6 min-w-0">
-          {showForm && (
-            <Card>
-              <CardHeader className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-3">
-                  <div className={`rounded-lg p-2 ${editing ? 'bg-warning/10 text-warning' : 'bg-primary/10 text-primary'}`}>
-                    <Mail className="h-5 w-5" />
-                  </div>
-                  <h2 className="text-lg font-semibold">
-                    {t(editing ? 'Edit Template' : 'Create Template', editing ? 'تعديل القالب' : 'إنشاء قالب', language)}
-                  </h2>
-                </div>
-                <div className="flex flex-wrap gap-1 justify-end">
-                  <span className="text-xs text-gray-400 me-1 self-center">{t('Insert:', 'إدراج:', language)}</span>
-                  {templateVars.map((v) => (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => setForm({ ...form, body: form.body + ' ' + v })}
-                      className="px-2 py-1 rounded-md bg-secondary/5 text-secondary text-xs font-mono hover:bg-secondary/10 transition-colors"
-                    >
-                      {v}
-                    </button>
-                  ))}
-                </div>
-              </CardHeader>
-              <CardBody className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
-                    label={t('Template Name (English)', 'اسم القالب (إنجليزي)', language)}
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  />
-                  <Input
-                    label={t('Template Name (Arabic)', 'اسم القالب (عربي)', language)}
-                    value={form.nameAr}
-                    onChange={(e) => setForm({ ...form, nameAr: e.target.value })}
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-gray-700">{t('Category', 'التصنيف', language)}</label>
-                    <select
-                      value={form.category}
-                      onChange={(e) => setForm({ ...form, category: e.target.value as EmailTemplateCategory })}
-                      className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      {templateCategories.map((c) => (
-                        <option key={c.value} value={c.value}>
-                          {language === 'ar' ? c.ar : c.en}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <Input
-                    label={t('Subject (English)', 'الموضوع (إنجليزي)', language)}
-                    value={form.subject}
-                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                  />
-                </div>
-                <Input
-                  label={t('Subject (Arabic)', 'الموضوع (عربي)', language)}
-                  value={form.subjectAr}
-                  onChange={(e) => setForm({ ...form, subjectAr: e.target.value })}
-                />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-gray-700">
-                      {t('Body (English)', 'المحتوى (إنجليزي)', language)}
-                    </label>
-                    <textarea
-                      value={form.body}
-                      onChange={(e) => setForm({ ...form, body: e.target.value })}
-                      rows={6}
-                      placeholder={t('Dear {{employeeName}}, ...', 'عزيزي {{employeeName}}، ...', language)}
-                      className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-gray-700">
-                      {t('Body (Arabic)', 'المحتوى (عربي)', language)}
-                    </label>
-                    <textarea
-                      value={form.bodyAr}
-                      onChange={(e) => setForm({ ...form, bodyAr: e.target.value })}
-                      rows={6}
-                      placeholder={t('Optional', 'اختياري', language)}
-                      className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2 justify-end">
-                  <Button variant="ghost" onClick={() => setShowForm(false)}>
-                    {t('Cancel', 'إلغاء', language)}
-                  </Button>
-                  <Button onClick={handleSaveTemplate} loading={savingTemplate}>
-                    {t(editing ? 'Save Changes' : 'Create Template', editing ? 'حفظ التغييرات' : 'إنشاء قالب', language)}
-                  </Button>
-                </div>
-              </CardBody>
-            </Card>
-          )}
-
+        <Tabs.Content value="compose" className="mt-6">
           <Card>
             <CardHeader className="flex items-center flex-wrap gap-3">
               <div className="flex items-center gap-2.5">
@@ -904,7 +845,9 @@ export function EmailContent() {
               </div>
             </CardBody>
           </Card>
+          </Tabs.Content>
 
+          <Tabs.Content value="outbox" className="mt-6">
           <Card>
             <CardHeader className="flex items-center gap-3">
               <div className="flex items-center gap-2.5">
@@ -989,6 +932,110 @@ export function EmailContent() {
               )}
             </CardBody>
           </Card>
+          </Tabs.Content>
+
+          <Tabs.Content value="templates" className="mt-6">
+          {showForm && (
+            <Card>
+              <CardHeader className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-3">
+                  <div className={`rounded-lg p-2 ${editing ? 'bg-warning/10 text-warning' : 'bg-primary/10 text-primary'}`}>
+                    <Mail className="h-5 w-5" />
+                  </div>
+                  <h2 className="text-lg font-semibold">
+                    {t(editing ? 'Edit Template' : 'Create Template', editing ? 'تعديل القالب' : 'إنشاء قالب', language)}
+                  </h2>
+                </div>
+                <div className="flex flex-wrap gap-1 justify-end">
+                  <span className="text-xs text-gray-400 me-1 self-center">{t('Insert:', 'إدراج:', language)}</span>
+                  {templateVars.map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setForm({ ...form, body: form.body + ' ' + v })}
+                      className="px-2 py-1 rounded-md bg-secondary/5 text-secondary text-xs font-mono hover:bg-secondary/10 transition-colors"
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              </CardHeader>
+              <CardBody className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input
+                    label={t('Template Name (English)', 'اسم القالب (إنجليزي)', language)}
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  />
+                  <Input
+                    label={t('Template Name (Arabic)', 'اسم القالب (عربي)', language)}
+                    value={form.nameAr}
+                    onChange={(e) => setForm({ ...form, nameAr: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-gray-700">{t('Category', 'التصنيف', language)}</label>
+                    <select
+                      value={form.category}
+                      onChange={(e) => setForm({ ...form, category: e.target.value as EmailTemplateCategory })}
+                      className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      {templateCategories.map((c) => (
+                        <option key={c.value} value={c.value}>
+                          {language === 'ar' ? c.ar : c.en}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <Input
+                    label={t('Subject (English)', 'الموضوع (إنجليزي)', language)}
+                    value={form.subject}
+                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                  />
+                </div>
+                <Input
+                  label={t('Subject (Arabic)', 'الموضوع (عربي)', language)}
+                  value={form.subjectAr}
+                  onChange={(e) => setForm({ ...form, subjectAr: e.target.value })}
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-gray-700">
+                      {t('Body (English)', 'المحتوى (إنجليزي)', language)}
+                    </label>
+                    <textarea
+                      value={form.body}
+                      onChange={(e) => setForm({ ...form, body: e.target.value })}
+                      rows={6}
+                      placeholder={t('Dear {{employeeName}}, ...', 'عزيزي {{employeeName}}، ...', language)}
+                      className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-gray-700">
+                      {t('Body (Arabic)', 'المحتوى (عربي)', language)}
+                    </label>
+                    <textarea
+                      value={form.bodyAr}
+                      onChange={(e) => setForm({ ...form, bodyAr: e.target.value })}
+                      rows={6}
+                      placeholder={t('Optional', 'اختياري', language)}
+                      className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 justify-end">
+                  <Button variant="ghost" onClick={() => setShowForm(false)}>
+                    {t('Cancel', 'إلغاء', language)}
+                  </Button>
+                  <Button onClick={handleSaveTemplate} loading={savingTemplate}>
+                    {t(editing ? 'Save Changes' : 'Create Template', editing ? 'حفظ التغييرات' : 'إنشاء قالب', language)}
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
+          )}
 
           <Card>
             <CardHeader className="flex items-center flex-wrap gap-3">
@@ -1142,8 +1189,8 @@ export function EmailContent() {
               )}
             </CardBody>
           </Card>
-        </div>
-      </div>
+          </Tabs.Content>
+        </Tabs.Root>
     </div>
   );
 }

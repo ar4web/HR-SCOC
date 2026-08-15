@@ -3,12 +3,16 @@
 import React from 'react';
 import { useCompanyStore } from '@/stores/company-store';
 import { Branding, ThemeVariant } from '@/types';
+import { applyThemeToDocument, mergeTokens, THEME_PRESETS, type ThemeTokens } from '@/lib/theme-tokens';
 
 export interface ThemeContextValue {
   theme: ThemeVariant;
   branding: Branding | null;
+  tokens: ThemeTokens;
+  themeCode: string;
   setTheme: (theme: ThemeVariant) => void;
   applyBranding: (branding: Branding) => void;
+  setLiveTokens: (tokens: ThemeTokens) => void;
   resolvedDark: boolean;
 }
 
@@ -51,18 +55,34 @@ function resolveDark(theme: ThemeVariant): boolean {
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
+function codeForTokens(tokens: ThemeTokens): string {
+  const match = THEME_PRESETS.find((p) => {
+    const a = p.tokens;
+    const b = tokens;
+    return a.brand === b.brand && a.accent === b.accent && a.sidebar === b.sidebar && a.paper === b.paper;
+  });
+  return match?.code || 'custom';
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const company = useCompanyStore((s) => s.company);
   const [branding, setBranding] = React.useState<Branding | null>(null);
+  const [tokens, setTokens] = React.useState<ThemeTokens>(mergeTokens(null));
   const [theme, setThemeState] = React.useState<ThemeVariant>('light');
   const [systemDark, setSystemDark] = React.useState(false);
 
   React.useEffect(() => {
     const current = company?.branding || branding;
     if (current) {
-      applyBrandingVars(current);
       setBranding(current);
       setThemeState(current.theme || 'light');
+      if (current.tokens) {
+        const merged = mergeTokens(current.tokens);
+        setTokens(merged);
+        applyThemeToDocument(merged);
+      } else {
+        applyBrandingVars(current);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [company?.branding]);
@@ -84,25 +104,39 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const applyBranding = React.useCallback((next: Branding) => {
     setBranding(next);
     setThemeState(next.theme || 'light');
-    applyBrandingVars(next);
+    if (next.tokens) {
+      const merged = mergeTokens(next.tokens);
+      setTokens(merged);
+      applyThemeToDocument(merged);
+    } else {
+      applyBrandingVars(next);
+    }
   }, []);
 
   const setTheme = React.useCallback((next: ThemeVariant) => {
     setThemeState(next);
     if (branding) {
-      applyBrandingVars({ ...branding, theme: next });
+      applyBranding({ ...branding, theme: next });
     }
-  }, [branding]);
+  }, [branding, applyBranding]);
+
+  const setLiveTokens = React.useCallback((next: ThemeTokens) => {
+    setTokens(next);
+    applyThemeToDocument(next);
+  }, []);
 
   const value = React.useMemo<ThemeContextValue>(
     () => ({
       theme,
       branding,
+      tokens,
+      themeCode: codeForTokens(tokens),
       setTheme,
       applyBranding,
+      setLiveTokens,
       resolvedDark,
     }),
-    [theme, branding, setTheme, applyBranding, resolvedDark]
+    [theme, branding, tokens, setTheme, applyBranding, setLiveTokens, resolvedDark]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

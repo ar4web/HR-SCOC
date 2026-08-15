@@ -14,12 +14,41 @@ export interface User {
 
 export type ThemeVariant = 'light' | 'dark' | 'auto';
 
+export interface ThemeTokens {
+  paper: string;
+  card: string;
+  card2: string;
+  ink: string;
+  muted: string;
+  faint: string;
+  line: string;
+  line2: string;
+  brand: string;
+  brandStrong: string;
+  brandDeep: string;
+  sidebar: string;
+  sidebarText: string;
+  sidebarMuted: string;
+  accent: string;
+  accentSoft: string;
+  ok: string;
+  okSoft: string;
+  warn: string;
+  warnSoft: string;
+  err: string;
+  errSoft: string;
+  info: string;
+  infoSoft: string;
+  radius: string;
+}
+
 export interface Branding {
   logo?: string;
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
   theme: ThemeVariant;
+  tokens?: ThemeTokens;
 }
 
 export interface WorkWeek {
