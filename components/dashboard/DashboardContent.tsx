@@ -12,13 +12,13 @@ import { ModuleSettingsMenu } from '@/components/module-settings/ModuleSettingsM
 import { DashboardData } from '@/lib/dashboard-engine';
 import { api, clearApiCache } from '@/lib/api';
 import { Chart } from '@/engines/chart-engine';
-import { t, formatCurrency, formatDate, getStatusLabel, getStatusColor, getContractTypeLabel, getLeaveTypeLabel, daysUntil } from '@/lib/utils';
+import { t, formatCurrency, formatDate, getStatusLabel, getContractTypeLabel, getLeaveTypeLabel, daysUntil } from '@/lib/utils';
 import {
   Users, UserCheck, CalendarClock, DollarSign, Receipt, FileWarning,
   ListTodo, TrendingUp, AlertTriangle, RefreshCw, CheckCircle2, XCircle,
-  Clock, UserPlus, CalendarPlus, MessageSquare, Bell, FileText,
+  UserPlus, CalendarPlus, MessageSquare, Bell, FileText,
   BarChart3, Wallet, Timer, Globe, Shield, PlaneTakeoff, PlaneLanding,
-  TriangleAlert, Building2, ClipboardCheck, PieChart,
+  TriangleAlert, Building2, ClipboardCheck, PieChart, FileClock, AlarmClock,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -315,8 +315,48 @@ export function DashboardContent() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {kpis.map((k) => {
+      {(() => {
+        const alerts: { icon: LucideIcon; text: string; tone: string; href: string }[] = [];
+        const errCount = data.expiredDocuments.length;
+        const warnCount = data.expiringDocuments.length;
+        const runwayCritical = data.criticalRunway.length;
+        const notReturned = data.notReturnedVacations.length;
+        const pendingCount = data.pendingLeaves + data.pendingExpenses;
+        if (errCount > 0) alerts.push({ icon: AlertTriangle, text: `${errCount} ${t('expired document(s)', 'مستند منتهي', language)}`, tone: 'border-error/20 bg-error/5 text-error', href: '/documents' });
+        if (runwayCritical > 0) alerts.push({ icon: Shield, text: `${runwayCritical} ${t('critical expiries', 'انتهاء حرج', language)}`, tone: 'border-error/20 bg-error/5 text-error', href: '/employees' });
+        if (notReturned > 0) alerts.push({ icon: PlaneLanding, text: `${notReturned} ${t('not returned', 'لم يعودوا', language)}`, tone: 'border-error/20 bg-error/5 text-error', href: '/leaves' });
+        if (pendingCount > 0) alerts.push({ icon: ClipboardCheck, text: `${pendingCount} ${t('pending approvals', 'موافقات معلقة', language)}`, tone: 'border-warning/20 bg-warning/5 text-warning', href: '/leaves' });
+        if (warnCount > 0) alerts.push({ icon: FileClock, text: `${warnCount} ${t('expiring soon', 'تنتهي قريباً', language)}`, tone: 'border-warning/20 bg-warning/5 text-warning', href: '/documents' });
+        if (alerts.length === 0) {
+          return (
+            <div className="flex items-center gap-2.5 rounded-xl border border-success/20 bg-success/5 px-4 py-3 text-sm font-medium text-success">
+              <CheckCircle2 className="h-4 w-4" />
+              {t('All clear — no urgent alerts', 'كل شيء على ما يرام — لا توجد تنبيهات عاجلة', language)}
+            </div>
+          );
+        }
+        return (
+          <div className="flex flex-wrap gap-2.5">
+            {alerts.map((a) => {
+              const Icon = a.icon;
+              return (
+                <Link
+                  key={a.text}
+                  href={a.href}
+                  className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors hover:opacity-80 ${a.tone}`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {a.text}
+                </Link>
+              );
+            })}
+          </div>
+        );
+      })()}
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-2 lg:col-span-2">
+          {kpis.map((k) => {
           const Icon = k.icon;
           const empty =
             (k.label.en === 'Pending Expenses' && data.pendingExpenses === 0) ||
@@ -361,6 +401,150 @@ export function DashboardContent() {
             />
           );
         })}
+        </div>
+
+        <div className="space-y-6">
+          <Card>
+            <CardHeader className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-info/10">
+                <Bell className="h-4 w-4 text-info" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold">{t('Recent Activity', 'النشاط الأخير', language)}</h2>
+                <p className="text-xs text-gray-400">{t('Latest notifications and messages', 'أحدث الإشعارات والرسائل', language)}</p>
+              </div>
+            </CardHeader>
+            <CardBody className="max-h-60 overflow-y-auto pr-1">
+              {data.recentNotifications.length === 0 && data.recentMessages.length === 0 ? (
+                <p className="py-6 text-center text-sm text-gray-400">{t('No recent activity', 'لا يوجد نشاط حديث', language)}</p>
+              ) : (
+                <div className="space-y-3">
+                  {data.recentNotifications.map((n) => {
+                    const meta = notifMeta[n.type] || notifMeta.info;
+                    const Icon = meta.icon;
+                    return (
+                      <div key={n.id} className="flex items-start gap-2.5">
+                        <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${meta.classes}`}>
+                          <Icon className="h-3.5 w-3.5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium text-gray-800">
+                            {language === 'ar' ? n.titleAr || n.title : n.title}
+                          </p>
+                          {n.message && (
+                            <p className="truncate text-[11px] text-gray-500">
+                              {language === 'ar' ? n.messageAr || n.message : n.message}
+                            </p>
+                          )}
+                          <p className="text-[10px] text-gray-400">{formatDate(n.createdAt, language)}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {data.recentMessages.map((m) => (
+                    <div key={m.id} className="flex items-start gap-2.5">
+                      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <MessageSquare className="h-3.5 w-3.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-gray-800">{m.senderName}</p>
+                        <p className="truncate text-[11px] text-gray-500">
+                          {m.attachment ? (m.attachment.type === 'image' ? t('📷 Image', '📷 صورة', language) : `📎 ${m.attachment.name}`) : m.content}
+                        </p>
+                        <p className="text-[10px] text-gray-400">{formatDate(m.timestamp, language)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-warning/10">
+                  <ListTodo className="h-4 w-4 text-warning" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold">{t('To-Do', 'المهام', language)}</h2>
+                  <p className="text-xs text-gray-400">{t('Open tasks by priority', 'مهام مفتوحة حسب الأولوية', language)}</p>
+                </div>
+              </div>
+              <Link href="/todos" className="text-sm font-medium text-primary hover:underline">
+                {t('View all', 'عرض الكل', language)}
+              </Link>
+            </CardHeader>
+            <CardBody className="max-h-60 overflow-y-auto pr-1">
+              {data.todoItems.length === 0 ? (
+                <p className="py-6 text-center text-sm text-gray-400">{t('No open tasks 🎉', 'لا توجد مهام مفتوحة 🎉', language)}</p>
+              ) : (
+                <div className="space-y-2.5">
+                  {data.todoItems.map((tItem) => (
+                    <div key={tItem.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-gray-50">
+                      <span
+                        className={`h-2 w-2 shrink-0 rounded-full ${
+                          tItem.priority === 'high' ? 'bg-error' : tItem.priority === 'medium' ? 'bg-warning' : 'bg-success'
+                        }`}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-medium text-gray-800">{tItem.title}</p>
+                        <p className="text-[10px] text-gray-400">
+                          {tItem.category ? `${tItem.category} · ` : ''}
+                          {tItem.dueDate ? t('Due', 'استحقاق', language) + ' ' + formatDate(tItem.dueDate, language) : t('No due date', 'بدون تاريخ', language)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                  <AlarmClock className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold">{t('Next Coming', 'القادم', language)}</h2>
+                  <p className="text-xs text-gray-400">{t('Upcoming leaves, expiries & deadlines', 'الإجازات القادمة والمواعيد والانتهاءات', language)}</p>
+                </div>
+              </div>
+              <Link href="/employees" className="text-sm font-medium text-primary hover:underline">
+                {t('View all', 'عرض الكل', language)}
+              </Link>
+            </CardHeader>
+            <CardBody className="max-h-60 overflow-y-auto pr-1">
+              {data.upcomingDeadlines.length === 0 ? (
+                <p className="py-6 text-center text-sm text-gray-400">{t('Nothing upcoming', 'لا يوجد شيء قادم', language)}</p>
+              ) : (
+                <div className="space-y-2.5">
+                  {data.upcomingDeadlines.map((d) => {
+                    const days = daysUntil(d.date);
+                    return (
+                      <div key={d.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-gray-50">
+                        <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${d.kind === 'document' ? 'bg-accent/10 text-accent-600' : 'bg-secondary/10 text-secondary'}`}>
+                          {d.kind === 'document' ? <FileClock className="h-3.5 w-3.5" /> : <Timer className="h-3.5 w-3.5" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-medium text-gray-800">{d.title}</p>
+                          <p className="text-[10px] text-gray-400">
+                            {d.kind === 'document' ? t('Document', 'مستند', language) : d.kind === 'contract' ? t('Contract', 'عقد', language) : d.kind === 'work_permit' ? t('Work Permit', 'تصريح عمل', language) : d.kind === 'iqama' ? t('Iqama', 'إقامة', language) : t('Probation', 'فترة تجريبية', language)} · {formatDate(d.date, language)}
+                          </p>
+                        </div>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${days === null || days < 0 ? 'bg-error/10 text-error' : days <= 30 ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
+                          {days === null ? '—' : days < 0 ? t('Expired', 'منتهي', language) : `${days} ${t('d', 'يوم', language)}`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -655,102 +839,6 @@ export function DashboardContent() {
             )}
           </CardBody>
         </Card>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                <UserCheck className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-base font-semibold">{t('Today at a Glance', 'اليوم في لمحة', language)}</h2>
-                <p className="text-xs text-gray-400">{t('Employee attendance status', 'حالة حضور الموظفين', language)}</p>
-              </div>
-            </CardHeader>
-            <CardBody className="max-h-72 overflow-y-auto pr-1">
-              <div className="space-y-1.5">
-                {data.todayAttendance.map((a) => (
-                  <div key={a.employeeId} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-gray-50">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-500">
-                      {a.name.split(' ').map((w) => w[0]).slice(0, 2).join('')}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-medium text-gray-800">{a.name}</p>
-                      <p className="truncate text-[10px] text-gray-400">{a.department}</p>
-                    </div>
-                    {a.clockIn && (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-gray-400">
-                        <Clock className="h-3 w-3" />
-                        {a.clockIn}
-                      </span>
-                    )}
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${getStatusColor(a.status)}`}>
-                      {getStatusLabel(a.status, language)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-info/10">
-                <Bell className="h-4 w-4 text-info" />
-              </div>
-              <div>
-                <h2 className="text-base font-semibold">{t('Recent Activity', 'النشاط الأخير', language)}</h2>
-                <p className="text-xs text-gray-400">{t('Latest notifications and messages', 'أحدث الإشعارات والرسائل', language)}</p>
-              </div>
-            </CardHeader>
-            <CardBody className="max-h-72 overflow-y-auto pr-1">
-              <div className="space-y-3">
-                {data.recentNotifications.length === 0 && data.recentMessages.length === 0 ? (
-                  <p className="py-6 text-center text-sm text-gray-400">{t('No recent activity', 'لا يوجد نشاط حديث', language)}</p>
-                ) : (
-                  <>
-                    {data.recentNotifications.map((n) => {
-                      const meta = notifMeta[n.type] || notifMeta.info;
-                      const Icon = meta.icon;
-                      return (
-                        <div key={n.id} className="flex items-start gap-2.5">
-                          <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${meta.classes}`}>
-                            <Icon className="h-3.5 w-3.5" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-medium text-gray-800">
-                              {language === 'ar' ? n.titleAr || n.title : n.title}
-                            </p>
-                            {n.message && (
-                              <p className="truncate text-[11px] text-gray-500">
-                                {language === 'ar' ? n.messageAr || n.message : n.message}
-                              </p>
-                            )}
-                            <p className="text-[10px] text-gray-400">{formatDate(n.createdAt, language)}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {data.recentMessages.map((m) => (
-                      <div key={m.id} className="flex items-start gap-2.5">
-                        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                          <MessageSquare className="h-3.5 w-3.5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-gray-800">{m.senderName}</p>
-                          <p className="truncate text-[11px] text-gray-500">
-                            {m.attachment ? (m.attachment.type === 'image' ? t('📷 Image', '📷 صورة', language) : `📎 ${m.attachment.name}`) : m.content}
-                          </p>
-                          <p className="text-[10px] text-gray-400">{formatDate(m.timestamp, language)}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
-            </CardBody>
-          </Card>
-        </div>
       </div>
 
       {data.upcomingLeaves.length > 0 && (

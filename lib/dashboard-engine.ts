@@ -192,6 +192,39 @@ export function getDashboardData() {
 
   const openTodos = todoList.filter((x) => x.status !== 'completed').length;
   const completedTodos = todoList.filter((x) => x.status === 'completed').length;
+  const todoItems = todoList
+    .filter((x) => x.status !== 'completed')
+    .sort((a, b) => {
+      const ad = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+      const bd = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+      return ad - bd;
+    })
+    .slice(0, 6)
+    .map((x) => ({
+      id: x.id,
+      title: x.title,
+      priority: x.priority,
+      dueDate: x.dueDate,
+      category: x.category,
+    }));
+
+  const upcomingDeadlines = [
+    ...runway.map((r) => ({
+      id: `${r.employeeId}-${r.type}`,
+      title: r.name,
+      date: r.expiryDate,
+      kind: r.type === 'work_permit' ? 'work_permit' : r.type === 'iqama' ? 'iqama' : r.type === 'contract' ? 'contract' : 'probation',
+    })),
+    ...expiring.map((d) => ({
+      id: d.id,
+      title: d.name,
+      date: d.expiryDate!,
+      kind: 'document' as const,
+    })),
+  ]
+    .filter((x) => new Date(x.date).getTime() >= todayMs)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(0, 6);
 
   const upcomingLeaves = leaveList
     .filter((l) => (l.status === 'approved' || l.status === 'pending') && new Date(l.startDate).getTime() >= todayMs)
@@ -270,6 +303,8 @@ export function getDashboardData() {
     expenseByCategory,
     openTodos,
     completedTodos,
+    todoItems,
+    upcomingDeadlines,
     expiringDocuments: expiring.map((d) => ({
       id: d.id,
       name: d.name,
