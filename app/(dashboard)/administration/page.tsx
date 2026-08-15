@@ -279,25 +279,27 @@ export default function AdministrationPage() {
                 {t('Audit Log', 'سجل التدقيق', language)}
               </button>
             </div>
-            {tab === 'users' && (
-              <>
-                <Button onClick={() => setShowAddModal(true)} title={t('Add User', 'إضافة مستخدم', language)} aria-label={t('Add User', 'إضافة مستخدم', language)}>
-                  <UserPlus className="h-4 w-4" />
+            <div className="flex gap-2 items-center">
+              {tab === 'users' && (
+                <>
+                  <Button onClick={() => setShowAddModal(true)} title={t('Add User', 'إضافة مستخدم', language)} aria-label={t('Add User', 'إضافة مستخدم', language)}>
+                    <UserPlus className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" onClick={handleResetDemo} disabled={saving} title={t('Reset Demo', 'إعادة تعيين', language)} aria-label={t('Reset Demo', 'إعادة تعيين', language)}>
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+              {tab === 'audit' && (
+                <Button variant="ghost" onClick={exportAuditCsv} title={t('Export CSV', 'تصدير CSV', language)} aria-label={t('Export CSV', 'تصدير CSV', language)}>
+                  <Download className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" onClick={handleResetDemo} disabled={saving} title={t('Reset Demo', 'إعادة تعيين', language)} aria-label={t('Reset Demo', 'إعادة تعيين', language)}>
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-            {tab === 'audit' && (
-              <Button variant="ghost" onClick={exportAuditCsv} title={t('Export CSV', 'تصدير CSV', language)} aria-label={t('Export CSV', 'تصدير CSV', language)}>
-                <Download className="h-4 w-4" />
-              </Button>
-            )}
-            <ModuleSettingsMenu
-              module={t('Administration', 'الإدارة', language)}
-              onExport={tab === 'audit' ? exportAuditCsv : undefined}
-            />
+              )}
+              <ModuleSettingsMenu
+                module={t('Administration', 'الإدارة', language)}
+                onExport={tab === 'audit' ? exportAuditCsv : undefined}
+              />
+            </div>
           </div>
         </CardHeader>
         <CardBody>

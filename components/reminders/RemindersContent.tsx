@@ -138,10 +138,12 @@ export function RemindersContent() {
             {t('Contracts, work permits, probation and document expirations', 'العقود وتصاريح العمل وفترات التجربة وانتهاء المستندات', language)}
           </p>
         </div>
-        <Button variant="ghost" onClick={load} title={t('Refresh', 'تحديث', language)} aria-label={t('Refresh', 'تحديث', language)}>
-          <RefreshCw className="h-4 w-4" />
-        </Button>
-        <ModuleSettingsMenu module={t('Reminders', 'التذكيرات', language)} />
+        <div className="flex gap-2 items-center">
+          <Button variant="ghost" onClick={load} title={t('Refresh', 'تحديث', language)} aria-label={t('Refresh', 'تحديث', language)}>
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          <ModuleSettingsMenu module={t('Reminders', 'التذكيرات', language)} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

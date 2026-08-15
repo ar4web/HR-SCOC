@@ -23,7 +23,6 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  Download,
   UserRound,
   Check,
   Plus,
@@ -194,9 +193,6 @@ export function LifecycleContent() {
           <ModuleSettingsMenu module={t('Lifecycle', 'دورة الحياة', language)} onExport={canManage ? exportCsv : undefined} />
           {canManage && (
             <>
-              <Button variant="outline" onClick={exportCsv} title={'CSV'} aria-label={'CSV'}>
-                <Download className="h-4 w-4" />
-              </Button>
               <Button
                 variant="outline"
                 title={t('New Offboarding', 'مغادرة جديدة', language)}

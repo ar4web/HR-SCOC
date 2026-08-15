@@ -96,16 +96,17 @@ export function NotificationsContent() {
             {t('Approval updates, reminders and system activity', 'تحديثات الموافقات والتذكيرات ونشاط النظام', language)}
           </p>
         </div>
-        <Button variant="outline" onClick={handleMarkAll} disabled={items.length === 0} title={t('Mark all read', 'تحديد الكل كمقروء', language)} aria-label={t('Mark all read', 'تحديد الكل كمقروء', language)}>
-          <Check className="h-4 w-4" />
-        </Button>
-        <Button variant="ghost" onClick={exportCsv} title={'CSV'} aria-label={'CSV'}>
-          <Download className="h-4 w-4" />
-        </Button>
-        <ModuleSettingsMenu
-          module={t('Notifications', 'الإشعارات', language)}
-          onExport={exportCsv}
-        />
+        <div className="flex gap-2 items-center">
+          <Button variant="outline" onClick={handleMarkAll} disabled={items.length === 0} title={t('Mark all read', 'تحديد الكل كمقروء', language)} aria-label={t('Mark all read', 'تحديد الكل كمقروء', language)}>
+            <Check className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" onClick={exportCsv} title={t('Export CSV', 'تصدير CSV', language)} aria-label={t('Export CSV', 'تصدير CSV', language)}>
+            <Download className="h-4 w-4" />
+          </Button>
+          <ModuleSettingsMenu
+            module={t('Notifications', 'الإشعارات', language)}
+          />
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
