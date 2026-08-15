@@ -381,7 +381,7 @@ export function EmailContent() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-gray-900">{t('Email Center', 'مركز البريد الإلكتروني', language)}</h1>
+          <h1 className="text-xl font-bold text-gray-900">{t('Email Center', 'مركز البريد الإلكتروني', language)}</h1>
           <p className="text-sm text-gray-500 mt-1">
             {t('Send email + manage prebuilt message templates in one view', 'أرسل البريد وأدر قوالب الرسائل الجاهزة في واجهة واحدة', language)}
           </p>

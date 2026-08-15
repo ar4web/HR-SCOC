@@ -129,7 +129,7 @@ export default function OrgChartContent() {
             <UserRound className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">
+            <h1 className="text-lg font-bold text-gray-900 sm:text-xl">
               {t('Organization Chart', 'الهيكل التنظيمي', language)}
             </h1>
             <p className="text-sm text-gray-500">

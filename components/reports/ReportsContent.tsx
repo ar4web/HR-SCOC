@@ -236,7 +236,7 @@ export function ReportsContent() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-xl font-bold text-gray-900">
             {t('Reports & Analytics', 'التقارير والتحليلات', language)}
           </h1>
           <p className="text-sm text-gray-500 mt-1">

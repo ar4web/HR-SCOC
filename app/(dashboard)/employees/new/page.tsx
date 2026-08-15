@@ -211,7 +211,7 @@ export default function NewEmployeePage() {
     <div className="mx-auto max-w-3xl space-y-6" dir={dir}>
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-bold text-gray-900 sm:text-2xl">
+          <h1 className="truncate text-lg font-bold text-gray-900 sm:text-xl">
             {t('Add Employee', 'إضافة موظف', language)}
           </h1>
           <p className="truncate text-sm text-gray-500 mt-1">

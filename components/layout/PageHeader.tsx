@@ -24,7 +24,7 @@ export default function PageHeader({ title, subtitle, actions, className = '' }:
   return (
     <div className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${className}`}>
       <div className="min-w-0">
-        <h1 className="text-xl font-bold text-gray-900 leading-tight break-words sm:text-2xl">
+        <h1 className="text-lg font-bold text-gray-900 leading-tight break-words sm:text-xl">
           {title}
         </h1>
         {subtitle ? (

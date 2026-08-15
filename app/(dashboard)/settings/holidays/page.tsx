@@ -79,7 +79,7 @@ export default function HolidaysPage() {
             <CalendarDays className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold">{t('Holidays', 'الإجازات الرسمية', language)}</h2>
           </div>
-          <Button size="sm" onClick={() => setShowNew(!showNew)}>
+          <Button onClick={() => setShowNew(!showNew)}>
             <Plus className="h-4 w-4" />
             {t('Add', 'إضافة', language)}
           </Button>

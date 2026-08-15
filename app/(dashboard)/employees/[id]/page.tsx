@@ -200,7 +200,7 @@ export default function EmployeeDetailPage() {
           <ArrowLeft className="h-5 w-5 text-gray-600" />
         </button>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-bold text-gray-900 sm:text-2xl">
+          <h1 className="truncate text-lg font-bold text-gray-900 sm:text-xl">
             {language === 'ar' ? employee.fullNameAr || employee.fullName : employee.fullName}
           </h1>
           <p className="truncate text-sm text-gray-500">{employee.employeeId} - {employee.position}</p>

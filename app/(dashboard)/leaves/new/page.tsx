@@ -156,7 +156,7 @@ export default function NewLeavePage() {
           <ArrowLeft className={`h-5 w-5 text-gray-600 ${dir === 'rtl' ? 'rotate-180' : ''}`} />
         </button>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-bold text-gray-900 sm:text-2xl">
+          <h1 className="truncate text-lg font-bold text-gray-900 sm:text-xl">
             {t('Request Leave', 'طلب إجازة', language)}
           </h1>
           <p className="truncate text-sm text-gray-500 mt-1">

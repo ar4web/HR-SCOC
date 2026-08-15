@@ -238,7 +238,7 @@ export function ExpensesContent() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-bold text-gray-900 sm:text-2xl">{t('Expense Management', 'إدارة المصروفات', language)}</h1>
+          <h1 className="truncate text-lg font-bold text-gray-900 sm:text-xl">{t('Expense Management', 'إدارة المصروفات', language)}</h1>
           <p className="truncate text-sm text-gray-500 mt-1">
             {t('Record daily expenses and request reimbursements', 'سجل المصروفات اليومية واطلب الاسترداد', language)}
           </p>

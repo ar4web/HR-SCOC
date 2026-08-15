@@ -131,7 +131,7 @@ export default function LeaveDetailPage() {
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-xl font-bold text-gray-900 sm:text-2xl">
+            <h1 className="truncate text-lg font-bold text-gray-900 sm:text-xl">
               {t('Leave Request', 'طلب إجازة', language)}
             </h1>
             <p className="truncate text-sm text-gray-500 mt-0.5">

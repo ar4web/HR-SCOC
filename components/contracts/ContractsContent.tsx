@@ -142,7 +142,7 @@ export function ContractsContent() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-gray-900">{t('Contracts & Agreements', 'العقود والاتفاقيات', language)}</h1>
+          <h1 className="text-xl font-bold text-gray-900">{t('Contracts & Agreements', 'العقود والاتفاقيات', language)}</h1>
           <p className="text-sm text-gray-500 mt-1">
             {t('Employment contracts, service agreements and NDAs with expiry tracking', 'عقود العمل واتفاقيات الخدمة واتفاقيات عدم الإفصاح مع تتبع انتهاء الصلاحية', language)}
           </p>

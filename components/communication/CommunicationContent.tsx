@@ -583,7 +583,7 @@ export function CommunicationContent() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('Chat', 'الدردشة', language)}</h1>
+          <h1 className="text-xl font-bold text-gray-900">{t('Chat', 'الدردشة', language)}</h1>
           <p className="text-sm text-gray-500 mt-1">
             {t('Team messaging with images and file attachments', 'مراسلة الفريق مع الصور ومرفقات الملفات', language)}
           </p>

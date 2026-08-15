@@ -410,7 +410,7 @@ export default function AttendancePage() {
             {t('Attendance Records', 'سجل الحضور', language)}
           </h2>
           <div className="flex-1" />
-          <Button variant="ghost" size="sm" onClick={exportCsv} title={t('Export CSV', 'تصدير CSV', language)} aria-label={t('Export CSV', 'تصدير CSV', language)}>
+          <Button variant="ghost" onClick={exportCsv} title={t('Export CSV', 'تصدير CSV', language)} aria-label={t('Export CSV', 'تصدير CSV', language)}>
             <Download className="h-4 w-4" />
           </Button>
           <ModuleSettingsMenu
