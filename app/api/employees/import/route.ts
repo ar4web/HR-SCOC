@@ -45,6 +45,7 @@ function toEmployeePayload(
     email: d.email as string,
     phone: (d.phone as string) || '',
     nationalId: (d.nationalId as string) || '',
+    iqamaNumber: (d.iqamaNumber as string) || undefined,
     nationality: (d.nationality as string) || 'Saudi',
     religion: 'muslim',
     gender: d.gender as Employee['gender'],
@@ -74,6 +75,8 @@ function toEmployeePayload(
     annualVacationDays: (d.annualVacationDays as number) || undefined,
     vacationBalance: (d.vacationBalance as number) || undefined,
     managerId: (d.managerId as string) || undefined,
+    workPermitExpiry: isoDate(d.workPermitExpiry as string) || undefined,
+    iqamaExpiryDate: isoDate(d.iqamaExpiryDate as string) || undefined,
   };
 }
 

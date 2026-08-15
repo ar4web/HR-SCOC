@@ -12,6 +12,7 @@ import { contractsService } from '@/modules/contracts/service';
 import { CONTRACT_TYPES } from '@/lib/contracts-engine';
 import type { Contract, ContractStatus } from '@/types';
 import { FileText, Plus, Trash2, Search, AlertTriangle, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import PageHeader from '@/components/layout/PageHeader';
 
 const FILTERS: Array<{ value: ContractStatus | 'all'; en: string; ar: string }> = [
   { value: 'all', en: 'All', ar: 'الكل' },
@@ -138,23 +139,21 @@ export function ContractsContent() {
     { label: t('Active value', 'قيمة النشطة', language), value: formatNumber(summary.totalValue), cls: 'text-accent', icon: AlertTriangle },
   ];
 
-  return (
+return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-xl font-bold text-gray-900">{t('Contracts & Agreements', 'العقود والاتفاقيات', language)}</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {t('Employment contracts, service agreements and NDAs with expiry tracking', 'عقود العمل واتفاقيات الخدمة واتفاقيات عدم الإفصاح مع تتبع انتهاء الصلاحية', language)}
-          </p>
-        </div>
-        <Button
-          onClick={() => setShowForm((s) => !s)}
-          title={t('New Contract', 'عقد جديد', language)}
-          aria-label={t('New Contract', 'عقد جديد', language)}
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-      </div>
+      <PageHeader
+        title={t('Contracts & Agreements', 'ال contracts', language)}
+        subtitle={t('Employment contracts, service agreements and NDAs with expiry tracking', 'idxude العقد واتفاقيات الخدمة واتفاقيات عدم الإفشاء مع تتبع انتهاء الصلاحية', language)}
+        actions={
+          <Button
+            onClick={() => setShowForm((s) => !s)}
+            title={t('New Contract', 'contracts', language)}
+            aria-label={t('New Contract', 'contracts', language)}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {stats.map((s) => (

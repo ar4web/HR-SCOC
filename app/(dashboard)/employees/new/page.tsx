@@ -37,13 +37,20 @@ export default function NewEmployeePage() {
       },
       {
         name: 'nationalId',
-        label: 'Iqama / National ID',
-        labelAr: 'رقم الهوية / الإقامة',
+        label: 'National ID',
+        labelAr: 'رقم الهوية الوطنية',
         required: true,
         validation: { minLength: 10, maxLength: 10, pattern: /^\d{10}$/ },
       },
     ],
     [
+      {
+        name: 'iqamaNumber',
+        label: 'Iqama Number',
+        labelAr: 'رقم الإقامة',
+        placeholder: 'For expatriates only',
+        validation: { minLength: 10, maxLength: 12, pattern: /^\d{10,12}$/ },
+      },
       {
         name: 'fullNameAr',
         label: 'Full Name (Arabic)',
@@ -136,6 +143,7 @@ export default function NewEmployeePage() {
       { name: 'workPermitExpiry', label: 'Work Permit Expiry', labelAr: 'انتهاء تصريح العمل', type: 'date' },
     ],
     [
+      { name: 'iqamaExpiryDate', label: 'Iqama Expiry Date', labelAr: 'انتهاء الإقامة', type: 'date' },
       { name: 'contractEndDate', label: 'Contract End Date', labelAr: 'انتهاء العقد', type: 'date' },
     ],
   ];
@@ -150,6 +158,7 @@ export default function NewEmployeePage() {
       email: values.email || '',
       phone: values.phone || '',
       nationalId: values.nationalId || '',
+      iqamaNumber: values.iqamaNumber || '',
       nationality: values.nationality || 'Saudi',
       religion: (values.religion as 'muslim' | 'other') || 'muslim',
       gender: (values.gender as 'male' | 'female') || 'male',
@@ -190,6 +199,7 @@ export default function NewEmployeePage() {
       endOfServiceAllowance: parseFloat(values.endOfServiceAllowance) || 0,
       probationEndDate: values.probationEndDate || '',
       workPermitExpiry: values.workPermitExpiry || '',
+      iqamaExpiryDate: values.iqamaExpiryDate || '',
       contractEndDate: values.contractEndDate || '',
     };
 

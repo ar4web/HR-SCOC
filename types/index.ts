@@ -256,6 +256,7 @@ export interface Employee {
   endOfServiceAllowance?: number;
   probationEndDate?: string;
   workPermitExpiry?: string;
+  iqamaExpiryDate?: string;
   createdAt: string;
   updatedAt: string;
 }

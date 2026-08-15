@@ -6,7 +6,8 @@ export const EMPLOYEE_IMPORT_COLUMNS = [
   { key: 'fullNameAr', label: 'Full Name (AR)', width: 22 },
   { key: 'email', label: 'Email*', width: 28 },
   { key: 'phone', label: 'Phone', width: 18 },
-  { key: 'nationalId', label: 'National ID / Iqama', width: 18 },
+  { key: 'nationalId', label: 'National ID', width: 18 },
+  { key: 'iqamaNumber', label: 'Iqama Number', width: 18 },
   { key: 'nationality', label: 'Nationality', width: 16 },
   { key: 'gender', label: 'Gender (male/female)', width: 20 },
   { key: 'maritalStatus', label: 'Marital Status (single/married/divorced/widowed)', width: 24 },
@@ -26,6 +27,8 @@ export const EMPLOYEE_IMPORT_COLUMNS = [
   { key: 'annualVacationDays', label: 'Annual Vacation Days', width: 18 },
   { key: 'vacationBalance', label: 'Vacation Balance (days)', width: 20 },
   { key: 'managerId', label: 'Manager Employee ID', width: 18 },
+  { key: 'workPermitExpiry', label: 'Work Permit Expiry (YYYY-MM-DD)', width: 24 },
+  { key: 'iqamaExpiryDate', label: 'Iqama Expiry Date (YYYY-MM-DD)', width: 24 },
 ] as const;
 
 export const TIMESHEET_COLUMNS = [
@@ -78,9 +81,9 @@ export function buildEmployeeTemplate(): Buffer {
     EMPLOYEE_IMPORT_COLUMNS,
     [
       'Ahmed Al-Qahtani', 'أحمد القحطاني', 'ahmed@scos.sa', '+966512345678', '1054321987',
-      'Saudi', 'male', 'single', '1990-05-15', 'Operations', 'Operations Officer', '2023-01-01',
+      '2154321987', 'Saudi', 'male', 'single', '1990-05-15', 'Operations', 'Operations Officer', '2023-01-01',
       'permanent', '2026-12-31', '8000', '2500', '1000', '500', 'active', 'SCOS HR', '12345',
-      '30', '22', '',
+      '30', '22', '2026-12-31', '2026-12-31',
     ],
     'Data',
     [

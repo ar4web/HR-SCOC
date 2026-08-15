@@ -64,6 +64,7 @@ const employeeBase = z.object({
   endOfServiceAllowance: z.number().nonnegative().max(1_000_000).optional(),
   probationEndDate: dateLike.optional(),
   workPermitExpiry: dateLike.optional(),
+  iqamaExpiryDate: dateLike.optional(),
 });
 
 export const employeeCreateSchema = employeeBase.passthrough();

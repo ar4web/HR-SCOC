@@ -48,7 +48,10 @@ export default function EmployeeDetailPage() {
       { name: 'phone', label: 'Phone', labelAr: 'الهاتف', type: 'tel' },
     ],
     [
-      { name: 'nationalId', label: 'Iqama / National ID', labelAr: 'رقم الهوية / الإقامة', validation: { minLength: 10, maxLength: 10, pattern: /^\d{10}$/ } },
+      { name: 'nationalId', label: 'National ID', labelAr: 'رقم الهوية الوطنية', validation: { minLength: 10, maxLength: 10, pattern: /^\d{10}$/ } },
+      { name: 'iqamaNumber', label: 'Iqama Number', labelAr: 'رقم الإقامة', validation: { minLength: 10, maxLength: 12, pattern: /^\d{10,12}$/ } },
+    ],
+    [
       { name: 'nationality', label: 'Nationality', labelAr: 'الجنسية' },
     ],
     [
@@ -122,6 +125,9 @@ export default function EmployeeDetailPage() {
       { name: 'probationEndDate', label: 'Probation End Date', labelAr: 'انتهاء فترة التجربة', type: 'date' },
       { name: 'workPermitExpiry', label: 'Work Permit Expiry', labelAr: 'انتهاء تصريح العمل', type: 'date' },
     ],
+    [
+      { name: 'iqamaExpiryDate', label: 'Iqama Expiry Date', labelAr: 'Iqama Expiry Date', type: 'date' },
+    ],
   ];
 
   const handleSave = async (values: Record<string, string>) => {
@@ -133,6 +139,7 @@ export default function EmployeeDetailPage() {
       email: values.email || '',
       phone: values.phone || '',
       nationalId: values.nationalId || '',
+      iqamaNumber: values.iqamaNumber || '',
       nationality: values.nationality || 'Saudi',
       gender: (values.gender as 'male' | 'female') || employee.gender,
       maritalStatus: (values.maritalStatus as 'single' | 'married' | 'divorced' | 'widowed') || employee.maritalStatus,
@@ -157,6 +164,7 @@ export default function EmployeeDetailPage() {
       endOfServiceAllowance: parseFloat(values.endOfServiceAllowance) || employee.endOfServiceAllowance || 0,
       probationEndDate: values.probationEndDate || '',
       workPermitExpiry: values.workPermitExpiry || '',
+      iqamaExpiryDate: values.iqamaExpiryDate || '',
       contractEndDate: values.contractEndDate || '',
     });
     setSaving(false);
