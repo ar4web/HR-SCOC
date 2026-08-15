@@ -263,13 +263,13 @@ export function DashboardContent() {
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-gray-900">
             {greeting}, {language === 'ar' ? user?.nameAr || user?.name : user?.name}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 mt-0.5">
             {now.toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             <span className="mx-2 text-gray-300">•</span>
             {now.toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}
@@ -302,10 +302,10 @@ export function DashboardContent() {
             <Link
               key={a.href}
               href={a.href}
-              className="group flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-card transition-all hover:border-primary/30 hover:shadow-md"
+              className="group flex items-center gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-card transition-all hover:border-primary/30 hover:shadow-md"
             >
-              <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${a.chip}`}>
-                <Icon className="h-5 w-5" />
+              <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${a.chip}`}>
+                <Icon className="h-4.5 w-4.5" />
               </div>
               <span className="text-sm font-medium text-gray-700 group-hover:text-primary">
                 {a.label}
@@ -356,7 +356,7 @@ export function DashboardContent() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-2 lg:col-span-2">
-          {kpis.map((k) => {
+          {kpis.slice(0, 4).map((k) => {
           const Icon = k.icon;
           const empty =
             (k.label.en === 'Pending Expenses' && data.pendingExpenses === 0) ||
@@ -377,6 +377,7 @@ export function DashboardContent() {
               pct={k.pct}
               barClassName="bg-gradient-to-r from-primary to-emerald-500"
               size="md"
+              compact
               className={k.span ? 'sm:col-span-2' : undefined}
               empty={empty}
               emptyText={
@@ -403,18 +404,18 @@ export function DashboardContent() {
         })}
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           <Card>
-            <CardHeader className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-info/10">
+            <CardHeader className="flex items-center gap-2.5 px-4 py-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-info/10">
                 <Bell className="h-4 w-4 text-info" />
               </div>
               <div>
-                <h2 className="text-base font-semibold">{t('Recent Activity', 'النشاط الأخير', language)}</h2>
-                <p className="text-xs text-gray-400">{t('Latest notifications and messages', 'أحدث الإشعارات والرسائل', language)}</p>
+                <h2 className="text-sm font-semibold">{t('Recent Activity', 'النشاط الأخير', language)}</h2>
+                <p className="text-[11px] text-gray-400">{t('Latest notifications and messages', 'أحدث الإشعارات والرسائل', language)}</p>
               </div>
             </CardHeader>
-            <CardBody className="max-h-60 overflow-y-auto pr-1">
+            <CardBody className="max-h-32 overflow-y-auto px-4 py-3 pr-2">
               {data.recentNotifications.length === 0 && data.recentMessages.length === 0 ? (
                 <p className="py-6 text-center text-sm text-gray-400">{t('No recent activity', 'لا يوجد نشاط حديث', language)}</p>
               ) : (
@@ -461,21 +462,21 @@ export function DashboardContent() {
           </Card>
 
           <Card>
-            <CardHeader className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-warning/10">
+            <CardHeader className="flex items-center justify-between px-4 py-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/10">
                   <ListTodo className="h-4 w-4 text-warning" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold">{t('To-Do', 'المهام', language)}</h2>
-                  <p className="text-xs text-gray-400">{t('Open tasks by priority', 'مهام مفتوحة حسب الأولوية', language)}</p>
+                  <h2 className="text-sm font-semibold">{t('To-Do', 'المهام', language)}</h2>
+                  <p className="text-[11px] text-gray-400">{t('Open tasks by priority', 'مهام مفتوحة حسب الأولوية', language)}</p>
                 </div>
               </div>
               <Link href="/todos" className="text-sm font-medium text-primary hover:underline">
                 {t('View all', 'عرض الكل', language)}
               </Link>
             </CardHeader>
-            <CardBody className="max-h-60 overflow-y-auto pr-1">
+            <CardBody className="max-h-32 overflow-y-auto px-4 py-3 pr-2">
               {data.todoItems.length === 0 ? (
                 <p className="py-6 text-center text-sm text-gray-400">{t('No open tasks 🎉', 'لا توجد مهام مفتوحة 🎉', language)}</p>
               ) : (
@@ -502,21 +503,21 @@ export function DashboardContent() {
           </Card>
 
           <Card>
-            <CardHeader className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+            <CardHeader className="flex items-center justify-between px-4 py-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                   <AlarmClock className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold">{t('Next Coming', 'القادم', language)}</h2>
-                  <p className="text-xs text-gray-400">{t('Upcoming leaves, expiries & deadlines', 'الإجازات القادمة والمواعيد والانتهاءات', language)}</p>
+                  <h2 className="text-sm font-semibold">{t('Next Coming', 'القادم', language)}</h2>
+                  <p className="text-[11px] text-gray-400">{t('Upcoming leaves, expiries & deadlines', 'الإجازات القادمة والمواعيد والانتهاءات', language)}</p>
                 </div>
               </div>
               <Link href="/employees" className="text-sm font-medium text-primary hover:underline">
                 {t('View all', 'عرض الكل', language)}
               </Link>
             </CardHeader>
-            <CardBody className="max-h-60 overflow-y-auto pr-1">
+            <CardBody className="max-h-32 overflow-y-auto px-4 py-3 pr-2">
               {data.upcomingDeadlines.length === 0 ? (
                 <p className="py-6 text-center text-sm text-gray-400">{t('Nothing upcoming', 'لا يوجد شيء قادم', language)}</p>
               ) : (
