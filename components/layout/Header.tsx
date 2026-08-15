@@ -8,14 +8,14 @@ import { useUIStore } from '@/stores/ui-store';
 import { NotificationsDropdown } from '@/components/layout/NotificationsDropdown';
 import { GlobalSearch } from '@/components/layout/GlobalSearch';
 import { t } from '@/lib/utils';
-import { Globe, LogOut, Menu, User, Settings, ChevronDown, UserRound } from 'lucide-react';
+import { Globe, LogOut, Menu, User, Settings, ChevronDown, UserRound, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { getRoleLabel, hasPermission } from '@/lib/rbac';
 
 export function Header() {
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const { language, toggleLanguage } = useLanguageStore();
-  const { toggleMobileSidebar } = useUIStore();
+  const { toggleMobileSidebar, sidebarCollapsed, toggleSidebarCollapsed } = useUIStore();
   const [profileOpen, setProfileOpen] = React.useState(false);
   const profileRef = React.useRef<HTMLDivElement>(null);
 
@@ -52,6 +52,14 @@ export function Header() {
           aria-label="Toggle menu"
         >
           <Menu className="h-5 w-5" />
+        </button>
+        <button
+          onClick={toggleSidebarCollapsed}
+          className="hidden rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:block"
+          aria-label={sidebarCollapsed ? t('Expand sidebar', 'توسيع القائمة', language) : t('Collapse sidebar', 'طي القائمة', language)}
+          title={sidebarCollapsed ? t('Expand sidebar', 'توسيع القائمة', language) : t('Collapse sidebar', 'طي القائمة', language)}
+        >
+          {sidebarCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
         </button>
       </div>
       <div className="hidden flex-1 items-center md:flex">

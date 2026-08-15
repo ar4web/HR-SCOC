@@ -172,7 +172,6 @@ export function DashboardContent() {
       sub: { en: `avg ${formatCurrency(data.avgSalary)}`, ar: `متوسط ${formatCurrency(data.avgSalary)}` },
       icon: DollarSign,
       chip: 'bg-secondary/10 text-secondary',
-      span: true,
     },
     {
       label: { en: 'Pending Expenses', ar: 'المصروفات المعلقة' },
@@ -378,7 +377,7 @@ export function DashboardContent() {
               barClassName="bg-gradient-to-r from-primary to-emerald-500"
               size="md"
               compact
-              className={k.span ? 'sm:col-span-2' : undefined}
+              className="h-full"
               empty={empty}
               emptyText={
                 k.label.en === 'Pending Expenses'
