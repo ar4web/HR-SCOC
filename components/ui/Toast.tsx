@@ -35,6 +35,13 @@ const iconColors: Record<ToastType, string> = {
   info: 'text-info',
 };
 
+const ringColors: Record<ToastType, string> = {
+  success: 'bg-success/10',
+  error: 'bg-error/10',
+  warning: 'bg-warning/10',
+  info: 'bg-info/10',
+};
+
 interface ToastContextValue {
   toasts: Toast[];
   addToast: (toast: Omit<Toast, 'id'>) => string;
@@ -89,33 +96,41 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
       {children}
-      <div className="fixed top-4 right-4 rtl:right-auto rtl:left-4 z-[100] flex max-w-sm flex-col gap-2" role="status" aria-live="polite">
-        {toasts.map((toast) => {
-          const Icon = icons[toast.type];
-          return (
-            <div
-              key={toast.id}
-              className={cn(
-                'flex items-start gap-3 p-4 rounded-lg border border-l-4 shadow-dropdown bg-white animate-slide-in',
-                colors[toast.type]
-              )}
-              role="alert"
-            >
-              <Icon className={cn('h-5 w-5 flex-shrink-0 mt-0.5', iconColors[toast.type])} />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900">{toast.title}</p>
-                {toast.message && <p className="text-xs text-gray-500 mt-0.5">{toast.message}</p>}
-              </div>
-              <button
-                onClick={() => removeToast(toast.id)}
-                className="p-0.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-                aria-label="Dismiss"
+      <div
+        className="fixed inset-0 z-[100] flex items-start justify-center pt-[28vh] pointer-events-none"
+        role="status"
+        aria-live="polite"
+      >
+        <div className="flex w-full max-w-sm flex-col gap-2 px-4 pointer-events-auto">
+          {toasts.map((toast) => {
+            const Icon = icons[toast.type];
+            return (
+              <div
+                key={toast.id}
+                className={cn(
+                  'group flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-lg transition-all animate-fade-in',
+                  colors[toast.type]
+                )}
+                role="alert"
               >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          );
-        })}
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', ringColors[toast.type])}>
+                  <Icon className={cn('h-4.5 w-4.5', iconColors[toast.type])} />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900">{toast.title}</p>
+                  {toast.message && <p className="text-xs text-gray-500 mt-0.5 truncate">{toast.message}</p>}
+                </div>
+                <button
+                  onClick={() => removeToast(toast.id)}
+                  className="p-1 rounded-md text-gray-300 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                  aria-label="Dismiss"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </ToastContext.Provider>
   );
