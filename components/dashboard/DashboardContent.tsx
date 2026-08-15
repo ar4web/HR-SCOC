@@ -16,9 +16,10 @@ import { t, formatCurrency, formatDate, getStatusLabel, getContractTypeLabel, ge
 import {
   Users, UserCheck, CalendarClock, DollarSign, Receipt, FileWarning,
   ListTodo, TrendingUp, AlertTriangle, RefreshCw, CheckCircle2, XCircle,
-  UserPlus, CalendarPlus, MessageSquare, Bell, FileText,
+  UserPlus, CalendarPlus, MessageSquare, Bell, FileText, ArrowUpRight,
   BarChart3, Wallet, Timer, Globe, Shield, PlaneTakeoff, PlaneLanding,
   TriangleAlert, Building2, ClipboardCheck, PieChart, FileClock, AlarmClock,
+  Files, Briefcase, Coins, Activity,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -47,6 +48,8 @@ interface Kpi {
   sub: { en: string; ar: string };
   icon: LucideIcon;
   chip: string;
+  tone?: string;
+  toneText?: string;
   pct?: number;
   chipValue?: string;
   span?: boolean;
@@ -146,6 +149,8 @@ export function DashboardContent() {
       sub: { en: `${data.activeEmployees} active`, ar: `${data.activeEmployees} نشط` },
       icon: Users,
       chip: 'bg-primary/10 text-primary',
+      tone: 'from-blue-500 to-indigo-600',
+      toneText: 'text-blue-600',
       pct: data.totalEmployees ? Math.round((data.activeEmployees / data.totalEmployees) * 100) : 0,
       chipValue: data.totalEmployees ? `${Math.round((data.activeEmployees / data.totalEmployees) * 100)}%` : undefined,
     },
@@ -155,6 +160,8 @@ export function DashboardContent() {
       sub: { en: `${data.attendanceToday.late} late`, ar: `${data.attendanceToday.late} متأخر` },
       icon: UserCheck,
       chip: 'bg-success/10 text-success',
+      tone: 'from-emerald-500 to-green-600',
+      toneText: 'text-emerald-600',
       pct: attendancePct,
       chipValue: `${attendancePct}%`,
     },
@@ -164,6 +171,8 @@ export function DashboardContent() {
       sub: { en: 'awaiting approval', ar: 'بانتظار الموافقة' },
       icon: CalendarClock,
       chip: 'bg-warning/10 text-warning',
+      tone: 'from-amber-500 to-orange-600',
+      toneText: 'text-amber-600',
       footer: [{ en: 'Approve now', ar: 'اعتماد الآن', tone: 'warning' }],
     },
     {
@@ -172,6 +181,8 @@ export function DashboardContent() {
       sub: { en: `avg ${formatCurrency(data.avgSalary)}`, ar: `متوسط ${formatCurrency(data.avgSalary)}` },
       icon: DollarSign,
       chip: 'bg-secondary/10 text-secondary',
+      tone: 'from-violet-500 to-purple-600',
+      toneText: 'text-violet-600',
     },
     {
       label: { en: 'Pending Expenses', ar: 'المصروفات المعلقة' },
@@ -294,7 +305,7 @@ export function DashboardContent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {quickActions.map((a) => {
           const Icon = a.icon;
           return (
@@ -303,29 +314,30 @@ export function DashboardContent() {
               href={a.href}
               className="group flex items-center gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-card transition-all hover:border-primary/30 hover:shadow-md"
             >
-              <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${a.chip}`}>
+              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${a.chip} transition-transform group-hover:scale-105`}>
                 <Icon className="h-4.5 w-4.5" />
               </div>
-              <span className="text-sm font-medium text-gray-700 group-hover:text-primary">
+              <span className="flex-1 text-sm font-medium text-gray-700 group-hover:text-primary">
                 {a.label}
               </span>
+              <ArrowUpRight className="h-4 w-4 shrink-0 text-gray-300 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
             </Link>
           );
         })}
       </div>
 
       {(() => {
-        const alerts: { icon: LucideIcon; text: string; tone: string; href: string }[] = [];
+        const alerts: { icon: LucideIcon; count: number; title: string; tone: string; iconBg: string; href: string }[] = [];
         const errCount = data.expiredDocuments.length;
         const warnCount = data.expiringDocuments.length;
         const runwayCritical = data.criticalRunway.length;
         const notReturned = data.notReturnedVacations.length;
         const pendingCount = data.pendingLeaves + data.pendingExpenses;
-        if (errCount > 0) alerts.push({ icon: AlertTriangle, text: `${errCount} ${t('expired document(s)', 'مستند منتهي', language)}`, tone: 'border-error/20 bg-error/5 text-error', href: '/documents' });
-        if (runwayCritical > 0) alerts.push({ icon: Shield, text: `${runwayCritical} ${t('critical expiries', 'انتهاء حرج', language)}`, tone: 'border-error/20 bg-error/5 text-error', href: '/employees' });
-        if (notReturned > 0) alerts.push({ icon: PlaneLanding, text: `${notReturned} ${t('not returned', 'لم يعودوا', language)}`, tone: 'border-error/20 bg-error/5 text-error', href: '/leaves' });
-        if (pendingCount > 0) alerts.push({ icon: ClipboardCheck, text: `${pendingCount} ${t('pending approvals', 'موافقات معلقة', language)}`, tone: 'border-warning/20 bg-warning/5 text-warning', href: '/leaves' });
-        if (warnCount > 0) alerts.push({ icon: FileClock, text: `${warnCount} ${t('expiring soon', 'تنتهي قريباً', language)}`, tone: 'border-warning/20 bg-warning/5 text-warning', href: '/documents' });
+        if (errCount > 0) alerts.push({ icon: FileText, count: errCount, title: t('Expired documents', 'مستندات منتهية', language), tone: 'border-error/20 bg-error/5 text-error', iconBg: 'bg-error/15 text-error', href: '/documents' });
+        if (runwayCritical > 0) alerts.push({ icon: Shield, count: runwayCritical, title: t('Critical expiries', 'انتهاءات حرجة', language), tone: 'border-error/20 bg-error/5 text-error', iconBg: 'bg-error/15 text-error', href: '/employees' });
+        if (notReturned > 0) alerts.push({ icon: PlaneLanding, count: notReturned, title: t('Not returned', 'لم يعودوا', language), tone: 'border-error/20 bg-error/5 text-error', iconBg: 'bg-error/15 text-error', href: '/leaves' });
+        if (pendingCount > 0) alerts.push({ icon: ClipboardCheck, count: pendingCount, title: t('Pending approvals', 'موافقات معلقة', language), tone: 'border-warning/20 bg-warning/5 text-warning', iconBg: 'bg-warning/15 text-warning', href: '/leaves' });
+        if (warnCount > 0) alerts.push({ icon: FileClock, count: warnCount, title: t('Expiring soon', 'تنتهي قريباً', language), tone: 'border-warning/20 bg-warning/5 text-warning', iconBg: 'bg-warning/15 text-warning', href: '/documents' });
         if (alerts.length === 0) {
           return (
             <div className="flex items-center gap-2.5 rounded-xl border border-success/20 bg-success/5 px-4 py-3 text-sm font-medium text-success">
@@ -335,17 +347,23 @@ export function DashboardContent() {
           );
         }
         return (
-          <div className="flex flex-wrap gap-2.5">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
             {alerts.map((a) => {
               const Icon = a.icon;
               return (
                 <Link
-                  key={a.text}
+                  key={a.title}
                   href={a.href}
-                  className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors hover:opacity-80 ${a.tone}`}
+                  className={`group flex items-center gap-2.5 rounded-xl border px-3 py-2 transition-all hover:shadow-sm ${a.tone}`}
                 >
-                  <Icon className="h-4 w-4" />
-                  {a.text}
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${a.iconBg}`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-semibold leading-tight">{a.count}</p>
+                    <p className="truncate text-[11px] leading-tight opacity-80">{a.title}</p>
+                  </div>
+                  <ArrowUpRight className="h-3.5 w-3.5 shrink-0 opacity-40 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </Link>
               );
             })}
@@ -373,8 +391,10 @@ export function DashboardContent() {
               chip={k.chipValue}
               chipClassName={k.chip}
               iconClassName={k.chip}
+              tone={k.tone || 'from-blue-500 to-indigo-600'}
+              toneText={k.toneText || 'text-blue-600'}
               pct={k.pct}
-              barClassName="bg-gradient-to-r from-primary to-emerald-500"
+              barClassName="bg-gradient-to-r from-blue-500 to-emerald-500"
               size="md"
               compact
               className="h-full"
@@ -405,14 +425,19 @@ export function DashboardContent() {
 
         <div className="space-y-4">
           <Card>
-            <CardHeader className="flex items-center gap-2.5 px-4 py-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-info/10">
-                <Bell className="h-4 w-4 text-info" />
+            <CardHeader className="flex items-center justify-between px-4 py-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-info/10">
+                  <Bell className="h-4 w-4 text-info" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold">{t('Recent Activity', 'النشاط الأخير', language)}</h2>
+                  <p className="text-[11px] text-gray-400">{t('Latest notifications and messages', 'أحدث الإشعارات والرسائل', language)}</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-sm font-semibold">{t('Recent Activity', 'النشاط الأخير', language)}</h2>
-                <p className="text-[11px] text-gray-400">{t('Latest notifications and messages', 'أحدث الإشعارات والرسائل', language)}</p>
-              </div>
+              <span className="rounded-full bg-info/10 px-2 py-0.5 text-[10px] font-semibold text-info">
+                {data.recentNotifications.length + data.recentMessages.length}
+              </span>
             </CardHeader>
             <CardBody className="max-h-32 overflow-y-auto px-4 py-3 pr-2">
               {data.recentNotifications.length === 0 && data.recentMessages.length === 0 ? (
@@ -490,10 +515,16 @@ export function DashboardContent() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-medium text-gray-800">{tItem.title}</p>
                         <p className="text-[10px] text-gray-400">
-                          {tItem.category ? `${tItem.category} · ` : ''}
                           {tItem.dueDate ? t('Due', 'استحقاق', language) + ' ' + formatDate(tItem.dueDate, language) : t('No due date', 'بدون تاريخ', language)}
                         </p>
                       </div>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                          tItem.priority === 'high' ? 'bg-error/10 text-error' : tItem.priority === 'medium' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'
+                        }`}
+                      >
+                        {tItem.priority}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -525,13 +556,13 @@ export function DashboardContent() {
                     const days = daysUntil(d.date);
                     return (
                       <div key={d.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-gray-50">
-                        <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${d.kind === 'document' ? 'bg-accent/10 text-accent-600' : 'bg-secondary/10 text-secondary'}`}>
+                        <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${d.kind === 'document' ? 'bg-accent/10 text-accent-600' : d.kind === 'iqama' ? 'bg-error/10 text-error' : d.kind === 'work_permit' ? 'bg-info/10 text-info' : d.kind === 'contract' ? 'bg-secondary/10 text-secondary' : 'bg-warning/10 text-warning'}`}>
                           {d.kind === 'document' ? <FileClock className="h-3.5 w-3.5" /> : <Timer className="h-3.5 w-3.5" />}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-xs font-medium text-gray-800">{d.title}</p>
                           <p className="text-[10px] text-gray-400">
-                            {d.kind === 'document' ? t('Document', 'مستند', language) : d.kind === 'contract' ? t('Contract', 'عقد', language) : d.kind === 'work_permit' ? t('Work Permit', 'تصريح عمل', language) : d.kind === 'iqama' ? t('Iqama', 'إقامة', language) : t('Probation', 'فترة تجريبية', language)} · {formatDate(d.date, language)}
+                            {d.kind === 'document' ? t('Document', 'مستند', language) : d.kind === 'contract' ? t('Contract', 'عقد', language) : d.kind === 'work_permit' ? t('Work Permit', 'تصريح عمل', language) : d.kind === 'iqama' ? t('Iqama', 'إقامة', language) : t('Probation', 'فترة تجريبية', language)}
                           </p>
                         </div>
                         <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${days === null || days < 0 ? 'bg-error/10 text-error' : days <= 30 ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
@@ -545,6 +576,89 @@ export function DashboardContent() {
             </CardBody>
           </Card>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10">
+                <Activity className="h-4 w-4 text-emerald-600" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold">{t('Workforce Status', 'حالة القوى العاملة', language)}</h2>
+                <p className="text-xs text-gray-400">{t('Active, inactive and terminated headcount', 'الموظفون النشطون وغير النشطين والمفصولون', language)}</p>
+              </div>
+            </div>
+            <Link href="/employees" className="text-sm font-medium text-primary hover:underline">
+              {t('View all', 'عرض الكل', language)}
+            </Link>
+          </CardHeader>
+          <CardBody>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {[
+                { key: 'active', label: t('Active', 'نشط', language), count: data.statusDistribution.find((s) => s.name === 'active')?.count || 0, hex: STATUS_HEX.active },
+                { key: 'inactive', label: t('Inactive', 'غير نشط', language), count: data.statusDistribution.find((s) => s.name === 'inactive')?.count || 0, hex: STATUS_HEX.inactive },
+                { key: 'terminated', label: t('Terminated', 'مفصول', language), count: data.statusDistribution.find((s) => s.name === 'terminated')?.count || 0, hex: STATUS_HEX.terminated },
+              ].map((s) => {
+                const pct = data.totalEmployees ? Math.round((s.count / data.totalEmployees) * 100) : 0;
+                return (
+                  <div key={s.key} className="rounded-xl border border-gray-100 p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">{s.label}</span>
+                      <span className="text-xl font-bold text-gray-900">{s.count}</span>
+                    </div>
+                    <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: s.hex }} />
+                    </div>
+                    <p className="mt-1.5 text-xs text-gray-400">{pct}%</p>
+                  </div>
+                );
+              })}
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+                <PlaneTakeoff className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold">{t('On Leave Now', 'في إجازة الآن', language)}</h2>
+                <p className="text-xs text-gray-400">{t('Currently on approved leave', 'في إجازة معتمدة حالياً', language)}</p>
+              </div>
+            </div>
+            <Link href="/leaves" className="text-sm font-medium text-primary hover:underline">
+              {t('View all', 'عرض الكل', language)}
+            </Link>
+          </CardHeader>
+          <CardBody className="max-h-64 overflow-y-auto pr-1">
+            {data.onLeaveNow.length === 0 ? (
+              <p className="py-10 text-center text-sm text-gray-400">{t('No one on leave', 'لا يوجد أحد في إجازة', language)}</p>
+            ) : (
+              <div className="space-y-2">
+                {data.onLeaveNow.slice(0, 6).map((l) => (
+                  <div key={l.id} className="flex items-center gap-3 rounded-xl border border-gray-100 px-3.5 py-2.5">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xs font-bold text-primary">
+                      {l.employeeName.split(' ').map((w) => w[0]).slice(0, 2).join('')}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-gray-800">{l.employeeName}</p>
+                      <p className="text-[11px] text-gray-400">
+                        {getLeaveTypeLabel(l.type, language)} · {l.daysCount} {t('days', 'أيام', language)}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success">
+                      {formatDate(l.endDate, language)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

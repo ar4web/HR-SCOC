@@ -30,6 +30,8 @@ export interface DashboardTileProps {
   onClick?: () => void;
   size?: 'md' | 'lg';
   compact?: boolean;
+  tone?: string;
+  toneText?: string;
   className?: string;
   children?: React.ReactNode;
 }
@@ -52,6 +54,8 @@ export function DashboardTile({
   onClick,
   size = 'md',
   compact,
+  tone,
+  toneText = 'text-gray-900',
   className,
   children,
 }: DashboardTileProps) {
@@ -59,7 +63,7 @@ export function DashboardTile({
     <div className="flex h-full flex-col">
       <div className="flex items-start gap-3">
         {Icon && (
-          <div className={cn('flex shrink-0 items-center justify-center rounded-xl transition-colors group-hover:brightness-105', compact ? 'h-9 w-9' : 'h-11 w-11', iconClassName)}>
+          <div className={cn('flex shrink-0 items-center justify-center rounded-xl transition-colors group-hover:brightness-105', compact ? 'h-9 w-9' : 'h-11 w-11', tone ? cn('bg-gradient-to-br text-white shadow-sm', tone) : iconClassName)}>
             <Icon className={compact ? 'h-4.5 w-4.5' : 'h-5 w-5'} />
           </div>
         )}
@@ -84,7 +88,7 @@ export function DashboardTile({
         <>
           <div className={cn('flex-1', compact ? 'mt-2' : 'mt-4')}>
             {value !== undefined && (
-              <p className={cn('font-bold leading-tight text-gray-900', size === 'lg' ? 'text-[36px]' : compact ? 'text-xl' : 'text-[32px]')}>
+              <p className={cn('font-bold leading-tight', size === 'lg' ? 'text-[36px]' : compact ? 'text-xl' : 'text-[32px]', toneText)}>
                 {value}
               </p>
             )}
