@@ -159,17 +159,19 @@ const toggleStatus = async (todo: Todo) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t('To-Do List', 'قائمة المهام', language)}</h1>
           <p className="text-sm text-gray-500 mt-1">
             {t('Track tasks, deadlines and priorities', 'تتبع المهام والمواعيد والأولويات', language)}
           </p>
         </div>
-        <Button onClick={openCreate} title={t('New Task', 'مهمة جديدة', language)} aria-label={t('New Task', 'مهمة جديدة', language)}>          <Plus className="h-4 w-4" />
-        </Button>
-        
-        <ModuleSettingsMenu module={t('To-Do', 'المهام', language)} />
+        <div className="flex gap-2 items-center">
+          <Button onClick={openCreate} title={t('New Task', 'مهمة جديدة', language)} aria-label={t('New Task', 'مهمة جديدة', language)}>
+            <Plus className="h-4 w-4" />
+          </Button>
+          <ModuleSettingsMenu module={t('To-Do', 'المهام', language)} />
+        </div>
       </div>
 
       {showForm && (
