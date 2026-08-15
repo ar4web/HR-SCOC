@@ -6,6 +6,7 @@ import { useLanguageStore } from '@/stores/language-store';
 import { t } from '@/lib/utils';
 import { employeeService } from '@/modules/employee-management/service';
 import { payrollService } from '@/modules/payroll/service';
+import { api } from '@/lib/api';
 import { Employee, LeaveRequest, Payroll, Todo } from '@/types';
 import { Search, Briefcase, CalendarDays, Users, ListTodo, CornerDownLeft } from 'lucide-react';
 
@@ -42,15 +43,15 @@ export function GlobalSearch() {
     let cancelled = false;
     Promise.all([
       employeeService.list({ page: 1, pageSize: 1000 }),
-      fetch('/api/leaves').then((r) => r.json()).catch(() => ({ data: [] })),
+      api.get<{ data: LeaveRequest[] }>('/leaves'),
       payrollService.list({}),
-      fetch('/api/todos').then((r) => r.json()).catch(() => ({ data: [] })),
+      api.get<{ data: Todo[] }>('/todos'),
     ]).then(([empsRes, leavesRes, payrollRes, todosRes]) => {
       if (cancelled) return;
       if (empsRes.success && empsRes.data) employeesRef.current = empsRes.data.data;
-      if (Array.isArray(leavesRes.data)) leavesRef.current = leavesRes.data;
+      if (leavesRes.success && Array.isArray(leavesRes.data?.data)) leavesRef.current = leavesRes.data.data;
       if (payrollRes.success && payrollRes.data) payrollRef.current = payrollRes.data.data;
-      if (Array.isArray(todosRes.data)) todosRef.current = todosRes.data;
+      if (todosRes.success && Array.isArray(todosRes.data?.data)) todosRef.current = todosRes.data.data;
     });
     return () => {
       cancelled = true;
