@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useAuthStore } from '@/stores/auth-store';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { hasPermission, Permission, UserRole } from '@/lib/permissions';
 
 interface PermissionGuardProps {
@@ -14,7 +14,6 @@ interface PermissionGuardProps {
 export function PermissionGuard({ permission, fallback, children }: PermissionGuardProps) {
   const { user, isAuthenticated, isLoading } = useAuthStore();
   const router = useRouter();
-  const pathname = usePathname();
 
   React.useEffect(() => {
     if (!isLoading && isAuthenticated && user && !hasPermission(user.role, permission)) {

@@ -142,13 +142,13 @@ export function ContractsContent() {
 return (
     <div className="space-y-6">
       <PageHeader
-        title={t('Contracts & Agreements', 'ال contracts', language)}
-        subtitle={t('Employment contracts, service agreements and NDAs with expiry tracking', 'idxude العقد واتفاقيات الخدمة واتفاقيات عدم الإفشاء مع تتبع انتهاء الصلاحية', language)}
+        title={t('Contracts & Agreements', 'العقود والاتفاقيات', language)}
+        subtitle={t('Employment contracts, service agreements and NDAs with expiry tracking', 'عقود العمل واتفاقيات الخدمة واتفاقيات عدم الإفصاح مع تتبع انتهاء الصلاحية', language)}
         actions={
           <Button
             onClick={() => setShowForm((s) => !s)}
-            title={t('New Contract', 'contracts', language)}
-            aria-label={t('New Contract', 'contracts', language)}
+            title={t('New Contract', 'عقد جديد', language)}
+            aria-label={t('New Contract', 'عقد جديد', language)}
           >
             <Plus className="h-4 w-4" />
           </Button>

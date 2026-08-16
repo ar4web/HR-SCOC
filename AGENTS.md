@@ -1,6 +1,7 @@
 # ORB — Agent Quick Reference
 
 ## CRITICAL: Work Rules
+
 1. **Do NOT run the same command twice.** If `npx tsc --noEmit` passed once, it still passes. Do not re-run to "double-check".
 2. **Do NOT read files you already have open.** If you read `lib/rbac.ts` in this conversation, do not read it again.
 3. **Do NOT create tests or CI.** There is no test suite. Do not write one. Do not add vitest/jest/playwright. This is explicitly deferred.
@@ -13,41 +14,89 @@
 10. **Stop when the task is done.** Do not suggest next steps, do not create follow-up tasks, do not ask "would you also like me to...".
 
 ## Verify before committing
-1. **npx tsc --noEmit** — ONLY run once per change (0 errors required)
-2. **npm run build** — must pass — ONLY run once per change
-3. **npx next lint** — 0 errors required (warnings OK) — ONLY run once per change
+
+```bash
+npx tsc --noEmit         # 0 errors — ONLY run once per change
+npm run build            # must pass — ONLY run once per change
+npx next lint            # 0 errors required (warnings OK) — ONLY run once per change
+```
 
 Do NOT run these in a loop. Run once, fix errors if any, run again once. If all pass, commit.
 
+No test suite exists. These three commands are the only verification.
+
+## Dev servers
+
+| Command | Port | Notes |
+|---|---|---|
+| `npm run dev` | 3000 | Hot-reload dev |
+| `npm start` | 3000 | Production build |
+| Docker | 3001 | `docker compose up -d --build` |
+
+Multiple servers can run simultaneously — watch for port conflicts (lsof -iTCP -sTCP:LISTEN).
+
+Kill dev servers when done: `kill $(lsof -ti:3001) 2>/dev/null`
+
 ## Architecture
+
 - **Next.js 14 App Router** (not Pages Router)
 - All API routes use `export const dynamic = 'force-dynamic'` — no static caching
 - Path alias: `@/*` → project root (e.g. `import { X } from '@/lib/y'`)
 - Client components live in `components/`, pages in `app/(dashboard)/`
+- Layouts: `app/(dashboard)/layout.tsx` (shell), `settings/layout.tsx`, `payroll/layout.tsx`
 
 ## Auth flow
+
 - Tokens: HMAC-signed (`lib/token.ts`), verified in `middleware.ts` (Edge) and route handlers (Node) using same pure-JS implementation
 - **Middleware blocks every `/api/*` except** `['/api/auth/login', '/api/auth/geo', '/api/email/gmail/callback']`
 - Route-level auth: `authFromRequest(req)` returns payload or null. Check roles with `hasPermission(role, 'permission')` from `lib/rbac.ts`
 - `TOKEN_SECRET` env var required in production; without it, a demo fallback is used (do NOT deploy with fallback)
 
+## Adding auth to a new API route
+
+```typescript
+import { authFromRequest, hasPermission } from '@/lib/rbac';
+
+export async function GET(req: Request) {
+  const auth = authFromRequest(req);
+  if (!auth) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  // For admin-only routes:
+  if (!hasPermission(auth.role, 'settings:manage')) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+  // ... handler logic
+}
+```
+
 ## Data persistence
+
 - JSON file: `data/db.json` (with `data/db.backup.json` fallback)
 - Loaded once at module init via `lib/persistence.ts` → `lib/mock-data.ts`
 - **Do NOT read/write `data/db.json` directly** — always go through `mock-data.ts` exports
 - `.gitignore` covers `data/` — do not commit db files
 
 ## Passwords
+
 - Stored as scrypt hashes (`lib/passwords.ts`)
 - Legacy plaintext auto-migrated on first successful login
 - Default password for seeded users: `Password123!`
 
 ## Gmail / OAuth tokens
+
 - Refresh tokens encrypted at rest with AES-256-GCM (`lib/crypto-utils.ts`, key = sha256 of TOKEN_SECRET)
 - OAuth uses `state` param (10-min TTL, single use) — verified in callback
 - Tokens redacted from `GET /api/email` response (never sent to client)
 
+## Zod validation
+
+- Schemas in `lib/validation.ts`: `employeeCreateSchema`, `employeeUpdateSchema`, `companyUpdateSchema`, `messageSchema`, `announcementSchema`, `channelSchema`, `documentCreateSchema`
+- All schemas use `.passthrough()` — unknown fields pass through
+- Use `parseWith(schema, body)` helper — returns `{ ok, data }` or `{ ok: false, error }`
+
 ## Key files
+
 | File | Purpose |
 |---|---|
 | `lib/token.ts` | Token signing/verification (pure JS, Edge+Node) |
@@ -65,21 +114,33 @@ Do NOT run these in a loop. Run once, fix errors if any, run again once. If all 
 | `AGENTS.md` | Agent quick reference (this file) |
 
 ## Common pitfalls
+
 - `mock-data.ts` is imported by client pages AND server routes — server-only code must use `eval('require')` pattern, never top-level `import fs`
-- `lib/passwords.ts` and `lib/crypto-utils.ts` use node:crypto — safe for server only
-- ESLint: `@typescript-eslint/parser@7.2.0` + `@typescript-eslint/eslint-plugin@7.2.0` — do NOT upgrade independently
+- `lib/passwords.ts`, `lib/crypto-utils.ts` use node:crypto — safe for server only
 - All API route handlers must be async and return NextResponse
+- ESLint: `@typescript-eslint/parser@7.2.0` + `@typescript-eslint/eslint-plugin@7.2.0` — do NOT upgrade independently
+- When testing API routes, use `curl` against `localhost:3001` (dev server on 3001), not by re-building
 - Docker rebuild required for production: `docker compose down && docker compose up -d --build`
 
 ## Credentials
+
 | Email | Password | Role |
 |---|---|---|
 | `admin@scos.sa` | `Password123!` | admin |
 | `employee@scos.sa` | `Password123!` | employee |
 
 ## Deferred (DO NOT work on these)
+
 - Automated test suite (no vitest/jest/playwright)
 - CI/CD pipeline
 - PostgreSQL migration (P1-6)
 - Redis session store
 - WebSocket/SSE real-time
+
+## Git rules
+
+- Do NOT commit unless the user explicitly says "commit"
+- Do NOT push unless the user explicitly says "push"
+- Do NOT amend commits
+- Do NOT force push
+- Do NOT create branches unless asked

@@ -19,7 +19,7 @@ import {
   UserPlus, CalendarPlus, MessageSquare, Bell, FileText, ArrowUpRight,
   BarChart3, Wallet, Timer, Globe, Shield, PlaneTakeoff, PlaneLanding,
   TriangleAlert, Building2, ClipboardCheck, PieChart, FileClock, AlarmClock,
-  Files, Briefcase, Coins, Activity,
+  Activity,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
