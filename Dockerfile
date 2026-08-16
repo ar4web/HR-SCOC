@@ -10,7 +10,9 @@ RUN npm ci
 COPY . .
 
 # Build
+ARG TOKEN_SECRET
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV TOKEN_SECRET=$TOKEN_SECRET
 RUN npm run build
 
 # Runtime stage

@@ -1,6 +1,9 @@
 services:
   hr-app:
-    build: .
+    build:
+      context: .
+      args:
+        TOKEN_SECRET: ${TOKEN_SECRET:-}
     image: scos-hr:latest
     restart: unless-stopped
     ports:
