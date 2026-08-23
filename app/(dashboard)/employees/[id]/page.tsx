@@ -3,7 +3,7 @@
 import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useLanguageStore } from '@/stores/language-store';
-import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { DetailSkeleton } from '@/components/ui/Skeleton';
@@ -11,15 +11,95 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { EmployeeReport } from '@/components/employee-report/EmployeeReport';
 import { employeeService } from '@/modules/employee-management/service';
 import { ContractType, Employee } from '@/types';
-import { t, formatDate, formatCurrency, getContractTypeLabel, getGenderLabel, getMaritalStatusLabel, calculateAge } from '@/lib/utils';
+import { t, formatDate, formatCurrency, getContractTypeLabel, getGenderLabel, getMaritalStatusLabel, calculateAge, daysUntil } from '@/lib/utils';
 import { FormBuilder, FormField } from '@/engines/form-engine';
 import { useToast } from '@/components/ui/Toast';
-import { ArrowLeft, User, Mail, Phone, MapPin, Briefcase, DollarSign, Heart, SearchX, Pencil, X, Shield, Plane } from 'lucide-react';
+import {
+  ArrowLeft, User, Mail, Phone, MapPin, Briefcase, DollarSign, SearchX,
+  Pencil, X, Shield, CreditCard, FileText, CalendarDays, BarChart3,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+function initialsFor(name: string): string {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() || '')
+    .join('') || '?';
+}
+
+function Avatar({ name, className }: { name: string; className?: string }) {
+  return (
+    <div className={`flex shrink-0 select-none items-center justify-center rounded-full bg-gray-100 font-semibold text-gray-700 ${className || 'h-11 w-11 text-sm'}`}>
+      {initialsFor(name)}
+    </div>
+  );
+}
+
+function Field({ label, value, strong, className }: { label: string; value: React.ReactNode; strong?: boolean; className?: string }) {
+  return (
+    <div className={className}>
+      <dt className="text-[11px] font-medium uppercase tracking-wide text-gray-400">{label}</dt>
+      <dd className={`mt-1 break-words text-sm ${strong ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>{value}</dd>
+    </div>
+  );
+}
+
+function Section({
+  icon: Icon,
+  title,
+  action,
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-gray-100 bg-white shadow-card">
+      <header className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-3">
+        <div className="flex items-center gap-2">
+          <Icon className="h-4 w-4 text-gray-400" />
+          <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
+        </div>
+        {action}
+      </header>
+      <div className="p-5">{children}</div>
+    </section>
+  );
+}
+
+function ExpiryRow({ label, date, locale }: { label: string; date?: string; locale: 'en' | 'ar' }) {
+  const days = daysUntil(date);
+  if (!date || days === null) return null;
+  const tone = days < 0 ? 'bg-error/10 text-error' : days <= 90 ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success';
+  const text = days < 0 ? t('Expired', 'منتهي', locale) : `${days} ${t('days left', 'يوم متبقي', locale)}`;
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-gray-50 py-2.5 last:border-0">
+      <div>
+        <p className="text-sm font-medium text-gray-800">{label}</p>
+        <p className="text-xs text-gray-400">{formatDate(date, locale)}</p>
+      </div>
+      <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${tone}`}>{text}</span>
+    </div>
+  );
+}
+
+function SalaryRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className={`flex items-center justify-between gap-4 py-2 ${strong ? '' : 'border-b border-gray-50'}`}>
+      <span className={`text-sm ${strong ? 'font-semibold text-gray-900' : 'text-gray-500'}`}>{label}</span>
+      <span className={`text-sm ${strong ? 'font-bold text-gray-900' : 'font-medium text-gray-800'}`}>{value}</span>
+    </div>
+  );
+}
 
 export default function EmployeeDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const { language } = useLanguageStore();
+  const { language, dir } = useLanguageStore();
   const { addToast } = useToast();
   const [employee, setEmployee] = React.useState<Employee | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -133,6 +213,7 @@ export default function EmployeeDetailPage() {
   const handleSave = async (values: Record<string, string>) => {
     if (!employee) return;
     setSaving(true);
+    const vacBalance = parseInt(values.vacationBalance, 10);
     const res = await employeeService.update(employee.id, {
       fullName: values.fullName || '',
       fullNameAr: values.fullNameAr || '',
@@ -160,7 +241,7 @@ export default function EmployeeDetailPage() {
       sponsorName: values.sponsorName || '',
       sponsorId: values.sponsorId || '',
       annualVacationDays: parseInt(values.annualVacationDays) || employee.annualVacationDays || 30,
-      vacationBalance: parseInt(values.vacationBalance) ?? employee.vacationBalance,
+      vacationBalance: Number.isFinite(vacBalance) ? vacBalance : employee.vacationBalance,
       endOfServiceAllowance: parseFloat(values.endOfServiceAllowance) || employee.endOfServiceAllowance || 0,
       probationEndDate: values.probationEndDate || '',
       workPermitExpiry: values.workPermitExpiry || '',
@@ -201,20 +282,28 @@ export default function EmployeeDetailPage() {
     );
   }
 
+  const displayName = language === 'ar' ? employee.fullNameAr || employee.fullName : employee.fullName;
+  const hireTs = employee.hireDate ? new Date(employee.hireDate).getTime() : NaN;
+  const serviceMonths = Number.isFinite(hireTs) ? Math.max(0, Math.round((Date.now() - hireTs) / (1000 * 60 * 60 * 24 * 30))) : 0;
+  const balanceIsLow = employee.vacationBalance != null && employee.vacationBalance <= 5;
+
   return (
-    <div className="max-w-4xl space-y-6">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-        <button onClick={() => router.back()} className="shrink-0 p-2 rounded-lg hover:bg-gray-100 transition-colors rtl:rotate-180">
-          <ArrowLeft className="h-5 w-5 text-gray-600" />
+    <div className="space-y-5" dir={dir}>
+      {/* Identity header */}
+      <div className="flex flex-wrap items-center gap-3">
+        <button onClick={() => router.back()} className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 rtl:rotate-180">
+          <ArrowLeft className="h-5 w-5" />
         </button>
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-bold text-gray-900 sm:text-xl">
-            {language === 'ar' ? employee.fullNameAr || employee.fullName : employee.fullName}
-          </h1>
-          <p className="truncate text-sm text-gray-500">{employee.employeeId} - {employee.position}</p>
+        <Avatar name={employee.fullName} className="h-12 w-12 text-base" />
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-lg font-bold leading-tight text-gray-900">{displayName}</h1>
+            <Badge status={employee.status} locale={language} />
+          </div>
+          <p className="text-sm text-gray-500">{employee.position} · {employee.department}</p>
+          <p className="text-xs text-gray-400">{employee.employeeId}</p>
         </div>
-        <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:flex-none sm:ms-auto sm:justify-end">
-          <Badge status={employee.status} locale={language} />
+        <div className="ms-auto flex items-center gap-2">
           {editing ? (
             <Button variant="outline" onClick={() => setEditing(false)}>
               <X className="h-4 w-4" />
@@ -223,7 +312,7 @@ export default function EmployeeDetailPage() {
           ) : (
             <Button variant="outline" onClick={() => setEditing(true)}>
               <Pencil className="h-4 w-4" />
-              {t('Edit', 'تعديل', language)}
+              {t('Edit Profile', 'تعديل الملف', language)}
             </Button>
           )}
         </div>
@@ -231,10 +320,10 @@ export default function EmployeeDetailPage() {
 
       {editing ? (
         <Card>
-          <CardHeader>
-            <h2 className="text-lg font-semibold">{t('Edit Employee', 'تعديل الموظف', language)}</h2>
-          </CardHeader>
-          <CardBody>
+          <div className="border-b border-gray-100 px-5 py-4">
+            <h2 className="text-base font-semibold">{t('Edit Employee', 'تعديل الموظف', language)}</h2>
+          </div>
+          <div className="p-5">
             <FormBuilder
               fields={editFields}
               locale={language}
@@ -248,6 +337,7 @@ export default function EmployeeDetailPage() {
                 email: employee.email,
                 phone: employee.phone,
                 nationalId: employee.nationalId,
+                iqamaNumber: employee.iqamaNumber || '',
                 nationality: employee.nationality,
                 gender: employee.gender,
                 maritalStatus: employee.maritalStatus,
@@ -271,193 +361,163 @@ export default function EmployeeDetailPage() {
                 workPermitExpiry: employee.workPermitExpiry || '',
               }}
             />
-          </CardBody>
+          </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 items-start">
-          <div className="xl:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="flex items-center gap-3">
-            <User className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">{t('Personal Info', 'معلومات شخصية', language)}</h2>
-          </CardHeader>
-          <CardBody className="space-y-3">
-            <div className="flex justify-between py-1">
-              <span className="text-sm text-gray-500">{t('National ID', 'رقم الهوية', language)}</span>
-              <span className="text-sm font-medium">{employee.nationalId}</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span className="text-sm text-gray-500">{t('Date of Birth', 'تاريخ الميلاد', language)}</span>
-              <span className="text-sm font-medium">{formatDate(employee.dateOfBirth, language)} ({calculateAge(employee.dateOfBirth)} {t('years', 'سنة', language)})</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span className="text-sm text-gray-500">{t('Gender', 'الجنس', language)}</span>
-              <span className="text-sm font-medium">{getGenderLabel(employee.gender, language)}</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span className="text-sm text-gray-500">{t('Marital Status', 'الحالة الاجتماعية', language)}</span>
-              <span className="text-sm font-medium">{getMaritalStatusLabel(employee.maritalStatus, language)}</span>
-            </div>
-          </CardBody>
-        </Card>
+        <>
+          <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
+            {/* Sidebar: identity + contact + sponsor */}
+            <div className="space-y-5">
+              <section className="rounded-2xl border border-gray-100 bg-white shadow-card">
+                <div className="flex flex-col items-center px-5 pt-6 text-center">
+                  <Avatar name={employee.fullName} className="h-16 w-16 text-lg" />
+                  <h2 className="mt-3 text-base font-bold text-gray-900">{displayName}</h2>
+                  <p className="text-sm text-gray-500">{employee.position}</p>
+                  <p className="text-xs text-gray-400">{employee.department}</p>
+                  <div className="mt-2">
+                    <Badge status={employee.status} locale={language} />
+                  </div>
+                  <p className="mt-2 text-xs font-medium text-gray-400">{employee.employeeId}</p>
+                </div>
 
-        <Card>
-          <CardHeader className="flex items-center gap-3">
-            <Briefcase className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">{t('Employment', 'التوظيف', language)}</h2>
-          </CardHeader>
-          <CardBody className="space-y-3">
-            <div className="flex justify-between py-1">
-              <span className="text-sm text-gray-500">{t('Department', 'القسم', language)}</span>
-              <span className="text-sm font-medium">{employee.department}</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span className="text-sm text-gray-500">{t('Position', 'المنصب', language)}</span>
-              <span className="text-sm font-medium">{employee.position}</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span className="text-sm text-gray-500">{t('Contract', 'العقد', language)}</span>
-              <span className="text-sm font-medium">{getContractTypeLabel(employee.contractType, language)}</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span className="text-sm text-gray-500">{t('Hire Date', 'تاريخ التعيين', language)}</span>
-              <span className="text-sm font-medium">{formatDate(employee.hireDate, language)}</span>
-            </div>
-            {employee.contractEndDate && (
-              <div className="flex justify-between py-1">
-                <span className="text-sm text-gray-500">{t('Contract End', 'انتهاء العقد', language)}</span>
-                <span className="text-sm font-medium">{formatDate(employee.contractEndDate, language)}</span>
-              </div>
-            )}
-            {employee.probationEndDate && (
-              <div className="flex justify-between py-1">
-                <span className="text-sm text-gray-500">{t('Probation End', 'انتهاء التجربة', language)}</span>
-                <span className="text-sm font-medium">{formatDate(employee.probationEndDate, language)}</span>
-              </div>
-            )}
-            {employee.workPermitExpiry && (
-              <div className="flex justify-between py-1">
-                <span className="text-sm text-gray-500">{t('Work Permit Expiry', 'انتهاء تصريح العمل', language)}</span>
-                <span className="text-sm font-medium">{formatDate(employee.workPermitExpiry, language)}</span>
-              </div>
-            )}
-          </CardBody>
-        </Card>
+                <div className="mt-5 border-t border-gray-100 px-5 py-4">
+                  <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-gray-400">{t('Contact', 'التواصل', language)}</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-[13px] text-gray-600">
+                      <Mail className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                      <span className="min-w-0 truncate">{employee.email || '—'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[13px] text-gray-600">
+                      <Phone className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                      <span>{employee.phone || '—'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[13px] text-gray-600">
+                      <MapPin className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                      <span className="min-w-0 truncate">
+                        {[employee.address.city, employee.address.region].filter(Boolean).join(', ') || '—'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-        <Card>
-          <CardHeader className="flex items-center gap-3">
-            <DollarSign className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">{t('Salary', 'الراتب', language)}</h2>
-          </CardHeader>
-          <CardBody className="space-y-3">
-            <div className="flex justify-between py-1">
-              <span className="text-sm text-gray-500">{t('Basic', 'أساسي', language)}</span>
-              <span className="text-sm font-medium">{formatCurrency(employee.salary.basic)}</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span className="text-sm text-gray-500">{t('Housing', 'سكن', language)}</span>
-              <span className="text-sm font-medium">{formatCurrency(employee.salary.housing)}</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span className="text-sm text-gray-500">{t('Transportation', 'مواصلات', language)}</span>
-              <span className="text-sm font-medium">{formatCurrency(employee.salary.transportation)}</span>
-            </div>
-            {employee.salary.otherAllowances > 0 && (
-              <div className="flex justify-between py-1">
-                <span className="text-sm text-gray-500">{t('Other Allowances', 'بدلات أخرى', language)}</span>
-                <span className="text-sm font-medium">{formatCurrency(employee.salary.otherAllowances)}</span>
-              </div>
-            )}
-            {employee.endOfServiceAllowance != null && employee.endOfServiceAllowance > 0 && (
-              <div className="flex justify-between py-1">
-                <span className="text-sm text-gray-500">{t('End of Service', 'نهاية الخدمة', language)}</span>
-                <span className="text-sm font-medium">{formatCurrency(employee.endOfServiceAllowance)}</span>
-              </div>
-            )}
-            <div className="flex justify-between py-1 border-t pt-3">
-              <span className="text-sm font-semibold text-gray-900">{t('Total', 'الإجمالي', language)}</span>
-              <span className="text-sm font-bold text-primary">
-                {formatCurrency(employee.salary.total)}
-              </span>
-            </div>
-          </CardBody>
-        </Card>
+                <div className="border-t border-gray-100 px-5 py-4">
+                  <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-gray-400">{t('Sponsor', 'الكفيل', language)}</p>
+                  <p className="text-sm font-medium text-gray-800">{employee.sponsorName || '—'}</p>
+                  <p className="text-xs text-gray-400">{employee.sponsorId || '—'}</p>
+                </div>
+              </section>
 
-        <Card>
-          <CardHeader className="flex items-center gap-3">
-            <MapPin className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">{t('Contact & Address', 'جهات الاتصال والعنوان', language)}</h2>
-          </CardHeader>
-          <CardBody className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-gray-400" />
-              <span className="text-sm">{employee.email}</span>
+              <section className="rounded-2xl border border-gray-100 bg-white shadow-card">
+                <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-3">
+                  <CreditCard className="h-4 w-4 text-gray-400" />
+                  <h2 className="text-sm font-semibold text-gray-900">{t('Key Facts', 'معلومات أساسية', language)}</h2>
+                </div>
+                <div className="p-5">
+                  <dl className="space-y-3">
+                    <Field label={t('Joined', 'تاريخ الانضمام', language)} value={formatDate(employee.hireDate, language)} />
+                    <Field label={t('Tenure', 'مدة الخدمة', language)} value={`${serviceMonths} ${t('months', 'شهر', language)}`} />
+                    <Field label={t('Contract', 'العقد', language)} value={getContractTypeLabel(employee.contractType, language)} />
+                    <Field label={t('Nationality', 'الجنسية', language)} value={employee.nationality || '—'} />
+                    <Field label={t('Age', 'العمر', language)} value={`${calculateAge(employee.dateOfBirth)} ${t('yrs', 'سنة', language)}`} />
+                  </dl>
+                </div>
+              </section>
             </div>
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-gray-400" />
-              <span className="text-sm">{employee.phone}</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-              <div className="text-sm">
-                <p>{employee.address.street}</p>
-                <p>{employee.address.city}, {employee.address.region}</p>
-              </div>
-            </div>
-            <div className="border-t pt-3 mt-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Heart className="h-4 w-4 text-error" />
-                <span className="text-sm font-medium">{t('Emergency Contact', 'جهة اتصال طارئة', language)}</span>
-              </div>
-              <p className="text-sm">{employee.emergencyContact.name} ({employee.emergencyContact.relation})</p>
-              <p className="text-sm text-gray-500">{employee.emergencyContact.phone}</p>
-            </div>
-          </CardBody>
-        </Card>
 
-        <Card>
-          <CardHeader className="flex items-center gap-3">
-            <Shield className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">{t('Sponsor', 'الكفيل', language)}</h2>
-          </CardHeader>
-          <CardBody className="space-y-3">
-            <div className="flex justify-between py-1">
-              <span className="text-sm text-gray-500">{t('Sponsor Name', 'اسم الكفيل', language)}</span>
-              <span className="text-sm font-medium">{employee.sponsorName || '—'}</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span className="text-sm text-gray-500">{t('Sponsor ID', 'رقم الكفيل', language)}</span>
-              <span className="text-sm font-medium">{employee.sponsorId || '—'}</span>
-            </div>
-          </CardBody>
-        </Card>
+            {/* Main: structured HR data — 3 cards per line */}
+            <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-2 lg:grid-cols-3">
+              <Section icon={User} title={t('Personal Information', 'المعلومات الشخصية', language)}>
+                <dl className="grid grid-cols-2 gap-x-6 gap-y-5">
+                  <Field label={t('National ID', 'رقم الهوية', language)} value={employee.nationalId || '—'} strong />
+                  <Field label={t('Iqama Number', 'رقم الإقامة', language)} value={employee.iqamaNumber || '—'} />
+                  <Field label={t('Date of Birth', 'تاريخ الميلاد', language)} value={`${formatDate(employee.dateOfBirth, language)} (${calculateAge(employee.dateOfBirth)} ${t('yrs', 'سنة', language)})`} />
+                  <Field label={t('Gender', 'الجنس', language)} value={getGenderLabel(employee.gender, language)} />
+                  <Field label={t('Marital Status', 'الحالة الاجتماعية', language)} value={getMaritalStatusLabel(employee.maritalStatus, language)} />
+                  <Field label={t('Nationality', 'الجنسية', language)} value={employee.nationality || '—'} />
+                </dl>
+              </Section>
 
-        <Card>
-          <CardHeader className="flex items-center gap-3">
-            <Plane className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">{t('Leave', 'الإجازات', language)}</h2>
-          </CardHeader>
-          <CardBody className="space-y-3">
-            <div className="flex justify-between py-1">
-              <span className="text-sm text-gray-500">{t('Annual Vacation', 'إجازة سنوية', language)}</span>
-              <span className="text-sm font-medium">
-                {employee.annualVacationDays != null ? `${employee.annualVacationDays} ${t('days', 'يوم', language)}` : '—'}
-              </span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span className="text-sm text-gray-500">{t('Vacation Balance', 'رصيد الإجازة', language)}</span>
-              <span className={`text-sm font-medium ${employee.vacationBalance != null && employee.vacationBalance <= 5 ? 'text-error' : ''}`}>
-                {employee.vacationBalance != null ? `${employee.vacationBalance} ${t('days', 'يوم', language)}` : '—'}
-              </span>
-            </div>
-          </CardBody>
-        </Card>
-        </div>
+              <Section icon={Briefcase} title={t('Employment', 'التوظيف', language)}>
+                <dl className="grid grid-cols-2 gap-x-6 gap-y-5">
+                  <Field label={t('Department', 'القسم', language)} value={employee.department || '—'} strong />
+                  <Field label={t('Position', 'المنصب', language)} value={employee.position || '—'} strong />
+                  <Field label={t('Contract Type', 'نوع العقد', language)} value={getContractTypeLabel(employee.contractType, language)} />
+                  <Field label={t('Hire Date', 'تاريخ التعيين', language)} value={formatDate(employee.hireDate, language)} />
+                  <Field label={t('Contract End', 'انتهاء العقد', language)} value={employee.contractEndDate ? formatDate(employee.contractEndDate, language) : '—'} />
+                  <Field label={t('Work Permit Expiry', 'انتهاء تصريح العمل', language)} value={employee.workPermitExpiry ? formatDate(employee.workPermitExpiry, language) : '—'} />
+                </dl>
+              </Section>
 
-        <div className="xl:col-span-1">
+              <Section icon={CalendarDays} title={t('Renewals & Expiries', 'التجديدات والانتهاءات', language)}>
+                <ExpiryRow locale={language} label={t('Iqama Expiry', 'انتهاء الإقامة', language)} date={employee.iqamaExpiryDate} />
+                <ExpiryRow locale={language} label={t('Work Permit', 'تصريح العمل', language)} date={employee.workPermitExpiry} />
+                <ExpiryRow locale={language} label={t('Contract End', 'انتهاء العقد', language)} date={employee.contractEndDate} />
+                <ExpiryRow locale={language} label={t('Probation End', 'انتهاء فترة التجربة', language)} date={employee.probationEndDate} />
+              </Section>
+
+              <Section icon={DollarSign} title={t('Compensation', 'الراتب والمزايا', language)}>
+                  <SalaryRow label={t('Basic', 'أساسي', language)} value={formatCurrency(employee.salary.basic)} />
+                  <SalaryRow label={t('Housing', 'سكن', language)} value={formatCurrency(employee.salary.housing)} />
+                  <SalaryRow label={t('Transportation', 'مواصلات', language)} value={formatCurrency(employee.salary.transportation)} />
+                  {employee.salary.otherAllowances > 0 && (
+                    <SalaryRow label={t('Other Allowances', 'بدلات أخرى', language)} value={formatCurrency(employee.salary.otherAllowances)} />
+                  )}
+                  {employee.endOfServiceAllowance != null && employee.endOfServiceAllowance > 0 && (
+                    <SalaryRow label={t('End of Service', 'نهاية الخدمة', language)} value={formatCurrency(employee.endOfServiceAllowance)} />
+                  )}
+                  <SalaryRow label={t('Total', 'الإجمالي', language)} value={formatCurrency(employee.salary.total)} strong />
+                  <div className="mt-3 bg-gray-50 px-4 py-3">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-gray-400">{t('Bank', 'البنك', language)}</p>
+                    <p className="mt-0.5 text-sm font-medium text-gray-800">{employee.salary.bankName || '—'}</p>
+                    <p className="break-words text-xs text-gray-500">{employee.salary.iban || employee.salary.bankAccount || '—'}</p>
+                  </div>
+                </Section>
+
+              <Section icon={Shield} title={t('Time Off', 'الإجازات', language)}>
+                <dl className="grid grid-cols-2 gap-x-6 gap-y-5">
+                  <Field label={t('Annual Vacation', 'إجازة سنوية', language)} value={`${employee.annualVacationDays ?? '—'} ${t('days', 'يوم', language)}`} strong />
+                  <Field
+                    label={t('Vacation Balance', 'رصيد الإجازة', language)}
+                    value={
+                      employee.vacationBalance != null
+                        ? <span className={balanceIsLow ? 'font-semibold text-error' : ''}>{`${employee.vacationBalance} ${t('days', 'يوم', language)}`}</span>
+                        : '—'
+                    }
+                    strong
+                  />
+                </dl>
+              </Section>
+
+              <Section icon={FileText} title={t('Documents', 'المستندات', language)}>
+                {employee.documents.length === 0 ? (
+                  <p className="py-3 text-center text-sm text-gray-400">{t('No documents attached', 'لا توجد مستندات مرفقة', language)}</p>
+                ) : (
+                  <div className="divide-y divide-gray-50">
+                    {employee.documents.map((doc) => (
+                      <div key={doc.id} className="flex items-center gap-2 py-2.5">
+                        <FileText className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                        <span className="min-w-0 flex-1 truncate text-sm text-gray-700">{doc.name}</span>
+                        <span className="shrink-0 text-xs text-gray-400">{formatDate(doc.uploadedAt, language)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Section>
+            </div>
+          </div>
+
+          {/* Report & Analytics */}
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+              <BarChart3 className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">{t('Employee Report & Analytics', 'تقرير الموظف والتحليلات', language)}</h2>
+              <p className="text-xs text-gray-400">{t('Attendance, leave and salary insights', 'رؤى الحضور والإجازات والرواتب', language)}</p>
+            </div>
+          </div>
           <EmployeeReport employeeId={id as string} />
-        </div>
-      </div>
+        </>
       )}
     </div>
   );

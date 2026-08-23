@@ -221,7 +221,7 @@ export function DocumentsContent() {
     if (days === null) return null;
     if (days < 0) {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#FEE2E2] text-[#991B1B]">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-error/10 text-error">
           <AlertTriangle className="h-3 w-3 me-1" />
           {t(`Expired`, 'منتهي', language)}
         </span>
@@ -229,14 +229,14 @@ export function DocumentsContent() {
     }
     if (days <= doc.remindDaysBefore) {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#FFEDD5] text-[#9A3412]">
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-warning/10 text-warning">
           <Clock className="h-3 w-3 me-1" />
           {t(`${days}d left`, `بقي ${days} يوم`, language)}
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#DCFCE7] text-[#166534]">
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success/10 text-success">
         <CheckCircle2 className="h-3 w-3 me-1" />
         {t(`${days} days`, `بقي ${days} يوم`, language)}
       </span>

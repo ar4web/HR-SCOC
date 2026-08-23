@@ -14,7 +14,7 @@ import { api } from '@/lib/api';
 import { Employee, LeaveRequest } from '@/types';
 import { t, formatDate, getLeaveTypeLabel } from '@/lib/utils';
 import {
-  ArrowLeft, Calendar, CalendarDays, Clock, User, FileText,
+  ArrowLeft, CalendarDays, Clock, User, FileText,
   CheckCircle2, XCircle, Ban, SearchX, UserCheck,
 } from 'lucide-react';
 
@@ -70,7 +70,6 @@ export default function LeaveDetailPage() {
             : t('Leave cancelled', 'تم إلغاء الإجازة', language),
       });
       setLeave(res.data);
-      load();
     } else {
       addToast({ type: 'error', title: res.error || t('Action failed', 'فشل الإجراء', language) });
     }
@@ -106,16 +105,16 @@ export default function LeaveDetailPage() {
     );
   }
 
-  const infoRows: { label: { en: string; ar: string }; value: string; icon: typeof Calendar }[] = [
+  const infoRows: { label: { en: string; ar: string }; value: string; icon: typeof CalendarDays }[] = [
     { label: { en: 'Employee ID', ar: 'رقم الموظف' }, value: employee?.employeeId || leave.employeeId, icon: User },
     { label: { en: 'Employee Name', ar: 'اسم الموظف' }, value: employee ? (language === 'ar' ? employee.fullNameAr || employee.fullName : employee.fullName) : '--', icon: UserCheck },
     { label: { en: 'Leave Type', ar: 'نوع الإجازة' }, value: getLeaveTypeLabel(leave.type, language), icon: CalendarDays },
-    { label: { en: 'Start Date', ar: 'تاريخ البدء' }, value: formatDate(leave.startDate, language), icon: Calendar },
-    { label: { en: 'End Date', ar: 'تاريخ الانتهاء' }, value: formatDate(leave.endDate, language), icon: Calendar },
+    { label: { en: 'Start Date', ar: 'تاريخ البدء' }, value: formatDate(leave.startDate, language), icon: CalendarDays },
+    { label: { en: 'End Date', ar: 'تاريخ الانتهاء' }, value: formatDate(leave.endDate, language), icon: CalendarDays },
     { label: { en: 'Total Days', ar: 'إجمالي الأيام' }, value: `${leave.daysCount}`, icon: Clock },
     { label: { en: 'Submitted', ar: 'تاريخ التقديم' }, value: formatDate(leave.createdAt, language), icon: Clock },
     ...(leave.approvedAt
-      ? [{ label: { en: 'Processed At', ar: 'تاريخ المعالجة' }, value: formatDate(leave.approvedAt, language), icon: Clock as typeof Calendar }]
+      ? [{ label: { en: 'Processed At', ar: 'تاريخ المعالجة' }, value: formatDate(leave.approvedAt, language), icon: Clock as typeof CalendarDays }]
       : []),
   ];
 

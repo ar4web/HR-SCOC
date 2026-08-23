@@ -6,12 +6,15 @@ import { useLanguageStore } from '@/stores/language-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { DashboardTile } from '@/components/ui/DashboardTile';
+
 import { useToast } from '@/components/ui/Toast';
 import { dashboardService } from '@/modules/dashboard/service';
 import { ModuleSettingsMenu } from '@/components/module-settings/ModuleSettingsMenu';
 import { DashboardData } from '@/lib/dashboard-engine';
 import { api, clearApiCache } from '@/lib/api';
 import { Chart } from '@/engines/chart-engine';
+import { useChartTheme, statusHexMap } from '@/lib/chart-theme';
+import { AddTodoDialog, AddReminderDialog } from '@/components/dashboard/AddDialogs';
 import { t, formatCurrency, formatDate, getStatusLabel, getContractTypeLabel, getLeaveTypeLabel, daysUntil } from '@/lib/utils';
 import {
   Users, UserCheck, CalendarClock, DollarSign, Receipt, FileWarning,
@@ -19,21 +22,9 @@ import {
   UserPlus, CalendarPlus, MessageSquare, Bell, FileText, ArrowUpRight,
   BarChart3, Wallet, Timer, Globe, Shield, PlaneTakeoff, PlaneLanding,
   TriangleAlert, Building2, ClipboardCheck, PieChart, FileClock, AlarmClock,
-  Activity,
+  Activity, Plus, X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-
-const COLORS = ['#3B82F6', '#10B981', '#EC4899', '#8B5CF6', '#F97316', '#EF4444', '#06B6D4'];
-
-const STATUS_HEX: Record<string, string> = {
-  present: '#10B981',
-  late: '#F59E0B',
-  absent: '#EF4444',
-  half_day: '#3B82F6',
-  active: '#10B981',
-  inactive: '#94A3B8',
-  terminated: '#EF4444',
-};
 
 const notifMeta: Record<string, { icon: LucideIcon; classes: string }> = {
   info: { icon: Bell, classes: 'bg-info/10 text-info' },
@@ -60,10 +51,15 @@ export function DashboardContent() {
   const { language, dir } = useLanguageStore();
   const { user } = useAuthStore();
   const { addToast } = useToast();
+  const theme = useChartTheme();
+  const COLORS = theme.palette;
+  const STATUS_HEX = statusHexMap(theme);
   const [data, setData] = React.useState<DashboardData | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
   const [now, setNow] = React.useState(new Date());
+  const [addOpen, setAddOpen] = React.useState(false);
+  const [dialog, setDialog] = React.useState<'todo' | 'reminder' | null>(null);
 
   const load = React.useCallback(async () => {
     clearApiCache('/dashboard');
@@ -149,8 +145,8 @@ export function DashboardContent() {
       sub: { en: `${data.activeEmployees} active`, ar: `${data.activeEmployees} نشط` },
       icon: Users,
       chip: 'bg-primary/10 text-primary',
-      tone: 'from-blue-500 to-indigo-600',
-      toneText: 'text-blue-600',
+      tone: 'from-primary to-secondary',
+      toneText: 'text-primary',
       pct: data.totalEmployees ? Math.round((data.activeEmployees / data.totalEmployees) * 100) : 0,
       chipValue: data.totalEmployees ? `${Math.round((data.activeEmployees / data.totalEmployees) * 100)}%` : undefined,
     },
@@ -160,8 +156,8 @@ export function DashboardContent() {
       sub: { en: `${data.attendanceToday.late} late`, ar: `${data.attendanceToday.late} متأخر` },
       icon: UserCheck,
       chip: 'bg-success/10 text-success',
-      tone: 'from-emerald-500 to-green-600',
-      toneText: 'text-emerald-600',
+      tone: 'from-success to-success/70',
+      toneText: 'text-success',
       pct: attendancePct,
       chipValue: `${attendancePct}%`,
     },
@@ -171,8 +167,8 @@ export function DashboardContent() {
       sub: { en: 'awaiting approval', ar: 'بانتظار الموافقة' },
       icon: CalendarClock,
       chip: 'bg-warning/10 text-warning',
-      tone: 'from-amber-500 to-orange-600',
-      toneText: 'text-amber-600',
+      tone: 'from-warning to-warning/70',
+      toneText: 'text-warning',
       footer: [{ en: 'Approve now', ar: 'اعتماد الآن', tone: 'warning' }],
     },
     {
@@ -181,15 +177,15 @@ export function DashboardContent() {
       sub: { en: `avg ${formatCurrency(data.avgSalary)}`, ar: `متوسط ${formatCurrency(data.avgSalary)}` },
       icon: DollarSign,
       chip: 'bg-secondary/10 text-secondary',
-      tone: 'from-violet-500 to-purple-600',
-      toneText: 'text-violet-600',
+      tone: 'from-info to-info/70',
+      toneText: 'text-info',
     },
     {
       label: { en: 'Pending Expenses', ar: 'المصروفات المعلقة' },
       value: formatCurrency(data.pendingExpenseTotal),
       sub: { en: `${data.pendingExpenses} request(s)`, ar: `${data.pendingExpenses} طلب` },
       icon: Receipt,
-      chip: 'bg-accent/10 text-accent-600',
+      chip: 'bg-accent/10 text-accent',
     },
     {
       label: { en: 'Document Alerts', ar: 'تنبيهات المستندات' },
@@ -214,7 +210,7 @@ export function DashboardContent() {
       value: `${weekAvgPct}%`,
       sub: { en: 'last 7 days avg', ar: 'متوسط آخر 7 أيام' },
       icon: TrendingUp,
-      chip: 'bg-emerald-100 text-emerald-600',
+      chip: 'bg-success/10 text-success',
       pct: weekAvgPct,
       chipValue: `${weekAvgPct}%`,
     },
@@ -265,13 +261,6 @@ export function DashboardContent() {
   const trendLate = data.attendanceTrend.map((d) => d.late);
   const trendAbsent = data.attendanceTrend.map((d) => d.absent);
 
-  const quickActions = [
-    { label: t('New Employee', 'موظف جديد', language), icon: UserPlus, href: '/employees/new', chip: 'bg-primary/10 text-primary' },
-    { label: t('Apply Leave', 'طلب إجازة', language), icon: CalendarPlus, href: '/leaves/new', chip: 'bg-warning/10 text-warning' },
-    { label: t('Open Chat', 'فتح الدردشة', language), icon: MessageSquare, href: '/communication', chip: 'bg-info/10 text-info' },
-    { label: t('Record Expense', 'تسجيل مصروف', language), icon: Receipt, href: '/expenses', chip: 'bg-accent/10 text-accent-600' },
-  ];
-
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -301,30 +290,82 @@ export function DashboardContent() {
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             {t('Refresh', 'تحديث', language)}
           </button>
+          <button
+            onClick={() => setAddOpen(true)}
+            className="h-9 w-9 p-0 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-primary hover:border-primary/30 transition-colors"
+            title={t('Add New', 'إضافة جديد', language)}
+            aria-label={t('Add New', 'إضافة جديد', language)}
+          >
+            <Plus className="h-4 w-4" />
+          </button>
           <ModuleSettingsMenu module={t('Dashboard', 'لوحة القيادة', language)} />
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {quickActions.map((a) => {
-          const Icon = a.icon;
-          return (
-            <Link
-              key={a.href}
-              href={a.href}
-              className="group flex items-center gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-card transition-all hover:border-primary/30 hover:shadow-md"
-            >
-              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${a.chip} transition-transform group-hover:scale-105`}>
-                <Icon className="h-4.5 w-4.5" />
+      {addOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setAddOpen(false)}>
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                  <Plus className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">{t('Add New', 'إضافة جديد', language)}</h3>
+                  <p className="text-xs text-gray-500">{t('What would you like to add?', 'ماذا تريد أن تضيف؟', language)}</p>
+                </div>
               </div>
-              <span className="flex-1 text-sm font-medium text-gray-700 group-hover:text-primary">
-                {a.label}
-              </span>
-              <ArrowUpRight className="h-4 w-4 shrink-0 text-gray-300 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
-            </Link>
-          );
-        })}
-      </div>
+              <button onClick={() => setAddOpen(false)} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100" title={t('Close', 'إغلاق', language)} aria-label={t('Close', 'إغلاق', language)}>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3 p-5">
+              {[
+                { label: t('New Employee', 'موظف جديد', language), desc: t('Add an employee record', 'إضافة سجل موظف', language), icon: UserPlus, chip: 'bg-primary/10 text-primary', href: '/employees/new' },
+                { label: t('Reminder', 'تذكير', language), desc: t('Set a reminder', 'تعيين تذكير', language), icon: AlarmClock, chip: 'bg-warning/10 text-warning', dialog: 'reminder' as const },
+                { label: t('Record Expense', 'تسجيل مصروف', language), desc: t('Add an expense entry', 'إضافة مصروف', language), icon: Receipt, chip: 'bg-accent/10 text-accent', href: '/expenses' },
+                { label: t('New Todo', 'مهمة جديدة', language), desc: t('Create a to-do item', 'إنشاء مهمة', language), icon: ListTodo, chip: 'bg-info/10 text-info', dialog: 'todo' as const },
+              ].map((a) => {
+                const Icon = a.icon;
+                const inner = (
+                  <>
+                    <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${a.chip} transition-transform group-hover:scale-105`}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 group-hover:text-primary">{a.label}</p>
+                      <p className="mt-0.5 text-xs text-gray-400">{a.desc}</p>
+                    </div>
+                  </>
+                );
+                const cls = 'group flex flex-col gap-2.5 rounded-xl border border-gray-100 bg-white p-4 shadow-card transition-all hover:border-primary/30 hover:shadow-md';
+                if ('dialog' in a && a.dialog) {
+                  return (
+                    <button
+                      key={a.label}
+                      onClick={() => {
+                        setAddOpen(false);
+                        setDialog(a.dialog);
+                      }}
+                      className={cls}
+                    >
+                      {inner}
+                    </button>
+                  );
+                }
+                return (
+                  <Link key={a.label} href={a.href!} onClick={() => setAddOpen(false)} className={cls}>
+                    {inner}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {dialog === 'todo' && <AddTodoDialog onClose={() => setDialog(null)} />}
+      {dialog === 'reminder' && <AddReminderDialog onClose={() => setDialog(null)} />}
 
       {(() => {
         const alerts: { icon: LucideIcon; count: number; title: string; tone: string; iconBg: string; href: string }[] = [];
@@ -391,10 +432,10 @@ export function DashboardContent() {
               chip={k.chipValue}
               chipClassName={k.chip}
               iconClassName={k.chip}
-              tone={k.tone || 'from-blue-500 to-indigo-600'}
-              toneText={k.toneText || 'text-blue-600'}
+              tone={k.tone || 'from-primary to-secondary'}
+              toneText={k.toneText || 'text-primary'}
               pct={k.pct}
-              barClassName="bg-gradient-to-r from-blue-500 to-emerald-500"
+              barClassName={`bg-gradient-to-r ${k.tone || 'from-primary to-secondary'}`}
               size="md"
               compact
               className="h-full"
@@ -424,6 +465,53 @@ export function DashboardContent() {
         </div>
 
         <div className="space-y-4">
+          <Card>
+            <CardHeader className="flex items-center justify-between px-4 py-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/10">
+                  <ListTodo className="h-4 w-4 text-warning" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold">{t('Top Todo', 'أهم المهام', language)}</h2>
+                  <p className="text-[11px] text-gray-400">{t('Open tasks by priority', 'مهام مفتوحة حسب الأولوية', language)}</p>
+                </div>
+              </div>
+              <Link href="/todos" className="text-sm font-medium text-primary hover:underline">
+                {t('View all', 'عرض الكل', language)}
+              </Link>
+            </CardHeader>
+            <CardBody className="max-h-72 overflow-y-auto px-4 py-3 pr-2">
+              {data.todoItems.length === 0 ? (
+                <p className="py-6 text-center text-sm text-gray-400">{t('No open tasks 🎉', 'لا توجد مهام مفتوحة 🎉', language)}</p>
+              ) : (
+                <div className="space-y-2.5">
+                  {data.todoItems.map((tItem) => (
+                    <div key={tItem.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-gray-50">
+                      <span
+                        className={`h-2 w-2 shrink-0 rounded-full ${
+                          tItem.priority === 'high' ? 'bg-error' : tItem.priority === 'medium' ? 'bg-warning' : 'bg-success'
+                        }`}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-medium text-gray-800">{tItem.title}</p>
+                        <p className="text-[10px] text-gray-400">
+                          {tItem.dueDate ? t('Due', 'استحقاق', language) + ' ' + formatDate(tItem.dueDate, language) : t('No due date', 'بدون تاريخ', language)}
+                        </p>
+                      </div>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                          tItem.priority === 'high' ? 'bg-error/10 text-error' : tItem.priority === 'medium' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'
+                        }`}
+                      >
+                        {tItem.priority}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+
           <Card>
             <CardHeader className="flex items-center justify-between px-4 py-2.5">
               <div className="flex items-center gap-2.5">
@@ -488,53 +576,6 @@ export function DashboardContent() {
           <Card>
             <CardHeader className="flex items-center justify-between px-4 py-2.5">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/10">
-                  <ListTodo className="h-4 w-4 text-warning" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold">{t('To-Do', 'المهام', language)}</h2>
-                  <p className="text-[11px] text-gray-400">{t('Open tasks by priority', 'مهام مفتوحة حسب الأولوية', language)}</p>
-                </div>
-              </div>
-              <Link href="/todos" className="text-sm font-medium text-primary hover:underline">
-                {t('View all', 'عرض الكل', language)}
-              </Link>
-            </CardHeader>
-            <CardBody className="max-h-32 overflow-y-auto px-4 py-3 pr-2">
-              {data.todoItems.length === 0 ? (
-                <p className="py-6 text-center text-sm text-gray-400">{t('No open tasks 🎉', 'لا توجد مهام مفتوحة 🎉', language)}</p>
-              ) : (
-                <div className="space-y-2.5">
-                  {data.todoItems.map((tItem) => (
-                    <div key={tItem.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-gray-50">
-                      <span
-                        className={`h-2 w-2 shrink-0 rounded-full ${
-                          tItem.priority === 'high' ? 'bg-error' : tItem.priority === 'medium' ? 'bg-warning' : 'bg-success'
-                        }`}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-medium text-gray-800">{tItem.title}</p>
-                        <p className="text-[10px] text-gray-400">
-                          {tItem.dueDate ? t('Due', 'استحقاق', language) + ' ' + formatDate(tItem.dueDate, language) : t('No due date', 'بدون تاريخ', language)}
-                        </p>
-                      </div>
-                      <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
-                          tItem.priority === 'high' ? 'bg-error/10 text-error' : tItem.priority === 'medium' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'
-                        }`}
-                      >
-                        {tItem.priority}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex items-center justify-between px-4 py-2.5">
-              <div className="flex items-center gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                   <AlarmClock className="h-4 w-4 text-primary" />
                 </div>
@@ -582,8 +623,8 @@ export function DashboardContent() {
         <Card className="lg:col-span-2">
           <CardHeader className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10">
-                <Activity className="h-4 w-4 text-emerald-600" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/10">
+                <Activity className="h-4 w-4 text-success" />
               </div>
               <div>
                 <h2 className="text-base font-semibold">{t('Workforce Status', 'حالة القوى العاملة', language)}</h2>
@@ -1165,7 +1206,7 @@ export function DashboardContent() {
             ) : (
               <div className="space-y-2">
                 {data.runway.slice(0, 10).map((r) => {
-                  const days = daysUntil(r.expiryDate) ?? r.daysLeft;
+                  const days = daysUntil(r.expiryDate) ?? r.daysLeft ?? 0;
                   const critical = r.daysLeft <= 90;
                   return (
                     <div key={r.employeeId + r.type} className="flex items-center gap-3 rounded-xl border border-gray-100 px-3.5 py-2.5">

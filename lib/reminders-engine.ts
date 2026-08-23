@@ -1,6 +1,6 @@
-import { employees, documents } from '@/lib/mock-data';
+import { employees, documents, manualReminders } from '@/lib/mock-data';
 
-export type ReminderKind = 'contract' | 'work_permit' | 'probation' | 'document';
+export type ReminderKind = 'contract' | 'work_permit' | 'probation' | 'document' | 'manual';
 
 export interface ReminderItem {
   id: string;
@@ -110,12 +110,27 @@ export function getReminders(): { items: ReminderItem[]; dormant: ReminderItem[]
     (status === 'ok' ? dormant : items).push(item);
   }
 
+  for (const mr of manualReminders) {
+    const days = daysUntil(mr.dueDate);
+    const item: ReminderItem = {
+      id: `manual-${mr.id}`,
+      kind: 'manual',
+      kindLabel: { en: 'Manual', ar: 'يدوي' },
+      owner: 'Manual',
+      name: mr.name,
+      nameAr: mr.nameAr,
+      dueDate: mr.dueDate,
+      daysLeft: days,
+      status: statusOf(days),
+    };
+    (item.status === 'ok' ? dormant : items).push(item);
+  }
+
   const sortKey = (a: ReminderItem, b: ReminderItem) => a.daysLeft - b.daysLeft;
   items.sort(sortKey);
   dormant.sort(sortKey);
   return { items, dormant };
 }
-
 export function getReminderSummary() {
   const { items } = getReminders();
   return {

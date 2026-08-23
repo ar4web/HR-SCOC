@@ -22,7 +22,7 @@ interface GeoInfo {
 
 const demoAccounts = [
   { label: 'Admin', email: 'admin@scos.sa', tone: 'bg-primary/10 text-primary border-primary/20' },
-  { label: 'Employee', email: 'employee@scos.sa', tone: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  { label: 'Employee', email: 'employee@scos.sa', tone: 'bg-success/10 text-success border-success/20' },
 ];
 
 export default function LoginPage() {
@@ -75,7 +75,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden" dir={dir}>
       {/* Decorative gradient blob */}
       <div className="pointer-events-none absolute -top-40 -right-40 h-[26rem] w-[26rem] rounded-full bg-primary/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-40 -left-40 h-[26rem] w-[26rem] rounded-full bg-blue-400/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -left-40 h-[26rem] w-[26rem] rounded-full bg-accent/10 blur-3xl" />
 
       <div className="w-full max-w-4xl grid lg:grid-cols-2 gap-8 items-center">
         {/* Branding panel */}
@@ -136,10 +136,10 @@ export default function LoginPage() {
                 <span className="font-medium text-gray-800">{geo?.localTime || '…'}</span>
               </div>
               <div className="flex items-center justify-between pt-1 border-t border-gray-100">
-                <span className="flex items-center gap-1.5 text-emerald-600">
+                <span className="flex items-center gap-1.5 text-success">
                   <ShieldCheck className="h-4 w-4" /> TLS
                 </span>
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-success bg-success/10 px-2 py-0.5 rounded-full">
                   <Wifi className="h-3 w-3" /> Encrypted
                 </span>
               </div>

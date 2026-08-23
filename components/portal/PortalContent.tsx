@@ -251,10 +251,10 @@ export function PortalContent() {
                       </tr>
                     </thead>
                     <tbody>
-                      {data.attendance.map((a) => {
+                      {data.attendance.map((a, i) => {
                         const meta = statusMeta[a.status] || { en: a.status, ar: a.status, cls: 'bg-gray-100 text-gray-600' };
                         return (
-                          <tr key={a.date} className="border-b border-gray-50 last:border-0">
+                          <tr key={`${a.date}-${i}`} className="border-b border-gray-50 last:border-0">
                             <td className="px-5 py-3 text-sm text-gray-700">{a.date}</td>
                             <td className="px-5 py-3 text-sm text-gray-700">{a.clockIn}</td>
                             <td className="px-5 py-3 text-sm text-gray-700">{a.clockOut || '—'}</td>

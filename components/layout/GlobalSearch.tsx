@@ -76,11 +76,10 @@ export function GlobalSearch() {
     };
   }, [open]);
 
-  const empById = React.useMemo(() => {
-    const map = new Map<string, Employee>();
-    for (const e of employeesRef.current) map.set(e.id, e);
-    return map;
-  }, []);
+  const empById = React.useCallback(
+    (id: string): Employee | undefined => employeesRef.current.find((e) => e.id === id),
+    []
+  );
 
   const results = React.useMemo<ResultItem[]>(() => {
     const q = query.trim().toLowerCase();
@@ -102,7 +101,7 @@ export function GlobalSearch() {
     }
 
     for (const l of leavesRef.current) {
-      const emp = empById.get(l.employeeId);
+      const emp = empById(l.employeeId);
       const hay = [emp?.fullName || '', emp?.fullNameAr || '', emp?.employeeId || '', l.type, l.status, l.reason].join(' ').toLowerCase();
       if (hay.includes(q)) {
         out.push({

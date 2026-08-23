@@ -8,8 +8,8 @@ import { useUIStore } from '@/stores/ui-store';
 import { NotificationsDropdown } from '@/components/layout/NotificationsDropdown';
 import { GlobalSearch } from '@/components/layout/GlobalSearch';
 import { t } from '@/lib/utils';
-import { Globe, LogOut, Menu, User, Settings, ChevronDown, UserRound, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-import { getRoleLabel, hasPermission } from '@/lib/rbac';
+import { Globe, LogOut, Menu, User, Settings, UserRound, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { hasPermission } from '@/lib/rbac';
 
 export function Header() {
   const router = useRouter();
@@ -72,7 +72,7 @@ export function Header() {
         <div className="relative" ref={profileRef}>
           <button
             onClick={() => setProfileOpen((o) => !o)}
-            className={`flex items-center gap-2 rounded-full p-1.5 transition-colors ${
+            className={`flex items-center rounded-full p-1.5 transition-colors ${
               profileOpen ? 'bg-gray-100' : 'hover:bg-gray-100'
             }`}
             aria-haspopup="menu"
@@ -82,11 +82,6 @@ export function Header() {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
               {user?.name?.charAt(0) || 'A'}
             </div>
-            <div className="hidden text-left sm:block">
-              <p className="text-sm font-medium leading-tight text-gray-900">{user?.name}</p>
-              <p className="text-[11px] leading-tight text-gray-400">{getRoleLabel(user?.role, language)}</p>
-            </div>
-            <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {profileOpen && (

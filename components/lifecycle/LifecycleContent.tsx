@@ -273,7 +273,7 @@ export function LifecycleContent() {
               <Card key={lc.id} className="overflow-hidden">
                 <div className={`h-1.5 ${type.chip}`} />
                 <CardHeader className="flex items-start gap-3 flex-wrap">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white" style={{ background: lc.type === 'onboarding' ? '#009B77' : '#C0392B' }}>
+                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white ${lc.type === 'onboarding' ? 'bg-primary' : 'bg-error'}`}>
                     {lc.type === 'onboarding' ? <Rocket className="h-5 w-5" /> : <Handshake className="h-5 w-5" />}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -317,7 +317,7 @@ export function LifecycleContent() {
                         <button
                           type="button"
                           onClick={() => handleToggleTask(lc, task.id, task.status !== 'done')}
-                          className={`h-4.5 w-4.5 shrink-0 h-[18px] w-[18px] rounded border flex items-center justify-center transition-colors ${
+                          className={`h-[18px] w-[18px] shrink-0 rounded border flex items-center justify-center transition-colors ${
                             task.status === 'done'
                               ? 'bg-success border-success text-white'
                               : 'border-gray-300 text-transparent hover:border-primary'

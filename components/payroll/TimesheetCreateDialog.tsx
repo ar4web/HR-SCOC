@@ -229,7 +229,7 @@ export function TimesheetCreateDialog({ open, period, onPeriodChange, onUpload, 
                         <input type="number" min="0" step="0.5" value={r.otHours} onChange={(e) => setRow(r.uid, { otHours: e.target.value })} className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-sm" />
                       </td>
                       <td className="px-3 py-1.5 text-right">
-                        <button onClick={() => removeRow(r.uid)} className="p-1 text-gray-400 hover:text-red-500" title={t('Remove', 'حذف', language)} aria-label={t('Remove', 'حذف', language)}>
+                        <button onClick={() => removeRow(r.uid)} className="p-1 text-gray-400 hover:text-error" title={t('Remove', 'حذف', language)} aria-label={t('Remove', 'حذف', language)}>
                           <Trash2Icon className="h-4 w-4" />
                         </button>
                       </td>

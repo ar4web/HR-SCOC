@@ -73,10 +73,11 @@ module.exports = {
       },
       borderRadius: {
         sm: '0.25rem',
-        DEFAULT: '0.5rem',
-        md: '0.75rem',
-        lg: '1rem',
-        xl: '1.25rem',
+        DEFAULT: '0.375rem',
+        md: '0.5rem',
+        lg: '0.625rem',
+        xl: '0.75rem',
+        '2xl': '0.875rem',
       },
       boxShadow: {
         card: '0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04)',

@@ -127,7 +127,12 @@ export function DataTable<T>({
           ))}
         </div>
       )}
-      <div className="overflow-x-auto rounded-lg border border-gray-100">
+      <div
+        className="overflow-x-auto scrollbar-thin rounded-lg border border-gray-100"
+        role="region"
+        aria-label={t('Data table', 'جدول البيانات', locale)}
+        tabIndex={0}
+      >
         <table className="w-full border-separate border-spacing-0">
           <thead>
             <tr className="bg-gray-50/50 border-b border-gray-100">

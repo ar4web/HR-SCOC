@@ -488,6 +488,13 @@ export interface Todo {
   updatedAt: string;
 }
 
+export interface ManualReminder {
+  id: string;
+  name: string;
+  nameAr?: string;
+  dueDate: string;
+}
+
 // Document module
 export type DocumentCategory =
   | 'contract'

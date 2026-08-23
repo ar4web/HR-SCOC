@@ -32,18 +32,17 @@ const ICON_MAP: Record<string, LucideIcon> = {
 };
 
 const GRADIENTS: Record<string, string> = {
-  'employee-management': 'from-blue-500 to-indigo-600',
-  'leave-management': 'from-emerald-500 to-teal-600',
-  payroll: 'from-amber-500 to-orange-600',
-  attendance: 'from-violet-500 to-purple-600',
-  communication: 'from-pink-500 to-rose-600',
-  'todo-management': 'from-sky-500 to-cyan-600',
-  'document-management': 'from-lime-500 to-green-600',
-  email: 'from-red-500 to-rose-600',
-  'expense-management': 'from-orange-500 to-amber-600',
-  reports: 'from-indigo-500 to-blue-600',
-  administration: 'from-slate-500 to-gray-700',
-  contracts: 'from-teal-500 to-cyan-700',
+  'employee-management': 'from-primary to-secondary',
+  'leave-management': 'from-success to-success/70',
+  payroll: 'from-warning to-warning/70',
+  attendance: 'from-info to-info/70',
+  communication: 'from-accent to-accent/70',
+  'todo-management': 'from-primary to-info',
+  'document-management': 'from-success to-primary',
+  email: 'from-error to-error/70',
+  'expense-management': 'from-warning to-accent',
+  reports: 'from-info to-primary',
+  administration: 'from-secondary to-secondary/70',
 };
 
 export default function ModulesPage() {
@@ -152,7 +151,7 @@ export default function ModulesPage() {
         {modules.map((mod) => {
           const enabled = localStates[mod.id] ?? false;
           const Icon = ICON_MAP[mod.icon] || Puzzle;
-          const gradient = GRADIENTS[mod.id] || 'from-gray-500 to-gray-700';
+          const gradient = GRADIENTS[mod.id] || 'from-secondary to-secondary/70';
           const missingDeps = mod.dependencies.filter((depId) => !localStates[depId]);
 
           return (

@@ -17,28 +17,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Chart } from '@/engines/chart-engine';
-
-const COLORS = ['#3B82F6', '#10B981', '#EC4899', '#8B5CF6', '#F97316', '#EF4444', '#06B6D4'];
-
-const STATUS_HEX: Record<string, string> = {
-  active: '#10B981',
-  inactive: '#94A3B8',
-  terminated: '#EF4444',
-  suspended: '#F59E0B',
-  present: '#10B981',
-  late: '#F59E0B',
-  absent: '#EF4444',
-  approved: '#10B981',
-  pending: '#F59E0B',
-  rejected: '#EF4444',
-  cancelled: '#94A3B8',
-};
-
-const LEAF_HEX: Record<string, string> = {
-  approved: '#10B981',
-  pending: '#F59E0B',
-  rejected: '#EF4444',
-};
+import { useChartTheme, statusHexMap, leafHexMap } from '@/lib/chart-theme';
 
 interface FilteredStats {
   total: number;
@@ -66,6 +45,10 @@ interface StatCard {
 
 export function ReportsContent() {
   const { language, dir } = useLanguageStore();
+  const theme = useChartTheme();
+  const COLORS = theme.palette;
+  const STATUS_HEX = statusHexMap(theme);
+  const LEAF_HEX = leafHexMap(theme);
   const [stats, setStats] = React.useState<DashboardStats | null>(null);
   const [employees, setEmployees] = React.useState<Employee[]>([]);
   const [department, setDepartment] = React.useState('all');
@@ -589,7 +572,7 @@ export function ReportsContent() {
                 ]}
                 categories={stats.attendanceTrend.map((d) => d.date.slice(8, 10) + '-' + d.date.slice(5, 7))}
                 height={280}
-                colors={['#10B981', '#F59E0B', '#EF4444']}
+                colors={[STATUS_HEX.present, STATUS_HEX.late, STATUS_HEX.absent]}
                 dir={dir}
                 locale={language}
               />
@@ -613,10 +596,10 @@ export function ReportsContent() {
             <CardBody className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { key: 'present', label: { en: 'Present', ar: 'حاضر' }, hex: '#10B981' },
-                  { key: 'late', label: { en: 'Late', ar: 'متأخر' }, hex: '#F59E0B' },
-                  { key: 'absent', label: { en: 'Absent', ar: 'غائب' }, hex: '#EF4444' },
-                  { key: 'half_day', label: { en: 'Half Day', ar: 'نصف يوم' }, hex: '#8B5CF6' },
+                  { key: 'present', label: { en: 'Present', ar: 'حاضر' }, hex: STATUS_HEX.present },
+                  { key: 'late', label: { en: 'Late', ar: 'متأخر' }, hex: STATUS_HEX.late },
+                  { key: 'absent', label: { en: 'Absent', ar: 'غائب' }, hex: STATUS_HEX.absent },
+                  { key: 'half_day', label: { en: 'Half Day', ar: 'نصف يوم' }, hex: STATUS_HEX.half_day },
                 ].map((s) => (
                   <div key={s.key} className="rounded-xl border border-gray-100 p-3">
                     <p className="text-xs text-gray-500">{t(s.label.en, s.label.ar, language)}</p>

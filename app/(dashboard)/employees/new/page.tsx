@@ -195,7 +195,7 @@ export default function NewEmployeePage() {
       sponsorName: values.sponsorName || '',
       sponsorId: values.sponsorId || '',
       annualVacationDays: parseInt(values.annualVacationDays) || 30,
-      vacationBalance: parseInt(values.vacationBalance) || 30,
+      vacationBalance: (() => { const n = parseInt(values.vacationBalance, 10); return Number.isFinite(n) ? n : 30; })(),
       endOfServiceAllowance: parseFloat(values.endOfServiceAllowance) || 0,
       probationEndDate: values.probationEndDate || '',
       workPermitExpiry: values.workPermitExpiry || '',

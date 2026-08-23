@@ -16,7 +16,7 @@ import {
 
 interface ReminderItem {
   id: string;
-  kind: 'contract' | 'work_permit' | 'probation' | 'document';
+  kind: 'contract' | 'work_permit' | 'probation' | 'document' | 'manual';
   employeeName?: string;
   employeeNameAr?: string;
   employeeDisplayId?: string;
@@ -31,6 +31,7 @@ const KIND_META: Record<ReminderItem['kind'], React.ElementType> = {
   work_permit: ScrollText,
   probation: BadgeCheck,
   document: FileText,
+  manual: AlarmClock,
 };
 
 export function RemindersContent() {

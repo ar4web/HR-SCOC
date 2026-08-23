@@ -97,11 +97,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
       {children}
       <div
-        className="fixed inset-0 z-[100] flex items-start justify-center pt-[28vh] pointer-events-none"
+        className="fixed end-4 top-4 z-[100] flex w-[min(24rem,calc(100vw-2rem))] flex-col items-end pointer-events-none"
         role="status"
         aria-live="polite"
       >
-        <div className="flex w-full max-w-sm flex-col gap-2 px-4 pointer-events-auto">
+        <div className="flex w-full flex-col gap-2 pointer-events-auto">
           {toasts.map((toast) => {
             const Icon = icons[toast.type];
             return (
@@ -114,7 +114,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 role="alert"
               >
                 <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', ringColors[toast.type])}>
-                  <Icon className={cn('h-4.5 w-4.5', iconColors[toast.type])} />
+                  <Icon className={cn('h-4 w-4', iconColors[toast.type])} />
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900">{toast.title}</p>

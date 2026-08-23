@@ -545,7 +545,7 @@ export function CommunicationContent() {
                   <Smile className="h-3.5 w-3.5" />
                 </button>
                 {reactMenuId === m.id && (
-                  <div className={`absolute bottom-full mb-1 z-20 flex gap-1 bg-white border border-gray-100 rounded-full shadow-lg px-2 py-1 ${mine ? 'right-0' : 'left-0'}`}>
+                  <div className={`absolute bottom-full mb-1 z-20 flex gap-1 bg-white border border-gray-100 rounded-full shadow-lg px-2 py-1 ${mine ? 'right-0 rtl:left-0' : 'left-0 rtl:right-0'}`}>
                     {['👍', '❤️', '😂', '🎉', '🔥', '👏'].map((e) => (
                       <button key={e} onClick={() => handleReact(m, e)} className="text-base hover:scale-125 transition-transform">
                         {e}

@@ -6,20 +6,27 @@
 
 @layer base {
   :root {
-    --color-primary: 0 155 119;
-    --color-primary-light: 0 184 141;
-    --color-primary-dark: 0 122 94;
-    --color-secondary: 0 32 91;
-    --color-secondary-dark: 0 24 71;
-    --color-accent: 255 199 44;
-    --color-background: 244 242 235;
-    --color-surface: 240 239 232;
-    --color-warning: 253 126 20;
-    --color-warning-dark: 204 99 12;
-    --color-success: 25 135 84;
-    --color-error: 220 53 69;
-    --color-error-dark: 176 42 55;
-    --color-info: 13 202 240;
+    --color-primary: 27 58 95;
+    --color-primary-light: 62 90 119;
+    --color-primary-dark: 22 46 76;
+    --color-secondary: 12 28 48;
+    --color-secondary-dark: 10 22 38;
+    --color-accent: 196 163 90;
+    --color-background: 238 241 245;
+    --color-surface: 244 246 250;
+    --color-warning: 176 122 22;
+    --color-warning-dark: 176 122 22;
+    --color-success: 31 122 77;
+    --color-error: 178 58 50;
+    --color-error-dark: 178 58 50;
+    --color-info: 43 95 138;
+    --card: #ffffff;
+    --card-2: #f4f6fa;
+    --ink: #152033;
+    --muted: #5b6780;
+    --faint: #8b95a8;
+    --line: #e2e6ee;
+    --line-2: #c9d0dc;
     --radius-sm: 0.25rem;
     --radius: 0.5rem;
     --radius-md: 0.75rem;
@@ -36,7 +43,7 @@
   *,
   *::before,
   *::after {
-    border-color: #e3ded2;
+    border-color: var(--line, #e3ded2);
   }
 
   body {
@@ -59,7 +66,7 @@
   }
 
   .card {
-    @apply bg-white border border-gray-100 shadow-card;
+    @apply rounded-lg bg-white border border-gray-100 shadow-card;
   }
 
   .card-header {
@@ -91,46 +98,106 @@
   }
 
   .bg-white {
-    background-color: #fdfcf8;
+    background-color: var(--card, #fdfcf8);
   }
 
   .hover\:bg-white:hover {
-    background-color: #fdfcf8;
+    background-color: var(--card, #fdfcf8);
   }
 
   .bg-gray-50 {
-    background-color: #f6f4ec;
+    background-color: var(--card-2, #f6f4ec);
   }
 
   .bg-gray-100 {
-    background-color: #f1ede2;
+    background-color: var(--card-2, #f1ede2);
   }
 
   .hover\:bg-gray-50:hover {
-    background-color: #f1efe7;
+    background-color: var(--card-2, #f1efe7);
   }
 
   .hover\:bg-gray-100:hover {
-    background-color: #eae6db;
+    background-color: var(--card-2, #eae6db);
+  }
+
+  .bg-gray-200 {
+    background-color: var(--line, #e9e4d6);
+  }
+
+  .bg-gray-300 {
+    background-color: var(--line-2, #dcd4c2);
+  }
+
+  .bg-gray-400 {
+    background-color: var(--faint, #c0b9a6);
   }
 
   .border-gray-100 {
-    border-color: #ece8dc;
+    border-color: var(--line, #ece8dc);
+  }
+
+  .border-gray-200 {
+    border-color: var(--line, #e5ded0);
+  }
+
+  .border-gray-300 {
+    border-color: var(--line-2, #d0c9ba);
   }
 
   .divide-gray-50 > :not([hidden]) ~ :not([hidden]) {
-    border-color: #f4f2e9;
+    border-color: var(--line, #f4f2e9);
   }
 
   .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
-    border-color: #ece8dc;
+    border-color: var(--line, #ece8dc);
+  }
+
+  .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: var(--line, #e5ded0);
   }
 
   .text-gray-900 {
-    color: #33383e;
+    color: var(--ink, #33383e);
+  }
+
+  .text-gray-800 {
+    color: var(--ink, #3a3d38);
   }
 
   .text-gray-700 {
-    color: #4b5157;
+    color: var(--muted, #4b5157);
+  }
+
+  .text-gray-600 {
+    color: var(--muted, #6f695b);
+  }
+
+  .text-gray-500 {
+    color: var(--muted, #7c7668);
+  }
+
+  .text-gray-400 {
+    color: var(--faint, #8f8875);
+  }
+
+  .text-gray-300 {
+    color: var(--faint, #a8a294);
+  }
+
+  .border-gray-50 {
+    border-color: var(--line, #ece8dc);
+  }
+
+  .bg-gray-50\/50 {
+    background-color: color-mix(in srgb, var(--card-2, #f6f4ec) 50%, transparent);
+  }
+
+  .bg-gray-50\/60 {
+    background-color: color-mix(in srgb, var(--card-2, #f6f4ec) 60%, transparent);
+  }
+
+  .bg-gray-100\/60 {
+    background-color: color-mix(in srgb, var(--card-2, #f1ede2) 60%, transparent);
   }
 }

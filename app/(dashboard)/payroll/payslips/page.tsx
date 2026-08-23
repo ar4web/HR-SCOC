@@ -68,7 +68,7 @@ export default function PayslipsPage() {
         <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-primary/10 text-xs font-medium text-primary">
           {periods.length} {t('periods', 'فترات', language)}
         </span>
-        <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-emerald-100 text-xs font-medium text-emerald-700">
+        <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-success/10 text-xs font-medium text-success">
           {records.length} {t('payslips', 'قسيمة', language)}
         </span>
       </div>

@@ -64,7 +64,7 @@ export function DashboardTile({
       <div className="flex items-start gap-3">
         {Icon && (
           <div className={cn('flex shrink-0 items-center justify-center rounded-xl transition-colors group-hover:brightness-105', compact ? 'h-9 w-9' : 'h-11 w-11', tone ? cn('bg-gradient-to-br text-white shadow-sm', tone) : iconClassName)}>
-            <Icon className={compact ? 'h-4.5 w-4.5' : 'h-5 w-5'} />
+            <Icon className={compact ? 'h-4 w-4' : 'h-5 w-5'} />
           </div>
         )}
         <div className="min-w-0 flex-1">
@@ -93,7 +93,7 @@ export function DashboardTile({
               </p>
             )}
             {sub && (
-              <p className={cn('mt-1 leading-snug text-[#6B7280]', compact ? 'text-xs' : 'text-[13px]')}>{sub}</p>
+              <p className={cn('mt-1 leading-snug text-gray-500', compact ? 'text-xs' : 'text-[13px]')}>{sub}</p>
             )}
           </div>
           {pct !== undefined && (

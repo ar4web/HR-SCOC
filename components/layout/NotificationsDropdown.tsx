@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useLanguageStore } from '@/stores/language-store';
 import { useNotifications } from '@/engines/notification-engine';
 import { t, formatDate } from '@/lib/utils';
-import { Bell, CheckCheck, Info, CheckCircle, AlertTriangle, AlertCircle } from 'lucide-react';
+import { Bell, CheckCheck, Info, CheckCircle, AlertTriangle, AlertCircle, Settings } from 'lucide-react';
 import { NotificationType } from '@/types';
 
 const typeMeta: Record<NotificationType, { icon: React.ElementType; classes: string }> = {
@@ -64,19 +64,30 @@ export function NotificationsDropdown() {
 
       {open && (
         <div className="absolute right-0 rtl:right-auto rtl:left-0 top-12 z-50 w-80 sm:w-96 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-modal animate-fade-in">
-          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+          <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-3">
             <p className="text-sm font-semibold text-gray-900">
               {t('Notifications', 'الإشعارات', language)}
             </p>
-            {unreadCount > 0 && (
-              <button
-                onClick={markAllAsRead}
-                className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary-dark transition-colors"
+            <div className="flex items-center gap-1">
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-primary hover:text-primary-dark transition-colors"
+                >
+                  <CheckCheck className="h-3.5 w-3.5" />
+                  {t('Mark all read', 'تحديد الكل كمقروء', language)}
+                </button>
+              )}
+              <Link
+                href="/notifications"
+                onClick={() => setOpen(false)}
+                title={t('Open notifications', 'فتح الإشعارات', language)}
+                aria-label={t('Open notifications', 'فتح الإشعارات', language)}
+                className="inline-flex items-center justify-center rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
               >
-                <CheckCheck className="h-3.5 w-3.5" />
-                {t('Mark all read', 'تحديد الكل كمقروء', language)}
-              </button>
-            )}
+                <Settings className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
 
           <div className="max-h-96 overflow-y-auto scrollbar-thin">

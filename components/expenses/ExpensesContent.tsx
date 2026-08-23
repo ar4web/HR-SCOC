@@ -13,7 +13,7 @@ import { useToast } from '@/components/ui/Toast';
 import { expenseService, ExpenseSummary } from '@/modules/expense-management/service';
 import { ModuleSettingsMenu } from '@/components/module-settings/ModuleSettingsMenu';
 import { Expense, ExpenseStatus, PaymentMethod } from '@/types';
-import { t, formatDate, formatCurrency } from '@/lib/utils';
+import { t, formatDate, formatCurrency, getStatusLabel, getPaymentMethodLabel } from '@/lib/utils';
 import {
   ReceiptText,
   Plus,
@@ -422,7 +422,7 @@ export function ExpensesContent() {
           <h2 className="text-lg font-semibold">{t('Expense Records', 'سجلات المصروفات', language)}</h2>
           <div className="flex-1" />
           <div className="relative">
-            <Search className="h-4 w-4 absolute left-3 top-2.5 text-gray-400" />
+            <Search className="h-4 w-4 absolute left-3 rtl:left-auto rtl:right-3 top-2.5 text-gray-400" />
             <input
               value={search}
               onChange={(e) => {
@@ -430,7 +430,7 @@ export function ExpensesContent() {
                 load(statusFilter, e.target.value);
               }}
               placeholder={t('Search expenses...', 'ابحث عن مصروفات...', language)}
-              className="block w-56 rounded-lg border border-gray-300 pl-9 pr-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary"
+              className="block w-56 rounded-lg border border-gray-300 pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
           <select
@@ -498,7 +498,7 @@ export function ExpensesContent() {
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-xs text-gray-400">
                           <span className="whitespace-nowrap">{formatDate(exp.date, language)}</span>
                           {exp.vendor && <span className="truncate">{exp.vendor}</span>}
-                          <span>{t(exp.paymentMethod, exp.paymentMethod, language)}</span>
+                          <span>{getPaymentMethodLabel(exp.paymentMethod, language)}</span>
                           {exp.reimbursedAt && (
                             <span className="whitespace-nowrap">
                               {t('Reimbursed', 'مسترجع', language)}: {formatDate(exp.reimbursedAt, language)}
@@ -511,7 +511,7 @@ export function ExpensesContent() {
                       </td>
                       <td className="px-6 py-4 align-middle">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusStyles[exp.status]}`}>
-                          {t(exp.status, exp.status, language)}
+                          {getStatusLabel(exp.status, language)}
                         </span>
                       </td>
                       <td className="px-6 py-4 align-middle text-end whitespace-nowrap">

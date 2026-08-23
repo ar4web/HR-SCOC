@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getReminders, getReminderSummary } from '@/lib/reminders-engine';
 import { authFromRequest, hasPermission } from '@/lib/rbac';
-import { employees, users, addNotification, addOutboundEmail, persistData } from '@/lib/mock-data';
+import { employees, users, addNotification, addOutboundEmail, persistData, addManualReminder } from '@/lib/mock-data';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
@@ -33,7 +33,19 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const auth = authFromRequest(req);
   const body = await req.json();
-  const reminderId = String(body.reminderId || '');
+
+  if (body?.create) {
+    const name = String(body.name || '').trim();
+    const dueDate = String(body.dueDate || '');
+    if (!name || !dueDate) {
+      return NextResponse.json({ error: 'name and dueDate are required' }, { status: 400 });
+    }
+    const reminder = addManualReminder({ name, nameAr: body.nameAr ? String(body.nameAr) : undefined, dueDate });
+    persistData();
+    return NextResponse.json({ success: true, reminder });
+  }
+
+  const reminderId = String(body?.reminderId || '');
   if (!reminderId) return NextResponse.json({ error: 'reminderId is required' }, { status: 400 });
 
   const { items } = getReminders();

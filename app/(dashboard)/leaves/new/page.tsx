@@ -190,7 +190,7 @@ export default function NewLeavePage() {
               ? t('Paid', 'مدفوعة', language)
               : t('Unpaid', 'غير مدفوعة', language);
             return (
-              <div className="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-100 text-sm text-blue-800">
+              <div className="mb-4 p-3 rounded-lg bg-info/10 border border-info/20 text-sm text-info">
                 <span className="font-medium">
                   {t('Policy', 'السياسة', language)}:
                 </span>{' '}

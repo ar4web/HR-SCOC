@@ -4,39 +4,13 @@ import { usePathname } from 'next/navigation';
 import { useLanguageStore } from '@/stores/language-store';
 import { useUIStore } from '@/stores/ui-store';
 import { useAuthStore } from '@/stores/auth-store';
-import { hasPermission, Permission } from '@/lib/rbac';
-import { MODULE_ROUTE_MAP } from '@/lib/module-route-map';
 import { useModuleStore } from '@/stores/module-store';
+import { hasPermission } from '@/lib/rbac';
+import { visibleNavLinks } from '@/lib/navigation';
 import { cn, t } from '@/lib/utils';
 import {
-  LayoutDashboard, Users,
-  BarChart, Settings, Shield, X,
-  ListTodo, FolderOpen, Mail, Receipt, Bell, AlarmClock, Rocket, Share2, FileText,
+  Settings, X,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-
-interface NavLink {
-  label: { en: string; ar: string };
-  route: string;
-  icon: LucideIcon;
-  permission?: Permission;
-}
-
-const links: NavLink[] = [
-  { label: { en: 'Dashboard', ar: 'لوحة القيادة' }, route: '/', icon: LayoutDashboard },
-  { label: { en: 'Employees', ar: 'الموظفون' }, route: '/employees', icon: Users },
-  { label: { en: 'To-Do', ar: 'المهام' }, route: '/todos', icon: ListTodo },
-  { label: { en: 'Documents', ar: 'المستندات' }, route: '/documents', icon: FolderOpen },
-  { label: { en: 'Email', ar: 'البريد الإلكتروني' }, route: '/email', icon: Mail },
-  { label: { en: 'Expenses', ar: 'المصروفات' }, route: '/expenses', icon: Receipt },
-  { label: { en: 'Reports', ar: 'التقارير' }, route: '/reports', icon: BarChart, permission: 'reports:read' },
-  { label: { en: 'Notifications', ar: 'الإشعارات' }, route: '/notifications', icon: Bell },
-  { label: { en: 'Reminders', ar: 'التذكيرات' }, route: '/reminders', icon: AlarmClock },
-  { label: { en: 'Lifecycle', ar: 'دورة الحياة' }, route: '/lifecycle', icon: Rocket },
-  { label: { en: 'Contracts', ar: 'العقود' }, route: '/contracts', icon: FileText, permission: 'contracts:read' },
-  { label: { en: 'Org Chart', ar: 'الهيكل التنظيمي' }, route: '/organization', icon: Share2 },
-  { label: { en: 'Administration', ar: 'الإدارة' }, route: '/administration', icon: Shield, permission: 'user:manage' },
-];
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -44,12 +18,7 @@ export function Sidebar() {
   const { mobileSidebarOpen, setMobileSidebarOpen, sidebarCollapsed } = useUIStore();
   const { user } = useAuthStore();
   const { moduleStates } = useModuleStore();
-  const visibleLinks = links.filter((l) => {
-    if (l.permission && !hasPermission(user?.role, l.permission)) return false;
-    const moduleId = MODULE_ROUTE_MAP[l.route];
-    if (moduleId && moduleStates[moduleId] === false) return false;
-    return true;
-  });
+  const visibleLinks = visibleNavLinks(user?.role, moduleStates).filter((l) => l.route !== '/notifications');
 
   return (
     <>
@@ -63,7 +32,7 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          'flex h-screen flex-col border-gray-200 bg-white transition-all duration-200 lg:translate-x-0',
+          'flex h-dvh flex-col border-gray-200 bg-white transition-all duration-200 lg:translate-x-0',
           'fixed inset-y-0 z-50 lg:static lg:z-auto',
           language === 'ar' ? 'right-0 border-l' : 'left-0 border-r',
           'ease-scos',

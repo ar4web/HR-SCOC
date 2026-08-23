@@ -78,7 +78,7 @@ export function ColumnPicker({ columns, visibleKeys, onChange }: ColumnPickerPro
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-gray-200 bg-white shadow-lg">
+        <div className="absolute right-0 rtl:left-0 z-50 mt-2 w-72 rounded-xl border border-gray-200 bg-white shadow-lg">
           <div className="border-b border-gray-100 p-3">
             <input
               value={search}

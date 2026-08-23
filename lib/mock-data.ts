@@ -24,6 +24,7 @@ import {
   ExpenseCategory,
   MessageAttachment,
   Contract,
+  ManualReminder,
 } from '@/types';
 import { generateId, formatEmployeeId } from './utils';
 import { loadPersistedData, savePersisted, PersistedState } from './persistence';
@@ -54,6 +55,7 @@ function persist(): void {
     expenses: Array.from(expenses.values()),
     lifecycles: Array.from(lifecycles.values()),
     contracts: Array.from(contracts.values()),
+    manualReminders: [...manualReminders],
   };
   savePersisted(state);
 }
@@ -187,6 +189,15 @@ export let lifecycles: Map<string, EmployeeLifecycle> = new Map();
 
 export let contracts: Map<string, Contract> = new Map();
 export let contractCounter = 0;
+
+export let manualReminders: ManualReminder[] = [];
+
+export function addManualReminder(data: { name: string; nameAr?: string; dueDate: string }): ManualReminder {
+  const reminder: ManualReminder = { id: generateId(), name: data.name, nameAr: data.nameAr, dueDate: data.dueDate };
+  manualReminders.push(reminder);
+  persist();
+  return reminder;
+}
 
 export let departments: Department[] = [
   { id: 'dept-1', name: 'Engineering', nameAr: 'الهندسة', employeeCount: 0 },
@@ -1270,6 +1281,7 @@ export function resetDemoData(): void {
   lifecycles = new Map();
   contracts = new Map();
   contractCounter = 0;
+  manualReminders = [];
   seedDemoData();
   persistenceEnabled = true;
   persist();
@@ -1303,6 +1315,7 @@ export function ensureHydrated(): void {
     lifecycles = new Map(persisted.lifecycles?.map((l) => [l.id, l]) ?? []);
     contracts = new Map(persisted.contracts?.map((c) => [c.id, c]) ?? []);
     contractCounter = contracts.size;
+    manualReminders = persisted.manualReminders ?? [];
     if (persisted.emailSettings) emailSettings = { ...persisted.emailSettings };
   } else {
     seedDemoData();

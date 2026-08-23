@@ -2,6 +2,7 @@
 
 import React from 'react';
 import type ApexCharts from 'apexcharts';
+import { useChartTheme } from '@/lib/chart-theme';
 
 export type ChartType =
   | 'line'
@@ -37,7 +38,7 @@ interface ChartEngineProps {
 
 type ApexOptions = ApexCharts.ApexOptions;
 
-const DEFAULT_COLORS = ['#3B82F6', '#10B981', '#EC4899', '#8B5CF6', '#F97316', '#EF4444'];
+const FALLBACK_PALETTE = ['#1B3A5F', '#1F7A4D', '#C4A35A', '#2B5F8A', '#B07A16', '#B23A32', '#8B95A8'];
 
 const FONT_FAMILY: Record<string, string> = {
   en: 'Inter, system-ui, sans-serif',
@@ -87,7 +88,7 @@ const LOCALES: Record<string, NonNullable<NonNullable<ApexOptions['chart']>['loc
   ar: [AR_LOCALE],
 };
 
-function buildOptions(props: ChartEngineProps): ApexOptions {
+function buildOptions(props: ChartEngineProps, palette: string[], muted: string, line: string): ApexOptions {
   const {
     type,
     series,
@@ -95,7 +96,7 @@ function buildOptions(props: ChartEngineProps): ApexOptions {
     labels,
     height = 300,
     width,
-    colors = DEFAULT_COLORS,
+    colors = palette,
     donutSize = '60%',
     showLegend = true,
     showToolbar = false,
@@ -113,7 +114,7 @@ function buildOptions(props: ChartEngineProps): ApexOptions {
       type,
       height,
       width,
-      foreColor: '#6B7280',
+      foreColor: muted,
       fontFamily: FONT_FAMILY[locale] || FONT_FAMILY.en,
       toolbar: { show: showToolbar },
       animations: { enabled: true, speed: 300 },
@@ -127,7 +128,7 @@ function buildOptions(props: ChartEngineProps): ApexOptions {
       width: type === 'line' || type === 'area' ? 2 : type === 'bar' ? 0 : 1,
     },
     grid: {
-      borderColor: '#E5E7EB',
+      borderColor: line,
       strokeDashArray: 3,
       padding: { top: 0, right: 8, bottom: 0, left: 8 },
     },
@@ -140,7 +141,7 @@ function buildOptions(props: ChartEngineProps): ApexOptions {
       position: 'bottom',
       horizontalAlign: dir === 'rtl' ? 'left' : 'center',
       fontSize,
-      labels: { colors: '#6B7280' },
+      labels: { colors: muted },
       markers: { size: 4 },
     },
     tooltip: { theme: 'light' },
@@ -174,13 +175,15 @@ function buildOptions(props: ChartEngineProps): ApexOptions {
     },
     yaxis: { labels: { style: { fontSize } } },
     ...(type === 'bar'
-      ? { plotOptions: { bar: { borderRadius: 4, columnWidth: '55%', distributed: false } } }
+      ? { plotOptions: { bar: { borderRadius: 0, columnWidth: '55%', distributed: false } } }
       : {}),
   };
 }
 
 export function Chart(props: ChartEngineProps) {
   const { dir = 'ltr', className, height = 300, width } = props;
+  const theme = useChartTheme();
+  const palette = theme.palette.length ? theme.palette : FALLBACK_PALETTE;
   const containerRef = React.useRef<HTMLDivElement>(null);
   const instanceRef = React.useRef<ApexCharts | null>(null);
   const generationRef = React.useRef(0);
@@ -205,6 +208,9 @@ export function Chart(props: ChartEngineProps) {
         props.fontSize,
         props.dir,
         props.locale,
+        palette,
+        theme.muted,
+        theme.line,
       ]),
     [
       props.type,
@@ -222,6 +228,9 @@ export function Chart(props: ChartEngineProps) {
       props.fontSize,
       props.dir,
       props.locale,
+      palette,
+      theme.muted,
+      theme.line,
     ]
   );
 
@@ -253,7 +262,7 @@ export function Chart(props: ChartEngineProps) {
         const el = containerRef.current;
         if (!el) return;
         el.innerHTML = '';
-        myInstance = new Apex(el, buildOptions(props));
+        myInstance = new Apex(el, buildOptions(props, palette, theme.muted, theme.line));
         instanceRef.current = myInstance;
         return myInstance.render();
       })

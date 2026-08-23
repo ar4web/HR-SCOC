@@ -1,4 +1,4 @@
-import { User, Company, Employee, LeaveRequest, Notification, Message, Channel, Announcement, AuditLog, Attendance, Payroll, Todo, HRDocument, EmailTemplate, EmailSettings, EmailOutbox, Expense, EmployeeLifecycle, Contract } from '@/types';
+import { User, Company, Employee, LeaveRequest, Notification, Message, Channel, Announcement, AuditLog, Attendance, Payroll, Todo, HRDocument, EmailTemplate, EmailSettings, EmailOutbox, Expense, EmployeeLifecycle, Contract, ManualReminder } from '@/types';
 
 export type PersistedUser = User & { password?: string };
 
@@ -23,6 +23,7 @@ export interface PersistedState {
   expenses: Expense[];
   lifecycles: EmployeeLifecycle[];
   contracts: Contract[];
+  manualReminders?: ManualReminder[];
 }
 
 interface FsLike {

@@ -58,8 +58,8 @@ export function getDashboardData() {
     if (e.workPermitExpiry) {
       runway.push({ employeeId: e.id, name: e.fullName, nameAr: e.fullNameAr, department: e.department, type: 'work_permit', expiryDate: e.workPermitExpiry, daysLeft: days(e.workPermitExpiry), critical: days(e.workPermitExpiry) <= 90 });
     }
-    if (e.iqamaNumber && e.workPermitExpiry) {
-      runway.push({ employeeId: e.id, name: e.fullName, nameAr: e.fullNameAr, department: e.department, type: 'iqama', expiryDate: e.workPermitExpiry, daysLeft: days(e.workPermitExpiry), critical: days(e.workPermitExpiry) <= 90 });
+    if (e.iqamaNumber && e.iqamaExpiryDate) {
+      runway.push({ employeeId: e.id, name: e.fullName, nameAr: e.fullNameAr, department: e.department, type: 'iqama', expiryDate: e.iqamaExpiryDate, daysLeft: days(e.iqamaExpiryDate), critical: days(e.iqamaExpiryDate) <= 90 });
     }
     if (e.contractEndDate) {
       runway.push({ employeeId: e.id, name: e.fullName, nameAr: e.fullNameAr, department: e.department, type: 'contract', expiryDate: e.contractEndDate, daysLeft: days(e.contractEndDate), critical: days(e.contractEndDate) <= 90 });
