@@ -20,8 +20,8 @@ import {
   Users, UserCheck, CalendarClock, DollarSign, Receipt, FileWarning,
   ListTodo, TrendingUp, AlertTriangle, RefreshCw, CheckCircle2, XCircle,
   UserPlus, CalendarPlus, MessageSquare, Bell, FileText, ArrowUpRight,
-  BarChart3, Wallet, Timer, Globe, Shield, PlaneTakeoff, PlaneLanding,
-  TriangleAlert, Building2, ClipboardCheck, PieChart, FileClock, AlarmClock,
+  BarChart3, Timer, Shield, PlaneTakeoff, PlaneLanding,
+  TriangleAlert, ClipboardCheck, PieChart, FileClock, AlarmClock,
   Activity, Plus, X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -241,19 +241,6 @@ export function DashboardContent() {
 
   const deptCounts = data.departmentDistribution.map((d) => d.count);
   const deptNames = data.departmentDistribution.map((d) => d.name);
-  const deptPayroll = data.departmentDistribution.map((d) => Math.round(d.payroll / 1000));
-  const attLabels = [
-    t('Present', 'حاضر', language),
-    t('Late', 'متأخر', language),
-    t('Absent', 'غائب', language),
-    t('Half Day', 'نصف يوم', language),
-  ];
-  const attSeries = [
-    data.attendanceToday.present,
-    data.attendanceToday.late,
-    data.attendanceToday.absent,
-    data.attendanceToday.halfDay,
-  ];
   const trendLabels = data.attendanceTrend.map((d) =>
     new Date(d.date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-GB', { weekday: 'short' })
   );
@@ -262,7 +249,7 @@ export function DashboardContent() {
   const trendAbsent = data.attendanceTrend.map((d) => d.absent);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-gray-900">
@@ -388,8 +375,8 @@ export function DashboardContent() {
           );
         }
         return (
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
-            {alerts.map((a) => {
+          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+            {alerts.slice(0, 4).map((a) => {
               const Icon = a.icon;
               return (
                 <Link
@@ -413,7 +400,7 @@ export function DashboardContent() {
       })()}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-2 lg:col-span-2">
+        <div className="grid grid-cols-2 gap-3 lg:col-span-2">
           {kpis.slice(0, 4).map((k) => {
           const Icon = k.icon;
           const empty =
@@ -456,6 +443,14 @@ export function DashboardContent() {
                   ? k.footer.map((f) => ({
                       label: t(f.en, f.ar, language),
                       className: f.tone === 'warning' ? 'bg-warning/10 text-warning' : f.tone === 'error' ? 'bg-error/10 text-error' : 'bg-success/10 text-success',
+                      href:
+                        k.label.en === 'Pending Leaves' || k.label.en === 'Not Returned'
+                          ? '/leaves'
+                          : k.label.en === 'Document Alerts'
+                          ? '/documents'
+                          : k.label.en === 'Critical Runway'
+                          ? '/employees'
+                          : undefined,
                     }))
                   : undefined
               }
@@ -619,8 +614,8 @@ export function DashboardContent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card>
           <CardHeader className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/10">
@@ -736,34 +731,6 @@ export function DashboardContent() {
 
         <Card>
           <CardHeader className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/10">
-              <UserCheck className="h-4 w-4 text-success" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold">{t("Today's Attendance", 'حضور اليوم', language)}</h2>
-              <p className="text-xs text-gray-400">{t('Status breakdown', 'توزيع الحالة', language)}</p>
-            </div>
-          </CardHeader>
-          <CardBody className="flex items-center justify-center">
-            <Chart
-              type="donut"
-              series={attSeries}
-              labels={attLabels}
-              height={260}
-              width="100%"
-              className="w-full"
-              colors={[STATUS_HEX.present, STATUS_HEX.late, STATUS_HEX.absent, STATUS_HEX.half_day]}
-              donutSize="68%"
-              dir={dir}
-              locale={language}
-            />
-          </CardBody>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-info/10">
               <TrendingUp className="h-4 w-4 text-info" />
             </div>
@@ -789,94 +756,6 @@ export function DashboardContent() {
           </CardBody>
         </Card>
 
-        <Card>
-          <CardHeader className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary/10">
-              <Wallet className="h-4 w-4 text-secondary" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold">{t('Payroll by Department', 'الرواتب حسب القسم', language)}</h2>
-              <p className="text-xs text-gray-400">{t('Monthly salary (000 ﷼)', 'الراتب الشهري (000 ريال)', language)}</p>
-            </div>
-          </CardHeader>
-          <CardBody>
-            {deptNames.length === 0 ? (
-              <p className="py-10 text-center text-sm text-gray-400">{t('No data available', 'لا توجد بيانات', language)}</p>
-            ) : (
-              <Chart
-                type="bar"
-                series={[{ name: t('Payroll (K ﷼)', 'الرواتب (ألف ريال)', language), data: deptPayroll }]}
-                categories={deptNames}
-                height={260}
-                colors={[COLORS[1]]}
-                showLegend={false}
-                dir={dir}
-                locale={language}
-              />
-            )}
-          </CardBody>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-info/10">
-              <Globe className="h-4 w-4 text-info" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold">{t('Nationality Distribution', 'التوزيع حسب الجنسية', language)}</h2>
-              <p className="text-xs text-gray-400">{t('Employees by nationality', 'الموظفون حسب الجنسية', language)}</p>
-            </div>
-          </CardHeader>
-          <CardBody className="flex items-center justify-center">
-            {data.nationalityDistribution.length === 0 ? (
-              <p className="py-10 text-center text-sm text-gray-400">{t('No data available', 'لا توجد بيانات', language)}</p>
-            ) : (
-              <Chart
-                type="donut"
-                series={data.nationalityDistribution.map((d) => d.count)}
-                labels={data.nationalityDistribution.map((d) => d.name)}
-                height={250}
-                width="100%"
-                className="w-full"
-                colors={COLORS}
-                donutSize="66%"
-                dir={dir}
-                locale={language}
-              />
-            )}
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary/10">
-              <Building2 className="h-4 w-4 text-secondary" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold">{t('Sponsor Comparison', 'مقارنة الكفلاء', language)}</h2>
-              <p className="text-xs text-gray-400">{t('Headcount by sponsor', 'عدد الموظفين حسب الكفيل', language)}</p>
-            </div>
-          </CardHeader>
-          <CardBody>
-            {data.sponsorDistribution.length === 0 ? (
-              <p className="py-10 text-center text-sm text-gray-400">{t('No data available', 'لا توجد بيانات', language)}</p>
-            ) : (
-              <Chart
-                type="bar"
-                series={[{ name: t('Employees', 'الموظفون', language), data: data.sponsorDistribution.map((d) => d.count) }]}
-                categories={data.sponsorDistribution.map((d) => d.name)}
-                height={250}
-                colors={[COLORS[4]]}
-                showLegend={false}
-                showDataLabels
-                dir={dir}
-                locale={language}
-              />
-            )}
-          </CardBody>
-        </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -1033,89 +912,6 @@ export function DashboardContent() {
                   </div>
                 </div>
               ))}
-            </div>
-          </CardBody>
-        </Card>
-      )}
-
-      {(data.pendingLeavesList.length > 0 || data.pendingExpensesList.length > 0) && (
-        <Card>
-          <CardHeader className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-warning/10">
-                <ClipboardCheck className="h-4 w-4 text-warning" />
-              </div>
-              <div>
-                <h2 className="text-base font-semibold">{t('Pending Approvals', 'الموافقات المعلقة', language)}</h2>
-                <p className="text-xs text-gray-400">{t('Leave requests and expenses awaiting your decision', 'طلبات إجازة ومصروفات بانتظار قرارك', language)}</p>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              {data.pendingLeavesList.length > 0 && (
-                <Link href="/leaves" className="text-sm font-medium text-primary hover:underline">
-                  {t('Review leaves', 'مراجعة الإجازات', language)}
-                </Link>
-              )}
-              {data.pendingExpensesList.length > 0 && (
-                <Link href="/expenses" className="text-sm font-medium text-primary hover:underline">
-                  {t('Review expenses', 'مراجعة المصاريف', language)}
-                </Link>
-              )}
-            </div>
-          </CardHeader>
-          <CardBody>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {data.pendingLeavesList.length > 0 && (
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    {t('Leave Requests', 'طلبات الإجازة', language)}
-                  </p>
-                  <div className="space-y-2">
-                    {data.pendingLeavesList.map((l) => (
-                      <div key={l.id} className="flex items-center gap-3 rounded-xl border border-gray-100 p-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                          <CalendarPlus className="h-4 w-4 text-primary" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-gray-900">
-                            {language === 'ar' ? l.employeeNameAr || l.employeeName : l.employeeName}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {getLeaveTypeLabel(l.type, language)} • {l.daysCount} {t('days', 'أيام', language)}
-                          </p>
-                        </div>
-                        <div className="text-right rtl:text-left">
-                          <p className="text-xs font-medium text-gray-700">{formatDate(l.startDate, language)}</p>
-                          <span className="mt-1 inline-block rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-semibold text-warning">
-                            {getStatusLabel('pending', language)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {data.pendingExpensesList.length > 0 && (
-                <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    {t('Expenses', 'المصاريف', language)}
-                  </p>
-                  <div className="space-y-2">
-                    {data.pendingExpensesList.map((x) => (
-                      <div key={x.id} className="flex items-center gap-3 rounded-xl border border-gray-100 p-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10">
-                          <Receipt className="h-4 w-4 text-accent-600" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-gray-900">{x.requestedByName}</p>
-                          <p className="truncate text-xs text-gray-500">{x.category} — {x.description}</p>
-                        </div>
-                        <p className="text-sm font-semibold text-gray-900">{formatCurrency(x.amount)}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </CardBody>
         </Card>
