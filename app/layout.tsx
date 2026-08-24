@@ -34,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `
               if ('serviceWorker' in navigator && window.location.hostname !== 'localhost') {
                 window.addEventListener('load', function () {
-                  navigator.serviceWorker.register('/sw.js').catch(function () {});
+                  navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(function () {});
                 });
               }
             `,
