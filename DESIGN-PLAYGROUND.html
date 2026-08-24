@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<!--
+  ═══════════════════════════════════════════════════════════════
+  SCOS HR — DESIGN PLAYGROUND
+  ═══════════════════════════════════════════════════════════════
+  HOW TO USE:
+  1. Open this file in your browser (double-click).
+  2. Redesign anything: edit the CSS variables and Tailwind classes
+     directly in this file, OR press F12 → right-click element →
+     Edit as HTML to experiment live, then copy your final values
+     back into this file and save.
+  3. Send the saved file back to the developer agent.
+     Every class/value you change will be merged 1:1 into the
+     real React app (same tokens, same component structure).
+
+  RULES OF THE SYSTEM (keep these or the merge breaks):
+  • Colors: ONLY the tokens below (primary/secondary/accent/…).
+    Never hardcode hex in components — change the token values here.
+  • No outline style: separation = shadow + background tint, no borders.
+  • Icons: lucide names (written in comments where relevant).
+  • Everything bilingual EN/AR + RTL mirrored (design LTR; dev handles RTL).
+  ═══════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCOS Design Playground</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        primary:   'rgb(var(--c-primary) / <alpha-value>)',
+        secondary: 'rgb(var(--c-secondary) / <alpha-value>)',
+        accent:    'rgb(var(--c-accent) / <alpha-value>)',
+        success:   'rgb(var(--c-success) / <alpha-value>)',
+        warning:   'rgb(var(--c-warning) / <alpha-value>)',
+        error:     'rgb(var(--c-error) / <alpha-value>)',
+        info:      'rgb(var(--c-info) / <alpha-value>)',
+        background: 'rgb(var(--c-bg) / <alpha-value>)',
+      },
+      fontFamily: { sans: ['Inter','system-ui','sans-serif'] },
+      boxShadow: {
+        card: '0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06)',
+        float: '0 8px 24px -6px rgb(0 0 0 / 0.12)',
+        modal: '0 20px 50px -12px rgb(0 0 0 / 0.25)',
+      },
+      borderRadius: { DEFAULT:'0.5rem', md:'0.75rem', lg:'1rem', xl:'1.25rem', '2xl':'1.5rem' },
+    }
+  }
+}
+</script>
+<style>
+  /* ═══════════════════════════════════════════════════
+     ★★★ EDIT THESE TOKENS TO RE-THEME THE WHOLE APP ★★★
+     Format: R G B (no commas). Alpha handled automatically.
+     Current = live production values.
+     ═══════════════════════════════════════════════════ */
+  :root {
+    --c-primary:   27 58 95;    /* brand — buttons, active nav, links      */
+    --c-secondary: 12 28 48;    /* deep navy — admin pills, gradients      */
+    --c-accent:    196 163 90;  /* gold — highlights, expense accents      */
+    --c-success:   31 122 77;   /* approve / active / present              */
+    --c-warning:   176 122 22;  /* pending / late / expiring               */
+    --c-error:     178 58 50;   /* reject / expired / destructive          */
+    --c-info:      43 95 138;   /* neutral info / processing               */
+    --c-bg:        238 241 245; /* app background                          */
+    --card:        #ffffff;     /* card surface                            */
+    --ink:         #152033;     /* main text                               */
+    --muted:       #5b6780;     /* secondary text                          */
+    --faint:       #8b95a8;     /* placeholder text                        */
+    --radius-card: 1rem;        /* ← change for sharper/softer cards       */
+  }
+  body { background: rgb(var(--c-bg)); color: var(--ink); font-family: Inter, system-ui, sans-serif; }
+  .surface { background: var(--card); border-radius: var(--radius-card); }
+  .chip { display:inline-flex; align-items:center; justify-content:center; }
+  h2 { font-size: 1rem; font-weight: 600; }
+  .lbl { font-size: 0.75rem; color: var(--muted); }
+</style>
+</head>
+<body class="p-8 space-y-10 max-w-5xl mx-auto">
+
+<h1 class="text-2xl font-bold">SCOS Design Playground <span class="lbl">— edit, save, send back</span></h1>
+
+<!-- ══════════════ 1. THEME PRESETS ══════════════ -->
+<section class="space-y-3">
+  <h2>1 · Theme presets <span class="lbl">— click to swap tokens, or edit :root above</span></h2>
+  <div class="flex gap-3 flex-wrap" id="presets">
+    <button onclick="setTheme('navy')"    class="surface shadow-card px-4 py-3 text-sm font-medium">◆ Atlas Navy (current default)</button>
+    <button onclick="setTheme('sand')"    class="surface shadow-card px-4 py-3 text-sm font-medium">◆ Sandstone Brown (your live theme)</button>
+    <button onclick="setTheme('green')"   class="surface shadow-card px-4 py-3 text-sm font-medium">◆ Pine Green (original)</button>
+    <button onclick="setTheme('indigo')"  class="surface shadow-card px-4 py-3 text-sm font-medium">◆ Royal Indigo</button>
+  </div>
+</section>
+
+<!-- ══════════════ 2. BUTTONS ══════════════ -->
+<section class="space-y-3">
+  <h2>2 · Buttons <span class="lbl">— primary action / secondary / danger / ghost</span></h2>
+  <div class="surface shadow-card p-6 flex gap-3 flex-wrap items-center">
+    <button class="rounded-lg bg-primary text-white px-4 h-9 text-sm font-medium active:scale-95 transition">＋ Add Employee</button>
+    <button class="rounded-lg bg-primary/5 text-primary px-4 h-9 text-sm font-medium hover:bg-primary/10 transition">Export</button>
+    <button class="rounded-lg bg-error text-white px-4 h-9 text-sm font-medium">Reject</button>
+    <button class="rounded-lg bg-success text-white px-4 h-9 text-sm font-medium">Approve</button>
+    <button class="rounded-lg text-gray-600 px-3 h-9 text-sm font-medium hover:bg-gray-100">Cancel</button>
+    <button class="rounded-lg bg-primary text-white px-4 h-11 text-base font-medium">Large Save</button>
+  </div>
+</section>
+
+<!-- ══════════════ 3. KPI CARD (dashboard) ══════════════ -->
+<section class="space-y-3">
+  <h2>3 · KPI card <span class="lbl">— 8 of these on the dashboard, 4×2 grid</span></h2>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="surface shadow-card p-4 hover:shadow-float hover:-translate-y-0.5 transition">
+      <div class="flex items-center gap-2.5">
+        <div class="chip h-9 w-9 rounded-xl bg-primary/10 text-primary">👤</div>
+        <span class="text-sm text-gray-600">Total Employees</span>
+      </div>
+      <p class="mt-2 text-3xl font-bold">8</p>
+      <p class="text-xs text-gray-400">8 active</p>
+    </div>
+    <div class="surface shadow-card p-4">
+      <div class="flex items-center gap-2.5">
+        <div class="chip h-9 w-9 rounded-xl bg-warning/10 text-warning">⏳</div>
+        <span class="text-sm text-gray-600">Pending Approvals</span>
+      </div>
+      <p class="mt-2 text-3xl font-bold text-warning">3</p>
+      <span class="mt-2 inline-block rounded-full bg-warning/10 text-warning px-2.5 py-1 text-[11px] font-semibold">Review now →</span>
+    </div>
+    <div class="surface shadow-card p-4">
+      <div class="flex items-center gap-2.5">
+        <div class="chip h-9 w-9 rounded-xl bg-error/10 text-error">🛡</div>
+        <span class="text-sm text-gray-600">Compliance Expiries</span>
+      </div>
+      <p class="mt-2 text-3xl font-bold">4</p>
+      <p class="text-xs text-gray-400">iqama/permits ≤ 90 days</p>
+    </div>
+    <div class="surface shadow-card p-4">
+      <div class="flex items-center gap-2.5">
+        <div class="chip h-9 w-9 rounded-xl bg-success/10 text-success">✓</div>
+        <span class="text-sm text-gray-600">Present Today</span>
+      </div>
+      <p class="mt-2 text-3xl font-bold">6<span class="text-lg text-gray-400">/8</span></p>
+      <div class="mt-2 h-1.5 rounded-full bg-gray-100"><div class="h-full w-3/4 rounded-full bg-success"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 4. APPROVAL INBOX ROW ══════════════ -->
+<section class="space-y-3">
+  <h2>4 · Approval inbox row <span class="lbl">— the actionable dashboard widget</span></h2>
+  <div class="surface shadow-card divide-y divide-gray-100/60">
+    <div class="flex items-center gap-3 px-4 py-3">
+      <div class="chip h-9 w-9 rounded-full bg-primary/10 text-primary text-xs font-bold">SA</div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold">Sara Al-Qahtani</p>
+        <p class="text-xs text-gray-500">Sick Leave · 1 day · 18 Aug → 18 Aug</p>
+      </div>
+      <button class="rounded-lg bg-success/10 text-success px-2.5 h-8 text-xs font-semibold hover:bg-success hover:text-white transition">✓ Approve</button>
+      <button class="rounded-lg bg-error/10 text-error px-2.5 h-8 text-xs font-semibold hover:bg-error hover:text-white transition">✕ Reject</button>
+    </div>
+    <div class="flex items-center gap-3 px-4 py-3">
+      <div class="chip h-9 w-9 rounded-full bg-primary/10 text-primary text-xs font-bold">MA</div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold">Mohammed Asad</p>
+        <p class="text-xs text-gray-500">Annual Leave · 3 days · 17 Aug → 19 Aug</p>
+      </div>
+      <button class="rounded-lg bg-success/10 text-success px-2.5 h-8 text-xs font-semibold hover:bg-success hover:text-white transition">✓ Approve</button>
+      <button class="rounded-lg bg-error/10 text-error px-2.5 h-8 text-xs font-semibold hover:bg-error hover:text-white transition">✕ Reject</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 5. STAT STRIP ══════════════ -->
+<section class="space-y-3">
+  <h2>5 · Stat strip <span class="lbl">— replaces stat cards on To-Do / Reminders / Contracts</span></h2>
+  <div class="surface shadow-card flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3.5">
+    <div class="flex items-center gap-2"><span class="text-warning">⏳</span><span class="text-lg font-bold">3</span><span class="text-xs text-gray-500">Pending</span></div>
+    <div class="flex items-center gap-2 sm:border-s sm:border-gray-100 sm:ps-6"><span class="text-info">◐</span><span class="text-lg font-bold">2</span><span class="text-xs text-gray-500">In Progress</span></div>
+    <div class="flex items-center gap-2 sm:border-s sm:border-gray-100 sm:ps-6"><span class="text-success">✓</span><span class="text-lg font-bold">6</span><span class="text-xs text-gray-500">Completed</span></div>
+  </div>
+</section>
+
+<!-- ══════════════ 6. FORM + INPUTS ══════════════ -->
+<section class="space-y-3">
+  <h2>6 · Form fields <span class="lbl">— labels above, soft fields, focus ring</span></h2>
+  <div class="surface shadow-card p-6 grid md:grid-cols-2 gap-4">
+    <div><label class="text-sm font-medium">Title <span class="text-error">*</span></label>
+      <input class="mt-1 w-full rounded-lg bg-gray-50 px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none" placeholder="e.g. Review Q4 contracts"></div>
+    <div><label class="text-sm font-medium">Priority</label>
+      <select class="mt-1 w-full rounded-lg bg-gray-50 px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none"><option>Medium</option></select></div>
+    <div class="md:col-span-2 flex justify-end gap-2">
+      <button class="rounded-lg text-gray-600 px-4 h-9 text-sm hover:bg-gray-100">Cancel</button>
+      <button class="rounded-lg bg-primary text-white px-4 h-9 text-sm font-medium">Save</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 7. BADGES / STATUS ══════════════ -->
+<section class="space-y-3">
+  <h2>7 · Status badges</h2>
+  <div class="surface shadow-card p-6 flex gap-2 flex-wrap text-xs font-medium">
+    <span class="rounded-full bg-success/10 text-success px-2.5 py-1">Approved</span>
+    <span class="rounded-full bg-warning/10 text-warning px-2.5 py-1">Pending</span>
+    <span class="rounded-full bg-error/10 text-error px-2.5 py-1">Rejected</span>
+    <span class="rounded-full bg-info/10 text-info px-2.5 py-1">Processing</span>
+    <span class="rounded-full bg-gray-100 text-gray-600 px-2.5 py-1">Draft</span>
+  </div>
+</section>
+
+<!-- ══════════════ 8. MODAL ══════════════ -->
+<section class="space-y-3">
+  <h2>8 · Modal dialog</h2>
+  <div class="relative h-64 rounded-xl bg-gray-800/40 flex items-center justify-center">
+    <div class="surface shadow-modal w-full max-w-md">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100/60">
+        <div class="flex items-center gap-3">
+          <div class="chip h-10 w-10 rounded-xl bg-info/10 text-info">☰</div>
+          <div><h2 class="font-semibold">New Todo</h2><p class="text-xs text-gray-400">Create a to-do item</p></div>
+        </div>
+        <button class="text-gray-400 hover:bg-gray-100 rounded-lg p-1.5">✕</button>
+      </div>
+      <div class="p-5 space-y-4">
+        <div><label class="text-sm font-medium">Title *</label>
+          <input class="mt-1 w-full rounded-lg bg-gray-50 px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none" placeholder="e.g. Review Q4 contracts"></div>
+      </div>
+      <div class="flex justify-end gap-2 px-5 py-4 border-t border-gray-100/60">
+        <button class="rounded-lg text-gray-600 px-4 h-9 text-sm hover:bg-gray-100">Cancel</button>
+        <button class="rounded-lg bg-primary text-white px-4 h-9 text-sm font-medium">Save</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+const THEMES = {
+  navy:   { primary:'27 58 95',  secondary:'12 28 48', accent:'196 163 90', bg:'238 241 245' },
+  sand:   { primary:'110 74 44', secondary:'55 35 20', accent:'196 163 90', bg:'245 241 235' },
+  green:  { primary:'0 155 119', secondary:'0 32 91',  accent:'255 199 44', bg:'244 242 235' },
+  indigo: { primary:'79 70 229', secondary:'30 27 75', accent:'217 119 6',  bg:'238 240 248' },
+};
+function setTheme(name){
+  const t = THEMES[name];
+  for (const [k,v] of Object.entries(t)) document.documentElement.style.setProperty('--c-'+k, v);
+}
+</script>
+</body>
+</html>
