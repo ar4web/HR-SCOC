@@ -446,7 +446,7 @@ export function EmailContent() {
                     <div className="animate-pulse h-10 w-full rounded-lg bg-gray-100" />
                   ) : (
                     <>
-                      <div className="rounded-xl border border-gray-100 p-4 flex flex-wrap items-center gap-3 hover:border-gray-200 transition-colors">
+                      <div className="rounded-xl bg-white shadow-card p-4 flex flex-wrap items-center gap-3 transition-shadow hover:shadow-md">
                         <div
                           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
                             gmailStatus.connected ? 'bg-success/10 text-success' : 'bg-gray-100 text-gray-400'
@@ -836,7 +836,7 @@ export function EmailContent() {
                       ))}
                     </div>
                   )}
-                  <div className="mt-4 flex-1 rounded-xl border border-gray-100 bg-gray-50/60 p-4">
+                  <div className="mt-4 flex-1 rounded-xl bg-gray-50/60 p-4">
                     <p className="text-xs font-semibold text-gray-500">{t('Preview', 'معاينة', language)}</p>
                     <p className="mt-2 text-sm font-semibold text-gray-900">{composeSubject || t('No subject', 'بدون موضوع', language)}</p>
                     <p className="mt-1 whitespace-pre-wrap text-xs text-gray-600">{composeBody || t('Empty message body', 'رسالة فارغة', language)}</p>

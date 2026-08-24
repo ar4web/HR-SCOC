@@ -17,7 +17,7 @@ import { t, formatCurrency, formatDate, getContractTypeLabel, getStatusLabel } f
 import { useToast } from '@/components/ui/Toast';
 import { useAuthStore } from '@/stores/auth-store';
 import { hasPermission } from '@/lib/rbac';
-import { Users, Plus, Eye, Trash2, Upload, Download, CalendarDays, Clock, DollarSign } from 'lucide-react';
+import { Users, Plus, Eye, Trash2, Upload, Download, DollarSign } from 'lucide-react';
 import { EmployeeImportDialog } from '@/components/employees/EmployeeImportDialog';
 
 const STORAGE_KEY = 'hrscoc-employee-columns';
@@ -310,7 +310,6 @@ export default function EmployeesPage() {
     const monthlyPayroll = employees.reduce((total, employee) => total + employee.salary.total, 0);
     return { active, departments, monthlyPayroll };
   }, [employees]);
-  const canViewPayroll = hasPermission(user?.role, 'payroll:view');
 
   return (
     <div className="space-y-6">
@@ -367,23 +366,6 @@ export default function EmployeesPage() {
         <DashboardTile icon={Users} label={t('Active staff', 'الموظفون النشطون', language)} value={String(workforce.active)} sub={`${employees.length ? Math.round((workforce.active / employees.length) * 100) : 0}% ${t('of workforce', 'من القوى العاملة', language)}`} iconClassName="bg-success/10 text-success" className="p-4" />
         <DashboardTile icon={Users} label={t('Departments', 'الأقسام', language)} value={String(workforce.departments)} sub={t('Teams represented', 'فرق ممثلة', language)} iconClassName="bg-secondary/10 text-secondary" className="p-4" />
         <DashboardTile icon={DollarSign} label={t('Monthly payroll', 'إجمالي الرواتب', language)} value={formatCurrency(workforce.monthlyPayroll)} sub={t('Current employee records', 'سجلات الموظفين الحالية', language)} iconClassName="bg-warning/10 text-warning" className="p-4 col-span-2 lg:col-span-1" />
-      </section>
-
-      <section className={`grid gap-3 ${canViewPayroll ? 'grid-cols-3' : 'grid-cols-2'}`} aria-label={t('People operations', 'عمليات الموظفين', language)}>
-        <Link href="/leaves" className="flex min-w-0 flex-col items-center gap-2 rounded-xl border border-gray-100 bg-white p-3 text-center shadow-card transition hover:border-primary/30 hover:bg-primary/5">
-          <CalendarDays className="h-5 w-5 text-primary" />
-          <span className="text-xs font-semibold text-gray-700">{t('Leaves', 'الإجازات', language)}</span>
-        </Link>
-        <Link href="/attendance" className="flex min-w-0 flex-col items-center gap-2 rounded-xl border border-gray-100 bg-white p-3 text-center shadow-card transition hover:border-primary/30 hover:bg-primary/5">
-          <Clock className="h-5 w-5 text-primary" />
-          <span className="text-xs font-semibold text-gray-700">{t('Attendance', 'الحضور', language)}</span>
-        </Link>
-        {canViewPayroll && (
-          <Link href="/payroll" className="flex min-w-0 flex-col items-center gap-2 rounded-xl border border-gray-100 bg-white p-3 text-center shadow-card transition hover:border-primary/30 hover:bg-primary/5">
-            <DollarSign className="h-5 w-5 text-primary" />
-            <span className="text-xs font-semibold text-gray-700">{t('Payroll', 'الرواتب', language)}</span>
-          </Link>
-        )}
       </section>
 
       <Card>

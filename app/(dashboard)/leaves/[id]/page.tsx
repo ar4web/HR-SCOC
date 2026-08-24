@@ -220,7 +220,7 @@ export default function LeaveDetailPage() {
                   {t('This request is pending approval by a manager.', 'هذا الطلب بانتظار موافقة مدير.', language)}
                 </div>
               ) : (
-                <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 space-y-2 text-sm">
+                <div className="rounded-xl bg-gray-50 p-4 space-y-2 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-gray-500">{t('Status', 'الحالة', language)}</span>
                     <Badge status={leave.status} locale={language} />

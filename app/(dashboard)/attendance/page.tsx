@@ -255,7 +255,7 @@ export default function AttendancePage() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white border border-gray-200 p-3">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white p-3 shadow-card">
         <Filter className="h-4 w-4 text-gray-400" />
         <input
           type="date"
@@ -308,101 +308,54 @@ export default function AttendancePage() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card>
-          <CardBody className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center">
-                <LogIn className="h-5 w-5 text-success" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900">
-                  {t('Clock In', 'تسجيل الحضور', language)}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  {todayRecord?.clockIn
-                    ? t(`Clocked in at ${todayRecord.clockIn}`, `تم تسجيل الحضور الساعة ${todayRecord.clockIn}`, language)
-                    : t('Start your work day', 'ابدأ يوم عملك', language)}
-                  {todayRecord?.location && (
-                    <span className="ml-1.5 inline-flex items-center gap-0.5 text-success">
-                      <MapPin className="h-3 w-3" />
-                      GPS
-                    </span>
-                  )}
-                </p>
-              </div>
+      <Card>
+        <CardBody className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+              <ClipboardList className="h-6 w-6 text-primary" />
             </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-semibold text-gray-900">
+                  {t('My Day', 'يومي', language)}
+                </h3>
+                {todayRecord && <Badge status={todayRecord.status} locale={language} />}
+              </div>
+              <p className="text-xs text-gray-500">
+                {todayRecord
+                  ? `${todayRecord.clockIn} – ${todayRecord.clockOut || '--'}${
+                      todayRecord.hoursWorked != null ? ` · ${todayRecord.hoursWorked.toFixed(2)} ${t('hrs', 'ساعات', language)}` : ''
+                    }${todayRecord?.location ? ' · GPS' : ''}`
+                  : t('No record yet today', 'لا يوجد تسجيل بعد اليوم', language)}
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 gap-2">
             <Button
               onClick={handleClockIn}
               loading={clocking}
               disabled={!!todayRecord?.clockIn}
-              className="w-full"
               variant={todayRecord?.clockIn ? 'outline' : 'primary'}
               title={todayRecord?.clockIn ? t('Already Clocked In', 'تم تسجيل الحضور', language) : t('Clock In', 'تسجيل حضور', language)}
               aria-label={todayRecord?.clockIn ? t('Already Clocked In', 'تم تسجيل الحضور', language) : t('Clock In', 'تسجيل حضور', language)}
             >
               <LogIn className="h-4 w-4" />
+              {t('Clock In', 'تسجيل الحضور', language)}
             </Button>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardBody className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-warning/10 flex items-center justify-center">
-                <LogOut className="h-5 w-5 text-warning" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900">
-                  {t('Clock Out', 'تسجيل الانصراف', language)}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  {todayRecord?.clockOut
-                    ? t(`Clocked out at ${todayRecord.clockOut}`, `تم تسجيل الانصراف الساعة ${todayRecord.clockOut}`, language)
-                    : t('End your work day', 'أنهِ يوم عملك', language)}
-                  {todayRecord?.hoursWorked != null && (
-                    <span className="ml-1.5 font-medium text-warning">
-                      · {todayRecord.hoursWorked.toFixed(2)} {t('hrs', 'ساعات', language)}
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
             <Button
               onClick={handleClockOut}
               loading={clocking}
               disabled={!todayRecord?.clockIn || !!todayRecord?.clockOut}
-              className="w-full"
               variant={todayRecord?.clockOut ? 'outline' : 'warning'}
               title={todayRecord?.clockOut ? t('Already Clocked Out', 'تم تسجيل الانصراف', language) : t('Clock Out', 'تسجيل انصراف', language)}
               aria-label={todayRecord?.clockOut ? t('Already Clocked Out', 'تم تسجيل الانصراف', language) : t('Clock Out', 'تسجيل انصراف', language)}
             >
               <LogOut className="h-4 w-4" />
+              {t('Clock Out', 'تسجيل الانصراف', language)}
             </Button>
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardBody className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <ClipboardList className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900">
-                  {t('Today Status', 'حالة اليوم', language)}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  {todayRecord
-                    ? `${todayRecord.clockIn} - ${todayRecord.clockOut || '--'}`
-                    : t('No record yet', 'لا يوجد تسجيل بعد', language)}
-                </p>
-              </div>
-            </div>
-            {todayRecord && <Badge status={todayRecord.status} locale={language} />}
-          </CardBody>
-        </Card>
-      </div>
+          </div>
+        </CardBody>
+      </Card>
 
       <Card>
         <CardHeader className="flex items-center gap-3">

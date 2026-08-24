@@ -4,7 +4,6 @@ import React from 'react';
 import { useLanguageStore } from '@/stores/language-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
-import { DashboardTile } from '@/components/ui/DashboardTile';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { TableSkeleton } from '@/components/ui/Skeleton';
@@ -241,37 +240,18 @@ const toggleStatus = async (todo: Todo) => {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <DashboardTile
-          icon={Clock}
-          label={t('Pending', 'قيد الانتظار', language)}
-          value={String(totals.pending)}
-          iconClassName="bg-warning/10 text-warning"
-          chip={`${totals.pending + totals.in_progress + totals.completed > 0 ? Math.round((totals.pending / (totals.pending + totals.in_progress + totals.completed)) * 100) : 0}%`}
-          chipClassName="bg-warning/10 text-warning"
-          pct={totals.pending + totals.in_progress + totals.completed > 0 ? Math.round((totals.pending / (totals.pending + totals.in_progress + totals.completed)) * 100) : 0}
-          barClassName="bg-warning"
-        />
-        <DashboardTile
-          icon={AlertCircle}
-          label={t('In Progress', 'قيد التنفيذ', language)}
-          value={String(totals.in_progress)}
-          iconClassName="bg-info/10 text-info"
-          chip={totals.in_progress > 0 ? t('Active', 'نشط', language) : t('Idle', 'خامل', language)}
-          chipClassName="bg-info/10 text-info"
-          pct={totals.pending + totals.in_progress + totals.completed > 0 ? Math.round((totals.in_progress / (totals.pending + totals.in_progress + totals.completed)) * 100) : 0}
-          barClassName="bg-info"
-        />
-        <DashboardTile
-          icon={CheckCircle2}
-          label={t('Completed', 'مكتملة', language)}
-          value={String(totals.completed)}
-          iconClassName="bg-success/10 text-success"
-          chip={`${totals.pending + totals.in_progress + totals.completed > 0 ? Math.round((totals.completed / (totals.pending + totals.in_progress + totals.completed)) * 100) : 0}%`}
-          chipClassName="bg-success/10 text-success"
-          pct={totals.pending + totals.in_progress + totals.completed > 0 ? Math.round((totals.completed / (totals.pending + totals.in_progress + totals.completed)) * 100) : 0}
-          barClassName="bg-success"
-        />
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl bg-white px-5 py-3.5 shadow-card">
+        {[
+          { label: t('Pending', 'قيد الانتظار', language), value: totals.pending, icon: Clock, cls: 'text-warning' },
+          { label: t('In Progress', 'قيد التنفيذ', language), value: totals.in_progress, icon: AlertCircle, cls: 'text-info' },
+          { label: t('Completed', 'مكتملة', language), value: totals.completed, icon: CheckCircle2, cls: 'text-success' },
+        ].map((s2, i) => (
+          <div key={s2.label} className={`flex items-center gap-2 ${i > 0 ? 'sm:border-s sm:border-gray-100 sm:ps-6' : ''}`}>
+            <s2.icon className={`h-4 w-4 ${s2.cls}`} />
+            <span className="text-lg font-bold leading-none text-gray-900">{s2.value}</span>
+            <span className="text-xs text-gray-500">{s2.label}</span>
+          </div>
+        ))}
       </div>
 
       <Card>
@@ -320,7 +300,7 @@ const toggleStatus = async (todo: Todo) => {
               {todos.map((todo) => (
                 <div
                   key={todo.id}
-                  className={`rounded-xl border border-gray-100 p-4 flex items-start gap-4 ${
+                  className={`rounded-xl bg-white shadow-card p-4 flex items-start gap-4 ${
                     todo.status === 'completed' ? 'bg-gray-50/60' : ''
                   }`}
                 >

@@ -63,7 +63,7 @@ export function NotificationsDropdown() {
       </button>
 
       {open && (
-        <div className="absolute right-0 rtl:right-auto rtl:left-0 top-12 z-50 w-80 sm:w-96 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-modal animate-fade-in">
+        <div className="absolute right-0 rtl:right-auto rtl:left-0 top-12 z-50 w-80 sm:w-96 overflow-hidden rounded-xl bg-white shadow-modal animate-fade-in">
           <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-3">
             <p className="text-sm font-semibold text-gray-900">
               {t('Notifications', 'الإشعارات', language)}

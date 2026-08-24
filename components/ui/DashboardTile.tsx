@@ -133,9 +133,9 @@ export function DashboardTile({
   );
 
   const base = cn(
-    'group flex h-full flex-col rounded-2xl border border-gray-100 bg-white shadow-card transition-all',
+    'group flex h-full flex-col rounded-2xl bg-white shadow-card transition-all',
     compact ? 'p-4' : 'p-6',
-    (href || onClick) && 'hover:-translate-y-0.5 hover:border-gray-200 hover:shadow-md',
+    (href || onClick) && 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md',
     className
   );
 

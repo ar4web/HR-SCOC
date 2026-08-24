@@ -560,13 +560,60 @@ Layout: PageHeader "Settings" + Settings icon; left rail nav card (`lg:w-60` sti
 6. Tables lack unified empty-state imagery (mix of EmptyState component and hand-rolled).
 7. Login page is polished; interior pages vary in polish — aim for one coherent elevation/spacing scale.
 
-## 7. WHAT TO DELIVER
+## 7. REDESIGN DIRECTIVES — v2 UPGRADE REQUEST (READ FIRST)
 
-Per redesigned surface, output:
-1. **Layout spec** — block order, grid/flex structure, breakpoints (mobile ≥360, tablet ≥768, desktop ≥1024/1280), exact spacing rhythm (pick from 4/8/12/16/24/32).
-2. **Component specs** — for every element: Tailwind class string (tokens only), size, typography, icon (lucide name), state styles (default/hover/active/disabled/loading), placement including RTL behavior.
-3. **Interaction spec** — what each button/link opens, focus order, keyboard/Escape handling for overlays, toast feedback copy (EN + AR).
-4. **Visual hierarchy rationale** — one line per major decision.
-5. **Optional enhancements clearly marked** (never silently change data/flows).
+The user is requesting a **full upgrade pass**: better design, better UI/UX, smarter functionality — and above all **less clutter**. The app has grown repetitive: nearly every page repeats the same pattern (KPI tile row → filter bar → card → table) and stacks redundant blocks. Your job is to *consolidate*, not decorate.
 
-Constraints recap: bilingual EN/AR with true RTL mirroring · theme tokens only · lucide icons only · respect permission gating described per page · keep all API payloads identical · accessible labels on icon-only controls.
+### 7.1 HARD STYLE RULE — NO OUTLINE LOOK
+The user explicitly rejects an "outline" aesthetic:
+- **Minimize borders/strokes.** Do not wrap everything in `border-*` boxes. Separation comes from **background contrast, soft shadows (`shadow-card`/`shadow-md`), and spacing** — not outlines.
+- Cards may keep a hairline divider where truly needed; prefer borderless surfaces on tinted backgrounds (e.g. white cards on `bg-background`, section tints like `bg-primary/5`).
+- Replace outline buttons for primary actions with **filled buttons**; reserve outline only for Cancel/secondary. Ghost icon-buttons should get hover fills instead of permanent borders.
+- Avoid nested boxes (card inside card inside bordered row). Flatten: one surface, internal whitespace/dividers.
+- No dashed borders, no double borders, no "boxed grid of boxes" (this is what the user called childish).
+
+### 7.2 DE-OVERLOAD PLAN — MERGE SIMILAR CONTENT
+Apply this merge map. Where you disagree, justify — but every page must END UP with fewer, richer blocks:
+
+| Page | Current overload | Merge action |
+|---|---|---|
+| Dashboard | Alerts row duplicates KPI counts; 3 separate chart cards; activity + notifications overlap | Fold alert counts INTO the 8 KPI tiles (as colored chips/links). Merge notifications + recent activity into ONE feed card. One combined analytics row max (attendance trend OR status donut, not both + more). Pending approvals → single compact approval queue widget with tab switch |
+| Employees list | KPI row + shortcut cards + table = 3 stacked sections | DELETE the 3 shortcut cards (sidebar already navigates). Keep KPI row (4 compact) + table |
+| Employee detail | Identity card + Key Facts card + 6 section cards | Merge Key Facts into identity rail. Merge Personal Information + Employment into one two-column card. Max 4 section cards total + report |
+| Attendance | 3 action cards (Clock In / Clock Out / Today Status) do one job; flash strip duplicates toast | ONE "My Day" card: status line + Clock In + Clock Out buttons inline. Drop flash strip (toast suffices). KPI row stays compact |
+| Documents | Alert banner + form card + toolbar with 3-way view switch + filters + viewer pane | Collapse form into modal dialog (not inline). Default to List+Viewer; move Grid/List toggle into a small menu. One filter row |
+| Contracts | 4 stat cards + form card + table | Stats → single slim strip (inline numbers with dots, no cards). Form → modal dialog |
+| Payroll Overview | Inline timesheet panel eats the page | Timesheet creation moves fully into the existing dialog; header keeps one "Timesheet" button. KPIs compact |
+| Reports | 11 chart/table blocks stacked | Group into tabs or a bento grid max 6 tiles: merge Headcount+Payroll by Dept (metric toggle), merge Nationality+Sponsor+Contract types into one "Workforce Mix" composite, keep Status donut, Leave bars, Attendance trend+Today merged, Leave balances table |
+| Lifecycle | KPI row + pill filters + search + card grid | KPIs → inline stat chips in the filter row |
+| Leaves list | Tab pair + status pills + counter all in one header | Fine — but unify header pattern with Contracts/Admin pills |
+| Portal | Hero + 4 tiles + 4 content cards + CTA card | Merge Personal-details CTA into profile area; payslips + leave requests can share one "My Records" card with tabs |
+| Settings/* | Mostly fine | Unify Save button treatment (visible label "Save", not icon-only) across ALL settings pages |
+| Global | Search inputs styled differently per page; empty states inconsistent | One search-input spec, one EmptyState spec, one table-toolbar spec — define once in §8, reuse everywhere |
+
+### 7.3 FUNCTIONALITY & UX UPGRADES TO PROPOSE
+Mark each as `[FUNC]` in your output. Candidates (approve/extend):
+- Command-palette style global search (⌘K) upgrading GlobalSearch
+- Bulk actions on tables (select rows → approve/delete/export)
+- Saved filters/views per user on Employees/Leaves/Expenses
+- Inline row expansion instead of navigating away for quick details
+- Optimistic UI toggles (todo check, approve/reject) with undo toast
+- Keyboard hints + focus-visible rings everywhere; Esc closes any overlay
+- Skeleton→content cross-fade instead of hard swap
+
+### 7.4 MANDATORY PAGE-BY-PAGE AUDIT (process requirement)
+Before proposing any design, walk EVERY page listed in §5 and produce an **audit table**:
+
+```
+| Page | Item (every block/button/filter/column/dialog) | Verdict | Notes |
+```
+Verdicts allowed: `KEEP` · `UPGRADE` (restyle) · `MERGE→<target>` · `MOVE→<where>` · `REMOVE` (justify) · `NEW` (proposed addition).
+Rules: no item may be skipped — if §5 lists it, it appears in the audit. Aim for a measurable net reduction (~30–40% fewer top-level blocks per page). Only AFTER the audit tables, produce the redesigned specs.
+
+### 7.5 DELIVERABLE FORMAT v2
+1. **Global design language sheet** — surfaces/elevation model, spacing rhythm, typography scale, button/badge/input/search/toolbar/empty-state specs (defined once).
+2. **Audit tables** (per §7.4) for all pages.
+3. **Per-page redesign spec** — new block order, exact Tailwind classes (tokens only), lucide icons, states (hover/active/disabled/loading/empty), RTL behavior, EN+AR copy for new labels.
+4. **[FUNC] enhancement list** — each with value, effort (S/M/L), risk.
+
+Constraints recap: bilingual EN/AR with true RTL mirroring · theme tokens only · lucide icons only · respect permission gating per page · API payloads unchanged unless a `[FUNC]` item says otherwise · accessible labels always.

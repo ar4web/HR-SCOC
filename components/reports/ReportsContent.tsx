@@ -517,7 +517,7 @@ export function ReportsContent() {
               {leaveStatus.map((l) => {
                 const pct = Math.round((l.count / leaveTotal) * 100);
                 return (
-                  <div key={l.name} className="rounded-2xl border border-gray-100 bg-gray-50/60 p-5">
+                  <div key={l.name} className="rounded-2xl bg-gray-50/60 p-5">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-700">
                         {getStatusLabel(l.name, language)}
@@ -601,7 +601,7 @@ export function ReportsContent() {
                   { key: 'absent', label: { en: 'Absent', ar: 'غائب' }, hex: STATUS_HEX.absent },
                   { key: 'half_day', label: { en: 'Half Day', ar: 'نصف يوم' }, hex: STATUS_HEX.half_day },
                 ].map((s) => (
-                  <div key={s.key} className="rounded-xl border border-gray-100 p-3">
+                  <div key={s.key} className="rounded-xl bg-gray-50 p-3">
                     <p className="text-xs text-gray-500">{t(s.label.en, s.label.ar, language)}</p>
                     <p className="text-lg font-bold" style={{ color: s.hex }}>
                       {stats.attendanceToday.counts[s.key] || 0}
@@ -757,7 +757,7 @@ export function ReportsContent() {
         </Card>
       )}
 
-      <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 text-sm text-gray-500">
+      <div className="rounded-xl bg-gray-50 p-4 text-sm text-gray-500">
         <TrendingUp className="h-4 w-4 inline me-1 text-primary" />
         {t(
           'Use the department filter to narrow analytics, or export the current view as CSV for offline analysis.',

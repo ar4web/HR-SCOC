@@ -95,7 +95,7 @@ export default function LeavePoliciesPage() {
               const policy = policies.find((p) => p.type === meta.type);
               if (!policy) return null;
               return (
-                <div key={meta.type} className="rounded-xl border border-gray-100 p-4 hover:shadow-sm transition-shadow">
+                <div key={meta.type} className="rounded-xl bg-white shadow-card p-4 hover:shadow-md transition-shadow">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="font-semibold text-gray-900">
                       {t(meta.en, meta.ar, language)}

@@ -58,7 +58,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white shadow-card">
+    <section className="rounded-2xl bg-white shadow-card">
       <header className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-3">
         <div className="flex items-center gap-2">
           <Icon className="h-4 w-4 text-gray-400" />
@@ -368,7 +368,7 @@ export default function EmployeeDetailPage() {
           <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
             {/* Sidebar: identity + contact + sponsor */}
             <div className="space-y-5">
-              <section className="rounded-2xl border border-gray-100 bg-white shadow-card">
+              <section className="rounded-2xl bg-white shadow-card">
                 <div className="flex flex-col items-center px-5 pt-6 text-center">
                   <Avatar name={employee.fullName} className="h-16 w-16 text-lg" />
                   <h2 className="mt-3 text-base font-bold text-gray-900">{displayName}</h2>
@@ -407,7 +407,7 @@ export default function EmployeeDetailPage() {
                 </div>
               </section>
 
-              <section className="rounded-2xl border border-gray-100 bg-white shadow-card">
+              <section className="rounded-2xl bg-white shadow-card">
                 <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-3">
                   <CreditCard className="h-4 w-4 text-gray-400" />
                   <h2 className="text-sm font-semibold text-gray-900">{t('Key Facts', 'معلومات أساسية', language)}</h2>

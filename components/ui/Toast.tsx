@@ -108,7 +108,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               <div
                 key={toast.id}
                 className={cn(
-                  'group flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-lg transition-all animate-fade-in',
+                  'group flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-lg transition-all animate-fade-in',
                   colors[toast.type]
                 )}
                 role="alert"

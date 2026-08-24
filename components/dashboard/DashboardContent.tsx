@@ -14,14 +14,14 @@ import { DashboardData } from '@/lib/dashboard-engine';
 import { api, clearApiCache } from '@/lib/api';
 import { Chart } from '@/engines/chart-engine';
 import { useChartTheme, statusHexMap } from '@/lib/chart-theme';
+import { hasPermission } from '@/lib/rbac';
 import { AddTodoDialog, AddReminderDialog } from '@/components/dashboard/AddDialogs';
-import { t, formatCurrency, formatDate, getStatusLabel, getContractTypeLabel, getLeaveTypeLabel, daysUntil } from '@/lib/utils';
+import { t, formatCurrency, formatDate, getLeaveTypeLabel, daysUntil } from '@/lib/utils';
 import {
-  Users, UserCheck, CalendarClock, DollarSign, Receipt, FileWarning,
-  ListTodo, TrendingUp, AlertTriangle, RefreshCw, CheckCircle2, XCircle,
-  UserPlus, CalendarPlus, MessageSquare, Bell, FileText, ArrowUpRight,
-  BarChart3, Timer, Shield, PlaneTakeoff, PlaneLanding,
-  TriangleAlert, ClipboardCheck, PieChart, FileClock, AlarmClock,
+  Users, UserCheck, DollarSign, Receipt, FileWarning,
+  ListTodo, AlertTriangle, RefreshCw, CheckCircle2, XCircle,
+  UserPlus, MessageSquare, Bell,   Timer, Shield, PlaneTakeoff, PlaneLanding,
+  FileClock, AlarmClock, ClipboardCheck,
   Activity, Plus, X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -52,7 +52,6 @@ export function DashboardContent() {
   const { user } = useAuthStore();
   const { addToast } = useToast();
   const theme = useChartTheme();
-  const COLORS = theme.palette;
   const STATUS_HEX = statusHexMap(theme);
   const [data, setData] = React.useState<DashboardData | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -60,6 +59,8 @@ export function DashboardContent() {
   const [now, setNow] = React.useState(new Date());
   const [addOpen, setAddOpen] = React.useState(false);
   const [dialog, setDialog] = React.useState<'todo' | 'reminder' | null>(null);
+  const [approvalTab, setApprovalTab] = React.useState<'leaves' | 'expenses'>('leaves');
+  const [actingId, setActingId] = React.useState<string | null>(null);
 
   const load = React.useCallback(async () => {
     clearApiCache('/dashboard');
@@ -102,6 +103,25 @@ export function DashboardContent() {
     }
   };
 
+  const handleExpenseDecision = async (id: string, status: 'approved' | 'rejected') => {
+    setActingId(id);
+    const res = await api.put(`/expenses/${id}`, { action: 'status', status });
+    setActingId(null);
+    if (res.success) {
+      addToast({
+        type: status === 'approved' ? 'success' : 'info',
+        title: t(
+          `Expense ${status === 'approved' ? 'approved' : 'rejected'}`,
+          `تم ${status === 'approved' ? 'الموافقة على' : 'رفض'} المصروف`,
+          language
+        ),
+      });
+      await load();
+    } else {
+      addToast({ type: 'error', title: res.error || t('Failed to update expense', 'فشل تحديث المصروف', language) });
+    }
+  };
+
   if (loading || !data) {
     return (
       <div className="space-y-6">
@@ -114,27 +134,24 @@ export function DashboardContent() {
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-28 rounded-2xl border border-gray-100 bg-white shadow-card animate-pulse" />
+            <div key={i} className="h-28 rounded-2xl bg-white shadow-card animate-pulse" />
           ))}
         </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="h-80 rounded-2xl border border-gray-100 bg-white shadow-card animate-pulse lg:col-span-2" />
-          <div className="h-80 rounded-2xl border border-gray-100 bg-white shadow-card animate-pulse" />
+          <div className="h-80 rounded-2xl bg-white shadow-card animate-pulse lg:col-span-2" />
+          <div className="h-80 rounded-2xl bg-white shadow-card animate-pulse" />
         </div>
       </div>
     );
   }
 
   const hour = now.getHours();
+  const canApproveLeave = hasPermission(user?.role, 'leave:approve');
+  const canApproveExpense = hasPermission(user?.role, 'expense:approve');
   const greeting = hour < 12 ? t('Good morning', 'صباح الخير', language) : hour < 18 ? t('Good afternoon', 'مساء الخير', language) : t('Good evening', 'مساء الخير', language);
 
   const presentToday = data.attendanceToday.present + data.attendanceToday.late;
   const attendancePct = data.totalEmployees > 0 ? Math.round((presentToday / data.totalEmployees) * 100) : 0;
-  const weekDays = data.attendanceTrend.length;
-  const weekAvgPct =
-    weekDays > 0 && data.totalEmployees > 0
-      ? Math.round(data.attendanceTrend.reduce((sum, t) => sum + t.present + t.late, 0) / (weekDays * data.totalEmployees) * 100)
-      : 0;
   const expiringDocs = data.expiringDocuments.length + data.expiredDocuments.length;
   const expiringSoon = data.expiringDocuments.length;
 
@@ -162,14 +179,14 @@ export function DashboardContent() {
       chipValue: `${attendancePct}%`,
     },
     {
-      label: { en: 'Pending Leaves', ar: 'الإجازات المعلقة' },
-      value: String(data.pendingLeaves),
-      sub: { en: 'awaiting approval', ar: 'بانتظار الموافقة' },
-      icon: CalendarClock,
+      label: { en: 'Pending Approvals', ar: 'موافقات معلقة' },
+      value: String(data.pendingLeaves + data.pendingExpenses),
+      sub: { en: 'leaves & expenses to review', ar: 'إجازات ومصروفات للمراجعة' },
+      icon: ClipboardCheck,
       chip: 'bg-warning/10 text-warning',
       tone: 'from-warning to-warning/70',
       toneText: 'text-warning',
-      footer: [{ en: 'Approve now', ar: 'اعتماد الآن', tone: 'warning' }],
+      footer: [{ en: 'Review now', ar: 'مراجعة الآن', tone: 'warning' }],
     },
     {
       label: { en: 'Monthly Payroll', ar: 'الرواتب الشهرية' },
@@ -181,11 +198,12 @@ export function DashboardContent() {
       toneText: 'text-info',
     },
     {
-      label: { en: 'Pending Expenses', ar: 'المصروفات المعلقة' },
-      value: formatCurrency(data.pendingExpenseTotal),
-      sub: { en: `${data.pendingExpenses} request(s)`, ar: `${data.pendingExpenses} طلب` },
-      icon: Receipt,
-      chip: 'bg-accent/10 text-accent',
+      label: { en: 'Compliance Expiries', ar: 'انتهاءات نظامية' },
+      value: String(data.criticalRunway.length),
+      sub: { en: 'iqama/permits ≤ 90 days', ar: 'إقامة/تصاريح ≤ 90 يوم' },
+      icon: Shield,
+      chip: 'bg-error/10 text-error',
+      footer: [{ en: 'View expiries', ar: 'عرض الانتهاءات', tone: 'error' }],
     },
     {
       label: { en: 'Document Alerts', ar: 'تنبيهات المستندات' },
@@ -206,41 +224,14 @@ export function DashboardContent() {
       chip: 'bg-info/10 text-info',
     },
     {
-      label: { en: 'Attendance Rate', ar: 'نسبة الحضور' },
-      value: `${weekAvgPct}%`,
-      sub: { en: 'last 7 days avg', ar: 'متوسط آخر 7 أيام' },
-      icon: TrendingUp,
-      chip: 'bg-success/10 text-success',
-      pct: weekAvgPct,
-      chipValue: `${weekAvgPct}%`,
-    },
-    {
       label: { en: 'On Leave Now', ar: 'في إجازة الآن' },
       value: String(data.onLeaveNow.length),
       sub: { en: `${data.notReturnedVacations.length} overdue return`, ar: `${data.notReturnedVacations.length} تأخر في العودة` },
       icon: PlaneTakeoff,
       chip: 'bg-primary/10 text-primary',
     },
-    {
-      label: { en: 'Not Returned', ar: 'لم يعودوا' },
-      value: String(data.notReturnedVacations.length),
-      sub: { en: data.notReturnedVacations[0]?.reason || 'no overdue leaves', ar: data.notReturnedVacations[0]?.reason || 'لا توجد إجازات متأخرة' },
-      icon: PlaneLanding,
-      chip: 'bg-error/10 text-error',
-      footer: [{ en: 'Review overdue', ar: 'مراجعة المتأخرين', tone: 'error' }],
-    },
-    {
-      label: { en: 'Critical Runway', ar: 'صلاحية حرجة' },
-      value: String(data.criticalRunway.length),
-      sub: { en: 'permits/contracts ≤ 90 days', ar: 'تصاريح/عقود ≤ 90 يوم' },
-      icon: Shield,
-      chip: 'bg-warning/10 text-warning',
-      footer: [{ en: 'View expiries', ar: 'عرض الانتهاءات', tone: 'warning' }],
-    },
   ];
 
-  const deptCounts = data.departmentDistribution.map((d) => d.count);
-  const deptNames = data.departmentDistribution.map((d) => d.name);
   const trendLabels = data.attendanceTrend.map((d) =>
     new Date(d.date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-GB', { weekday: 'short' })
   );
@@ -325,7 +316,7 @@ export function DashboardContent() {
                     </div>
                   </>
                 );
-                const cls = 'group flex flex-col gap-2.5 rounded-xl border border-gray-100 bg-white p-4 shadow-card transition-all hover:border-primary/30 hover:shadow-md';
+                const cls = 'group flex flex-col gap-2.5 rounded-xl bg-white p-4 shadow-card transition-all hover:border-primary/30 hover:shadow-md';
                 if ('dialog' in a && a.dialog) {
                   return (
                     <button
@@ -354,54 +345,8 @@ export function DashboardContent() {
       {dialog === 'todo' && <AddTodoDialog onClose={() => setDialog(null)} />}
       {dialog === 'reminder' && <AddReminderDialog onClose={() => setDialog(null)} />}
 
-      {(() => {
-        const alerts: { icon: LucideIcon; count: number; title: string; tone: string; iconBg: string; href: string }[] = [];
-        const errCount = data.expiredDocuments.length;
-        const warnCount = data.expiringDocuments.length;
-        const runwayCritical = data.criticalRunway.length;
-        const notReturned = data.notReturnedVacations.length;
-        const pendingCount = data.pendingLeaves + data.pendingExpenses;
-        if (errCount > 0) alerts.push({ icon: FileText, count: errCount, title: t('Expired documents', 'مستندات منتهية', language), tone: 'border-error/20 bg-error/5 text-error', iconBg: 'bg-error/15 text-error', href: '/documents' });
-        if (runwayCritical > 0) alerts.push({ icon: Shield, count: runwayCritical, title: t('Critical expiries', 'انتهاءات حرجة', language), tone: 'border-error/20 bg-error/5 text-error', iconBg: 'bg-error/15 text-error', href: '/employees' });
-        if (notReturned > 0) alerts.push({ icon: PlaneLanding, count: notReturned, title: t('Not returned', 'لم يعودوا', language), tone: 'border-error/20 bg-error/5 text-error', iconBg: 'bg-error/15 text-error', href: '/leaves' });
-        if (pendingCount > 0) alerts.push({ icon: ClipboardCheck, count: pendingCount, title: t('Pending approvals', 'موافقات معلقة', language), tone: 'border-warning/20 bg-warning/5 text-warning', iconBg: 'bg-warning/15 text-warning', href: '/leaves' });
-        if (warnCount > 0) alerts.push({ icon: FileClock, count: warnCount, title: t('Expiring soon', 'تنتهي قريباً', language), tone: 'border-warning/20 bg-warning/5 text-warning', iconBg: 'bg-warning/15 text-warning', href: '/documents' });
-        if (alerts.length === 0) {
-          return (
-            <div className="flex items-center gap-2.5 rounded-xl border border-success/20 bg-success/5 px-4 py-3 text-sm font-medium text-success">
-              <CheckCircle2 className="h-4 w-4" />
-              {t('All clear — no urgent alerts', 'كل شيء على ما يرام — لا توجد تنبيهات عاجلة', language)}
-            </div>
-          );
-        }
-        return (
-          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-            {alerts.slice(0, 4).map((a) => {
-              const Icon = a.icon;
-              return (
-                <Link
-                  key={a.title}
-                  href={a.href}
-                  className={`group flex items-center gap-2.5 rounded-xl border px-3 py-2 transition-all hover:shadow-sm ${a.tone}`}
-                >
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${a.iconBg}`}>
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold leading-tight">{a.count}</p>
-                    <p className="truncate text-[11px] leading-tight opacity-80">{a.title}</p>
-                  </div>
-                  <ArrowUpRight className="h-3.5 w-3.5 shrink-0 opacity-40 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                </Link>
-              );
-            })}
-          </div>
-        );
-      })()}
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="grid grid-cols-2 gap-3 lg:col-span-2">
-          {kpis.slice(0, 4).map((k) => {
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {kpis.slice(0, 8).map((k) => {
           const Icon = k.icon;
           const empty =
             (k.label.en === 'Pending Expenses' && data.pendingExpenses === 0) ||
@@ -457,47 +402,159 @@ export function DashboardContent() {
             />
           );
         })}
-        </div>
+      </div>
 
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="flex items-center justify-between px-4 py-2.5">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/10">
-                  <ListTodo className="h-4 w-4 text-warning" />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <Card className="flex flex-col lg:col-span-2">
+        <CardHeader className="flex flex-wrap items-center justify-between gap-2 px-5 py-3.5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <ClipboardCheck className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold">{t('Approval Inbox', 'صندوق الموافقات', language)}</h2>
+              <p className="text-xs text-gray-400">{t('Decide leave requests and expenses instantly', 'قرارات فورية للإجازات والمصروفات', language)}</p>
+            </div>
+          </div>
+          <div className="flex gap-1 rounded-lg bg-gray-100/70 p-1">
+            {(['leaves', 'expenses'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setApprovalTab(tab)}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  approvalTab === tab ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {tab === 'leaves' ? t('Leaves', 'الإجازات', language) : t('Expenses', 'المصروفات', language)}
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${approvalTab === tab ? 'bg-primary/10 text-primary' : 'bg-gray-200/70 text-gray-500'}`}>
+                  {tab === 'leaves' ? data.pendingLeaves : data.pendingExpenses}
+                </span>
+              </button>
+            ))}
+          </div>
+        </CardHeader>
+        <CardBody className="flex-1 overflow-y-auto px-4 py-2">
+          {approvalTab === 'leaves' ? (
+            data.pendingLeavesList.length === 0 ? (
+              <p className="py-12 text-center text-sm text-gray-400">{t('All leave requests handled 🎉', 'تمت معالجة جميع طلبات الإجازة 🎉', language)}</p>
+            ) : (
+              <div className="divide-y divide-gray-100/60">
+                {data.pendingLeavesList.map((l) => (
+                  <div key={l.id} className="flex items-center gap-3 px-1 py-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                      {l.employeeName.split(' ').map((w) => w[0]).slice(0, 2).join('')}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-gray-900">
+                        {language === 'ar' ? l.employeeNameAr || l.employeeName : l.employeeName}
+                      </p>
+                      <p className="truncate text-xs text-gray-500">
+                        {getLeaveTypeLabel(l.type, language)} · {l.daysCount} {t('days', 'أيام', language)} · {formatDate(l.startDate, language)} → {formatDate(l.endDate, language)}
+                      </p>
+                    </div>
+                    {canApproveLeave && (
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <button
+                          onClick={() => handleLeaveDecision(l.id, 'approved')}
+                          disabled={actingId === l.id}
+                          className="inline-flex h-8 items-center gap-1 rounded-lg bg-success/10 px-2.5 text-xs font-semibold text-success transition-all hover:bg-success hover:text-white active:scale-95 disabled:opacity-50"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          {t('Approve', 'اعتماد', language)}
+                        </button>
+                        <button
+                          onClick={() => handleLeaveDecision(l.id, 'rejected')}
+                          disabled={actingId === l.id}
+                          className="inline-flex h-8 items-center gap-1 rounded-lg bg-error/10 px-2.5 text-xs font-semibold text-error transition-all hover:bg-error hover:text-white active:scale-95 disabled:opacity-50"
+                        >
+                          <XCircle className="h-3.5 w-3.5" />
+                          {t('Reject', 'رفض', language)}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )
+          ) : data.pendingExpensesList.length === 0 ? (
+            <p className="py-12 text-center text-sm text-gray-400">{t('No expense requests waiting 🎉', 'لا توجد مصروفات بانتظار القرار 🎉', language)}</p>
+          ) : (
+            <div className="divide-y divide-gray-100/60">
+              {data.pendingExpensesList.map((x) => (
+                <div key={x.id} className="flex items-center gap-3 px-1 py-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
+                    <Receipt className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-gray-900">{x.requestedByName}</p>
+                    <p className="truncate text-xs text-gray-500">{x.category}{x.description ? ` — ${x.description}` : ''}</p>
+                  </div>
+                  <span className="shrink-0 text-sm font-bold text-primary">{formatCurrency(x.amount)}</span>
+                  {canApproveExpense && (
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <button
+                        onClick={() => handleExpenseDecision(x.id, 'approved')}
+                        disabled={actingId === x.id}
+                        className="inline-flex h-8 items-center gap-1 rounded-lg bg-success/10 px-2.5 text-xs font-semibold text-success transition-all hover:bg-success hover:text-white active:scale-95 disabled:opacity-50"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        {t('Approve', 'اعتماد', language)}
+                      </button>
+                      <button
+                        onClick={() => handleExpenseDecision(x.id, 'rejected')}
+                        disabled={actingId === x.id}
+                        className="inline-flex h-8 items-center gap-1 rounded-lg bg-error/10 px-2.5 text-xs font-semibold text-error transition-all hover:bg-error hover:text-white active:scale-95 disabled:opacity-50"
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                        {t('Reject', 'رفض', language)}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardBody>
+        <div className="border-t border-gray-100/60 px-5 py-2.5 text-end">
+          <Link href={approvalTab === 'leaves' ? '/leaves' : '/expenses'} className="text-xs font-medium text-primary hover:underline">
+            {t('Open full module', 'فتح الوحدة الكاملة', language)} →
+          </Link>
+        </div>
+      </Card>
+
+        <div className="space-y-6">
+          <Card className="flex flex-col">
+            <CardHeader className="flex items-center justify-between px-5 py-3.5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/10">
+                  <ListTodo className="h-5 w-5 text-warning" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold">{t('Top Todo', 'أهم المهام', language)}</h2>
-                  <p className="text-[11px] text-gray-400">{t('Open tasks by priority', 'مهام مفتوحة حسب الأولوية', language)}</p>
+                  <h2 className="text-base font-semibold">{t('My Tasks', 'مهامي', language)}</h2>
+                  <p className="text-xs text-gray-400">{t('Open tasks by priority', 'مهام مفتوحة حسب الأولوية', language)}</p>
                 </div>
               </div>
               <Link href="/todos" className="text-sm font-medium text-primary hover:underline">
                 {t('View all', 'عرض الكل', language)}
               </Link>
             </CardHeader>
-            <CardBody className="max-h-72 overflow-y-auto px-4 py-3 pr-2">
+            <CardBody className="max-h-[22rem] flex-1 overflow-y-auto px-3 py-3">
               {data.todoItems.length === 0 ? (
-                <p className="py-6 text-center text-sm text-gray-400">{t('No open tasks 🎉', 'لا توجد مهام مفتوحة 🎉', language)}</p>
+                <p className="py-10 text-center text-sm text-gray-400">{t('No open tasks 🎉', 'لا توجد مهام مفتوحة 🎉', language)}</p>
               ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-1">
                   {data.todoItems.map((tItem) => (
-                    <div key={tItem.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-gray-50">
-                      <span
-                        className={`h-2 w-2 shrink-0 rounded-full ${
-                          tItem.priority === 'high' ? 'bg-error' : tItem.priority === 'medium' ? 'bg-warning' : 'bg-success'
-                        }`}
-                      />
+                    <div key={tItem.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-gray-50">
+                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${tItem.priority === 'high' ? 'bg-error/15' : tItem.priority === 'medium' ? 'bg-warning/15' : 'bg-success/15'}`}>
+                        <span className={`h-2 w-2 rounded-full ${tItem.priority === 'high' ? 'bg-error' : tItem.priority === 'medium' ? 'bg-warning' : 'bg-success'}`} />
+                      </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-medium text-gray-800">{tItem.title}</p>
-                        <p className="text-[10px] text-gray-400">
-                          {tItem.dueDate ? t('Due', 'استحقاق', language) + ' ' + formatDate(tItem.dueDate, language) : t('No due date', 'بدون تاريخ', language)}
-                        </p>
+                        <p className="truncate text-sm font-medium text-gray-800">{tItem.title}</p>
+                        {tItem.dueDate && (
+                          <p className="text-xs text-gray-400">{t('Due', 'استحقاق', language)} {formatDate(tItem.dueDate, language)}</p>
+                        )}
                       </div>
-                      <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
-                          tItem.priority === 'high' ? 'bg-error/10 text-error' : tItem.priority === 'medium' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'
-                        }`}
-                      >
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${tItem.priority === 'high' ? 'bg-error/10 text-error' : tItem.priority === 'medium' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
                         {tItem.priority}
                       </span>
                     </div>
@@ -508,26 +565,26 @@ export function DashboardContent() {
           </Card>
 
           <Card>
-            <CardHeader className="flex items-center justify-between px-4 py-2.5">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-info/10">
-                  <Bell className="h-4 w-4 text-info" />
+            <CardHeader className="flex items-center justify-between px-5 py-3.5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-info/10">
+                  <Bell className="h-5 w-5 text-info" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold">{t('Recent Activity', 'النشاط الأخير', language)}</h2>
-                  <p className="text-[11px] text-gray-400">{t('Latest notifications and messages', 'أحدث الإشعارات والرسائل', language)}</p>
+                  <h2 className="text-base font-semibold">{t('Recent Activity', 'النشاط الأخير', language)}</h2>
+                  <p className="text-xs text-gray-400">{t('Notifications and messages', 'الإشعارات والرسائل', language)}</p>
                 </div>
               </div>
-              <span className="rounded-full bg-info/10 px-2 py-0.5 text-[10px] font-semibold text-info">
-                {data.recentNotifications.length + data.recentMessages.length}
-              </span>
+              <Link href="/notifications" className="text-sm font-medium text-primary hover:underline">
+                {t('View all', 'عرض الكل', language)}
+              </Link>
             </CardHeader>
-            <CardBody className="max-h-32 overflow-y-auto px-4 py-3 pr-2">
+            <CardBody className="max-h-[22rem] flex-1 overflow-y-auto px-4 py-3">
               {data.recentNotifications.length === 0 && data.recentMessages.length === 0 ? (
-                <p className="py-6 text-center text-sm text-gray-400">{t('No recent activity', 'لا يوجد نشاط حديث', language)}</p>
+                <p className="py-10 text-center text-sm text-gray-400">{t('No recent activity', 'لا يوجد نشاط حديث', language)}</p>
               ) : (
                 <div className="space-y-3">
-                  {data.recentNotifications.map((n) => {
+                  {data.recentNotifications.slice(0, 4).map((n) => {
                     const meta = notifMeta[n.type] || notifMeta.info;
                     const Icon = meta.icon;
                     return (
@@ -549,16 +606,14 @@ export function DashboardContent() {
                       </div>
                     );
                   })}
-                  {data.recentMessages.map((m) => (
+                  {data.recentMessages.slice(0, 2).map((m) => (
                     <div key={m.id} className="flex items-start gap-2.5">
                       <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         <MessageSquare className="h-3.5 w-3.5" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-medium text-gray-800">{m.senderName}</p>
-                        <p className="truncate text-[11px] text-gray-500">
-                          {m.attachment ? (m.attachment.type === 'image' ? t('📷 Image', '📷 صورة', language) : `📎 ${m.attachment.name}`) : m.content}
-                        </p>
+                        <p className="truncate text-[11px] text-gray-500">{m.content}</p>
                         <p className="text-[10px] text-gray-400">{formatDate(m.timestamp, language)}</p>
                       </div>
                     </div>
@@ -567,70 +622,142 @@ export function DashboardContent() {
               )}
             </CardBody>
           </Card>
-
-          <Card>
-            <CardHeader className="flex items-center justify-between px-4 py-2.5">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                  <AlarmClock className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold">{t('Next Coming', 'القادم', language)}</h2>
-                  <p className="text-[11px] text-gray-400">{t('Upcoming leaves, expiries & deadlines', 'الإجازات القادمة والمواعيد والانتهاءات', language)}</p>
-                </div>
-              </div>
-              <Link href="/employees" className="text-sm font-medium text-primary hover:underline">
-                {t('View all', 'عرض الكل', language)}
-              </Link>
-            </CardHeader>
-            <CardBody className="max-h-32 overflow-y-auto px-4 py-3 pr-2">
-              {data.upcomingDeadlines.length === 0 ? (
-                <p className="py-6 text-center text-sm text-gray-400">{t('Nothing upcoming', 'لا يوجد شيء قادم', language)}</p>
-              ) : (
-                <div className="space-y-2.5">
-                  {data.upcomingDeadlines.map((d) => {
-                    const days = daysUntil(d.date);
-                    return (
-                      <div key={d.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-gray-50">
-                        <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${d.kind === 'document' ? 'bg-accent/10 text-accent-600' : d.kind === 'iqama' ? 'bg-error/10 text-error' : d.kind === 'work_permit' ? 'bg-info/10 text-info' : d.kind === 'contract' ? 'bg-secondary/10 text-secondary' : 'bg-warning/10 text-warning'}`}>
-                          {d.kind === 'document' ? <FileClock className="h-3.5 w-3.5" /> : <Timer className="h-3.5 w-3.5" />}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-xs font-medium text-gray-800">{d.title}</p>
-                          <p className="text-[10px] text-gray-400">
-                            {d.kind === 'document' ? t('Document', 'مستند', language) : d.kind === 'contract' ? t('Contract', 'عقد', language) : d.kind === 'work_permit' ? t('Work Permit', 'تصريح عمل', language) : d.kind === 'iqama' ? t('Iqama', 'إقامة', language) : t('Probation', 'فترة تجريبية', language)}
-                          </p>
-                        </div>
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${days === null || days < 0 ? 'bg-error/10 text-error' : days <= 30 ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
-                          {days === null ? '—' : days < 0 ? t('Expired', 'منتهي', language) : `${days} ${t('d', 'يوم', language)}`}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardBody>
-          </Card>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex items-center justify-between">
+        <Card className="flex flex-col">
+          <CardHeader className="flex items-center justify-between px-5 py-3.5">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/10">
-                <Activity className="h-4 w-4 text-success" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-error/10">
+                <Shield className="h-5 w-5 text-error" />
               </div>
               <div>
-                <h2 className="text-base font-semibold">{t('Workforce Status', 'حالة القوى العاملة', language)}</h2>
-                <p className="text-xs text-gray-400">{t('Active, inactive and terminated headcount', 'الموظفون النشطون وغير النشطين والمفصولون', language)}</p>
+                <h2 className="text-base font-semibold">{t('Compliance Watchlist', 'قائمة المتابعة النظامية', language)}</h2>
+                <p className="text-xs text-gray-400">{t('Iqama, permits, contracts & documents by urgency', 'الإقامة والتصاريح والعقود والمستندات حسب الأولوية', language)}</p>
               </div>
             </div>
             <Link href="/employees" className="text-sm font-medium text-primary hover:underline">
               {t('View all', 'عرض الكل', language)}
             </Link>
           </CardHeader>
-          <CardBody>
+          <CardBody className="max-h-[24rem] flex-1 overflow-y-auto px-4 py-2">
+            {(() => {
+              const items: { key: string; icon: LucideIcon; tint: string; title: string; sub: string; badge: string; badgeCls: string }[] = [];
+              for (const d of data.upcomingDeadlines) {
+                const days = daysUntil(d.date);
+                if (days === null) continue;
+                const kindLabel = d.kind === 'document' ? t('Document', 'مستند', language) : d.kind === 'contract' ? t('Contract', 'عقد', language) : d.kind === 'work_permit' ? t('Work Permit', 'تصريح عمل', language) : d.kind === 'iqama' ? t('Iqama', 'إقامة', language) : t('Probation', 'فترة تجريبية', language);
+                items.push({
+                  key: d.id,
+                  icon: d.kind === 'document' ? FileClock : Timer,
+                  tint: d.kind === 'iqama' ? 'bg-error/10 text-error' : d.kind === 'work_permit' ? 'bg-info/10 text-info' : d.kind === 'contract' ? 'bg-secondary/10 text-secondary' : 'bg-warning/10 text-warning',
+                  title: d.title,
+                  sub: kindLabel,
+                  badge: days < 0 ? t('Expired', 'منتهي', language) : `${days} ${t('days', 'يوم', language)}`,
+                  badgeCls: days < 0 || days <= 15 ? 'bg-error/10 text-error' : days <= 30 ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success',
+                });
+              }
+              for (const e of data.notReturnedVacations) {
+                items.push({
+                  key: `nr-${e.id}`,
+                  icon: PlaneLanding,
+                  tint: 'bg-error/10 text-error',
+                  title: e.employeeName,
+                  sub: t('Did not return from vacation', 'لم يعد من الإجازة', language),
+                  badge: t('Overdue', 'متأخر', language),
+                  badgeCls: 'bg-error/10 text-error',
+                });
+              }
+              if (items.length === 0) {
+                return <p className="py-12 text-center text-sm text-gray-400">{t('Everything is compliant 🎉', 'كل شيء منتظم 🎉', language)}</p>;
+              }
+              return (
+                <div className="space-y-0.5">
+                  {items.slice(0, 8).map((it) => {
+                    const Icon = it.icon;
+                    return (
+                      <div key={it.key} className="flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-gray-50">
+                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${it.tint}`}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-gray-900">{it.title}</p>
+                          <p className="text-xs text-gray-400">{it.sub}</p>
+                        </div>
+                        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ${it.badgeCls}`}>{it.badge}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </CardBody>
+        </Card>
+
+        <Card className="flex flex-col">
+          <CardHeader className="flex items-center justify-between px-5 py-3.5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10">
+                <UserCheck className="h-5 w-5 text-success" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold">{t("Today's Attendance", 'حضور اليوم', language)}</h2>
+                <p className="text-xs text-gray-400">{t('Live status and weekly trend', 'الحالة المباشرة واتجاه الأسبوع', language)}</p>
+              </div>
+            </div>
+            <Link href="/attendance" className="text-sm font-medium text-primary hover:underline">
+              {t('View all', 'عرض الكل', language)}
+            </Link>
+          </CardHeader>
+          <CardBody className="flex flex-col gap-4 px-5 py-4">
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { label: t('Present', 'حاضر', language), count: data.attendanceToday.present, cls: 'bg-success/10 text-success' },
+                { label: t('Late', 'متأخر', language), count: data.attendanceToday.late, cls: 'bg-warning/10 text-warning' },
+                { label: t('Absent', 'غائب', language), count: data.attendanceToday.absent, cls: 'bg-error/10 text-error' },
+                { label: t('Half Day', 'نصف يوم', language), count: data.attendanceToday.halfDay, cls: 'bg-info/10 text-info' },
+              ].map((s) => (
+                <div key={s.label} className={`rounded-xl px-2 py-3 text-center ${s.cls}`}>
+                  <p className="text-xl font-bold leading-none">{s.count}</p>
+                  <p className="mt-1 text-[11px] font-medium opacity-80">{s.label}</p>
+                </div>
+              ))}
+            </div>
+            <Chart
+              type="area"
+              series={[
+                { name: t('Present', 'حاضر', language), data: trendPresent },
+                { name: t('Late', 'متأخر', language), data: trendLate },
+                { name: t('Absent', 'غائب', language), data: trendAbsent },
+              ]}
+              categories={trendLabels}
+              height={200}
+              colors={[STATUS_HEX.present, STATUS_HEX.late, STATUS_HEX.absent]}
+              dir={dir}
+              locale={language}
+            />
+          </CardBody>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="flex items-center justify-between px-5 py-3.5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10">
+                <Activity className="h-5 w-5 text-secondary" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold">{t('Workforce Status', 'حالة القوى العاملة', language)}</h2>
+                <p className="text-xs text-gray-400">{t('Headcount health and nationality mix', 'الموظفون والجنسيات', language)}</p>
+              </div>
+            </div>
+            <Link href="/employees" className="text-sm font-medium text-primary hover:underline">
+              {t('View all', 'عرض الكل', language)}
+            </Link>
+          </CardHeader>
+          <CardBody className="px-5 py-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {[
                 { key: 'active', label: t('Active', 'نشط', language), count: data.statusDistribution.find((s) => s.name === 'active')?.count || 0, hex: STATUS_HEX.active },
@@ -639,27 +766,38 @@ export function DashboardContent() {
               ].map((s) => {
                 const pct = data.totalEmployees ? Math.round((s.count / data.totalEmployees) * 100) : 0;
                 return (
-                  <div key={s.key} className="rounded-xl border border-gray-100 p-4">
+                  <div key={s.key} className="rounded-xl bg-gray-50 p-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-700">{s.label}</span>
                       <span className="text-xl font-bold text-gray-900">{s.count}</span>
                     </div>
-                    <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                    <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-gray-200/60">
                       <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: s.hex }} />
                     </div>
-                    <p className="mt-1.5 text-xs text-gray-400">{pct}%</p>
                   </div>
                 );
               })}
             </div>
+            {data.nationalityDistribution.length > 0 && (
+              <div className="mt-4 border-t border-gray-100/60 pt-3">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">{t('Top nationalities', 'أكثر الجنسيات', language)}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {data.nationalityDistribution.slice(0, 6).map((n) => (
+                    <span key={n.name} className="rounded-full bg-secondary/5 px-2.5 py-1 text-xs font-medium text-secondary">
+                      {n.name} · {n.count}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardBody>
         </Card>
 
-        <Card>
-          <CardHeader className="flex items-center justify-between">
+        <Card className="flex flex-col">
+          <CardHeader className="flex items-center justify-between px-5 py-3.5">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                <PlaneTakeoff className="h-4 w-4 text-primary" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                <PlaneTakeoff className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <h2 className="text-base font-semibold">{t('On Leave Now', 'في إجازة الآن', language)}</h2>
@@ -670,24 +808,24 @@ export function DashboardContent() {
               {t('View all', 'عرض الكل', language)}
             </Link>
           </CardHeader>
-          <CardBody className="max-h-64 overflow-y-auto pr-1">
+          <CardBody className="max-h-[24rem] flex-1 overflow-y-auto px-4 py-2">
             {data.onLeaveNow.length === 0 ? (
-              <p className="py-10 text-center text-sm text-gray-400">{t('No one on leave', 'لا يوجد أحد في إجازة', language)}</p>
+              <p className="py-12 text-center text-sm text-gray-400">{t('No one on leave', 'لا يوجد أحد في إجازة', language)}</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-0.5">
                 {data.onLeaveNow.slice(0, 6).map((l) => (
-                  <div key={l.id} className="flex items-center gap-3 rounded-xl border border-gray-100 px-3.5 py-2.5">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xs font-bold text-primary">
+                  <div key={l.id} className="flex items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-gray-50">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
                       {l.employeeName.split(' ').map((w) => w[0]).slice(0, 2).join('')}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-gray-800">{l.employeeName}</p>
-                      <p className="text-[11px] text-gray-400">
+                      <p className="truncate text-sm font-medium text-gray-900">{l.employeeName}</p>
+                      <p className="text-xs text-gray-400">
                         {getLeaveTypeLabel(l.type, language)} · {l.daysCount} {t('days', 'أيام', language)}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success">
-                      {formatDate(l.endDate, language)}
+                    <span className="shrink-0 rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-semibold text-success">
+                      {t('until', 'حتى', language)} {formatDate(l.endDate, language)}
                     </span>
                   </div>
                 ))}
@@ -697,371 +835,6 @@ export function DashboardContent() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-                <BarChart3 className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-base font-semibold">{t('Headcount by Department', 'عدد الموظفين حسب القسم', language)}</h2>
-                <p className="text-xs text-gray-400">{t('Current headcount distribution', 'التوزيع الحالي للموظفين', language)}</p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardBody>
-            {deptNames.length === 0 ? (
-              <p className="py-10 text-center text-sm text-gray-400">{t('No data available', 'لا توجد بيانات', language)}</p>
-            ) : (
-              <Chart
-                type="bar"
-                series={[{ name: t('Employees', 'الموظفون', language), data: deptCounts }]}
-                categories={deptNames}
-                height={260}
-                colors={[COLORS[0]]}
-                showLegend={false}
-                showDataLabels
-                dir={dir}
-                locale={language}
-              />
-            )}
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-info/10">
-              <TrendingUp className="h-4 w-4 text-info" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold">{t('Attendance Trend (7 days)', 'اتجاه الحضور (7 أيام)', language)}</h2>
-              <p className="text-xs text-gray-400">{t('Daily present, late and absent counts', 'العدد اليومي للحاضرين والمتأخرين والغائبين', language)}</p>
-            </div>
-          </CardHeader>
-          <CardBody>
-            <Chart
-              type="area"
-              series={[
-                { name: t('Present', 'حاضر', language), data: trendPresent },
-                { name: t('Late', 'متأخر', language), data: trendLate },
-                { name: t('Absent', 'غائب', language), data: trendAbsent },
-              ]}
-              categories={trendLabels}
-              height={260}
-              colors={[STATUS_HEX.present, STATUS_HEX.late, STATUS_HEX.absent]}
-              dir={dir}
-              locale={language}
-            />
-          </CardBody>
-        </Card>
-
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-warning/10">
-                <CalendarClock className="h-4 w-4 text-warning" />
-              </div>
-              <div>
-                <h2 className="text-base font-semibold">{t('Pending Approvals', 'الموافقات المعلقة', language)}</h2>
-                <p className="text-xs text-gray-400">{t('Leave requests waiting for your decision', 'طلبات إجازة بانتظار قرارك', language)}</p>
-              </div>
-            </div>
-            <Link href="/leaves" className="text-sm font-medium text-primary hover:underline">
-              {t('View all', 'عرض الكل', language)}
-            </Link>
-          </CardHeader>
-          <CardBody>
-            {data.pendingLeaveRequests.length === 0 ? (
-              <p className="py-10 text-center text-sm text-gray-400">
-                {t('No pending approvals 🎉', 'لا توجد موافقات معلقة 🎉', language)}
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {data.pendingLeaveRequests.map((l) => (
-                  <div key={l.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-gray-100 p-3.5">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                      {l.employeeName.split(' ').map((w) => w[0]).slice(0, 2).join('')}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-gray-900">{l.employeeName}</p>
-                      <p className="text-xs text-gray-500">
-                        {getLeaveTypeLabel(l.type, language)} • {l.daysCount} {t('day(s)', 'أيام', language)} • {formatDate(l.startDate, language)}
-                        {l.reason ? ` • ${l.reason}` : ''}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleLeaveDecision(l.id, 'approved')}
-                        className="inline-flex items-center gap-1 rounded-lg bg-success px-3 py-1.5 text-xs font-medium text-white hover:bg-success/90"
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        {t('Approve', 'موافقة', language)}
-                      </button>
-                      <button
-                        onClick={() => handleLeaveDecision(l.id, 'rejected')}
-                        className="inline-flex items-center gap-1 rounded-lg border border-error/20 px-3 py-1.5 text-xs font-medium text-error hover:bg-error/10"
-                      >
-                        <XCircle className="h-3.5 w-3.5" />
-                        {t('Reject', 'رفض', language)}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {(data.expiredDocuments.length > 0 || data.expiringDocuments.length > 0) && (
-              <div className="mt-5">
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-gray-700">{t('Document Expiry Alerts', 'تنبيهات انتهاء المستندات', language)}</h3>
-                  <Link href="/documents" className="text-xs font-medium text-primary hover:underline">
-                    {t('View all', 'عرض الكل', language)}
-                  </Link>
-                </div>
-                <div className="space-y-2">
-                  {data.expiredDocuments.map((d) => (
-                    <div key={d.id} className="flex items-center gap-3 rounded-xl bg-error/5 px-3.5 py-2.5">
-                      <AlertTriangle className="h-4 w-4 shrink-0 text-error" />
-                      <p className="flex-1 truncate text-sm text-gray-700">
-                        {language === 'ar' ? d.nameAr || d.name : d.name}
-                      </p>
-                      <span className="rounded-full bg-error/10 px-2 py-0.5 text-xs font-semibold text-error">
-                        {t('Expired', 'منتهي', language)}
-                      </span>
-                    </div>
-                  ))}
-                  {data.expiringDocuments.map((d) => {
-                    const days = Math.round((new Date(d.expiryDate!).getTime() - now.getTime()) / 86400000);
-                    return (
-                      <div key={d.id} className="flex items-center gap-3 rounded-xl bg-warning/5 px-3.5 py-2.5">
-                        <Timer className="h-4 w-4 shrink-0 text-warning" />
-                        <p className="flex-1 truncate text-sm text-gray-700">
-                          {language === 'ar' ? d.nameAr || d.name : d.name}
-                        </p>
-                        <span className="rounded-full bg-warning/10 px-2 py-0.5 text-xs font-semibold text-warning">
-                          {days} {t('days', 'أيام', language)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {data.pendingExpenses > 0 && (
-              <div className="mt-5">
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-gray-700">{t('Pending Expenses', 'المصروفات المعلقة', language)}</h3>
-                  <Link href="/expenses" className="text-xs font-medium text-primary hover:underline">
-                    {t('View all', 'عرض الكل', language)}
-                  </Link>
-                </div>
-                <div className="flex items-center gap-3 rounded-xl bg-accent/5 px-3.5 py-2.5">
-                  <Receipt className="h-4 w-4 shrink-0 text-accent-600" />
-                  <p className="flex-1 text-sm text-gray-700">
-                    {data.pendingExpenses} {t('expense request(s)', 'طلب مصروف', language)}
-                  </p>
-                  <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent-600">
-                    {formatCurrency(data.pendingExpenseTotal)}
-                  </span>
-                </div>
-              </div>
-            )}
-          </CardBody>
-        </Card>
-      </div>
-
-      {data.upcomingLeaves.length > 0 && (
-        <Card>
-          <CardHeader className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary/10">
-                <CalendarClock className="h-4 w-4 text-secondary" />
-              </div>
-              <div>
-                <h2 className="text-base font-semibold">{t('Upcoming Leaves', 'الإجازات القادمة', language)}</h2>
-                <p className="text-xs text-gray-400">{t('Approved and pending leaves in the pipeline', 'الإجازات المعتمدة والمعلقة', language)}</p>
-              </div>
-            </div>
-            <Link href="/leaves" className="text-sm font-medium text-primary hover:underline">
-              {t('View all', 'عرض الكل', language)}
-            </Link>
-          </CardHeader>
-          <CardBody>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {data.upcomingLeaves.map((l) => (
-                <div key={l.id} className="flex items-center gap-3 rounded-xl border border-gray-100 p-3">
-                  <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl bg-primary/10">
-                    <CalendarPlus className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-gray-900">{l.employeeName}</p>
-                    <p className="text-xs text-gray-500">
-                      {getLeaveTypeLabel(l.type, language)} • {l.daysCount} {t('days', 'أيام', language)}
-                    </p>
-                  </div>
-                  <div className="text-right rtl:text-left">
-                    <p className="text-xs font-medium text-gray-700">{formatDate(l.startDate, language)}</p>
-                    <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${l.status === 'approved' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
-                      {getStatusLabel(l.status, language)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardBody>
-        </Card>
-      )}
-
-      {data.expenseByCategory.length > 0 && (
-        <Card>
-          <CardHeader className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10">
-              <PieChart className="h-4 w-4 text-accent-600" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold">
-                {t('Expenses by Category', 'المصاريف حسب الفئة', language)}
-              </h2>
-              <p className="text-xs text-gray-400">
-                {t('Total spend per expense category', 'إجمالي الإنفاق حسب فئة المصروف', language)}
-              </p>
-            </div>
-          </CardHeader>
-          <CardBody className="flex items-center justify-center">
-            <Chart
-              type="donut"
-              series={data.expenseByCategory.map((c) => c.amount)}
-              labels={data.expenseByCategory.map((c) => c.category)}
-              height={260}
-              donutSize="68%"
-              colors={COLORS}
-              dir={dir}
-              locale={language}
-            />
-          </CardBody>
-        </Card>
-      )}
-
-      {data.contractDistribution.length > 0 && (
-        <Card>
-          <CardHeader className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10">
-              <FileText className="h-4 w-4 text-accent-600" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold">{t('Contract Types', 'أنواع العقود', language)}</h2>
-              <p className="text-xs text-gray-400">{t('Breakdown by contract type', 'التوزيع حسب نوع العقد', language)}</p>
-            </div>
-          </CardHeader>
-          <CardBody className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {data.contractDistribution.map((c, i) => (
-              <div key={c.name} className="rounded-xl border border-gray-100 p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">{getContractTypeLabel(c.name, language)}</span>
-                  <span className="text-lg font-bold text-gray-900">{c.count}</span>
-                </div>
-                <div className="mt-2 h-2 w-full rounded-full bg-gray-100">
-                  <div
-                    className="h-2 rounded-full"
-                    style={{ width: `${data.totalEmployees ? Math.round((c.count / data.totalEmployees) * 100) : 0}%`, backgroundColor: COLORS[i % COLORS.length] }}
-                  />
-                </div>
-                <p className="mt-1.5 text-xs text-gray-400">
-                  {data.totalEmployees ? Math.round((c.count / data.totalEmployees) * 100) : 0}%
-                </p>
-              </div>
-            ))}
-          </CardBody>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-warning/10">
-                <Shield className="h-4 w-4 text-warning" />
-              </div>
-              <div>
-                <h2 className="text-base font-semibold">{t('Employee Runway', 'صلاحية الموظفين', language)}</h2>
-                <p className="text-xs text-gray-400">{t('Work permits, iqama & contracts expiring', 'تصاريح العمل والإقامة والعقود المنتهية القريبة', language)}</p>
-              </div>
-            </div>
-            <span className="rounded-full bg-warning/10 px-3 py-1 text-xs font-semibold text-warning">
-              {data.criticalRunway.length} {t('critical', 'حرج', language)}
-            </span>
-          </CardHeader>
-          <CardBody className="max-h-80 overflow-y-auto pr-1">
-            {data.runway.length === 0 ? (
-              <p className="py-10 text-center text-sm text-gray-400">{t('No runways tracked', 'لا توجد مواعيد انتهاء', language)}</p>
-            ) : (
-              <div className="space-y-2">
-                {data.runway.slice(0, 10).map((r) => {
-                  const days = daysUntil(r.expiryDate) ?? r.daysLeft ?? 0;
-                  const critical = r.daysLeft <= 90;
-                  return (
-                    <div key={r.employeeId + r.type} className="flex items-center gap-3 rounded-xl border border-gray-100 px-3.5 py-2.5">
-                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${critical ? 'bg-error/10 text-error' : 'bg-info/10 text-info'}`}>
-                        <Timer className="h-4 w-4" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-gray-800">{r.name}</p>
-                        <p className="text-[11px] text-gray-400">
-                          {r.type === 'work_permit' ? t('Work Permit', 'تصريح عمل', language) : r.type === 'iqama' ? t('Iqama', 'إقامة', language) : r.type === 'contract' ? t('Contract', 'عقد', language) : t('Probation', 'فترة تجريبية', language)} • {formatDate(r.expiryDate, language)}
-                        </p>
-                      </div>
-                      <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-bold ${days < 0 ? 'bg-error/10 text-error' : days <= 30 ? 'bg-error/10 text-error' : critical ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
-                        {days < 0 ? t('Expired', 'منتهي', language) : `${days} ${t('days', 'أيام', language)}`}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-error/10">
-              <PlaneLanding className="h-4 w-4 text-error" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold">{t('Vacation Returns', 'العودة من الإجازة', language)}</h2>
-              <p className="text-xs text-gray-400">{t('Who has not returned from vacation & why', 'من لم يعد من الإجازة ولماذا', language)}</p>
-            </div>
-          </CardHeader>
-          <CardBody className="max-h-80 overflow-y-auto pr-1">
-            {data.notReturnedVacations.length === 0 ? (
-              <p className="py-10 text-center text-sm text-gray-400">
-                {t('Everyone returned on time 🎉', 'الجميع عادوا في الوقت 🎉', language)}
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {data.notReturnedVacations.map((v) => (
-                  <div key={v.id} className="flex items-start gap-3 rounded-xl border border-error/10 bg-error/5 px-3.5 py-2.5">
-                    <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-error" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-800">{v.employeeName}</p>
-                      <p className="text-[11px] text-gray-500">
-                        {getLeaveTypeLabel(v.type, language)} · {formatDate(v.endDate, language)} · {v.reason || t('No reason', 'بدون سبب', language)}
-                      </p>
-                    </div>
-                    <span className="shrink-0 rounded-full bg-error/10 px-2 py-0.5 text-[11px] font-bold text-error">
-                      +{v.overdueDays} {t('days', 'أيام', language)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-      </div>
     </div>
   );
 }

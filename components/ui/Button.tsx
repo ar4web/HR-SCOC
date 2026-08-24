@@ -20,7 +20,7 @@ export function Button({
   const variants = {
     primary: 'bg-primary text-white hover:bg-primary-dark focus-ring',
     secondary: 'bg-secondary text-white hover:bg-secondary-700 focus-ring',
-    outline: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus-ring',
+    outline: 'bg-gray-100/80 text-gray-700 hover:bg-gray-200/80 focus-ring',
     ghost: 'text-gray-600 hover:bg-gray-100 focus-ring',
     warning: 'bg-warning text-white hover:bg-warning-dark focus-ring',
     danger: 'bg-error text-white hover:bg-error-dark focus-ring',

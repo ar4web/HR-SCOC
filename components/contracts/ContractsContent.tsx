@@ -155,15 +155,13 @@ return (
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {stats.map((s) => (
-          <Card key={s.label} className="p-4">
-            <div className="flex items-center gap-2">
-              <s.icon className={`h-4 w-4 ${s.cls}`} />
-              <div className="text-xs text-gray-500">{s.label}</div>
-            </div>
-            <div className={`mt-1.5 text-2xl font-bold leading-none ${s.cls}`}>{s.value}</div>
-          </Card>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl bg-white px-5 py-3.5 shadow-card">
+        {stats.map((s, i) => (
+          <div key={s.label} className={`flex items-center gap-2 ${i > 0 ? 'sm:border-s sm:border-gray-100 sm:ps-6' : ''}`}>
+            <s.icon className={`h-4 w-4 ${s.cls}`} />
+            <span className="text-lg font-bold leading-none text-gray-900">{s.value}</span>
+            <span className="text-xs text-gray-500">{s.label}</span>
+          </div>
         ))}
       </div>
 

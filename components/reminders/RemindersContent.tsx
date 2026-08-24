@@ -147,40 +147,18 @@ export function RemindersContent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card>
-          <CardBody className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-error/10">
-              <ShieldAlert className="h-5 w-5 text-error" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{summary ? summary.expired : '—'}</p>
-              <p className="text-xs text-gray-500">{t('Expired', 'منتهي', language)}</p>
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/10">
-              <BellRing className="h-5 w-5 text-warning" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{summary ? summary.expiring : '—'}</p>
-              <p className="text-xs text-gray-500">{t('Expiring soon', 'ينتهي قريباً', language)}</p>
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-              <UserRound className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-900">{summary ? summary.total : '—'}</p>
-              <p className="text-xs text-gray-500">{t('Requires action', 'يتطلب إجراء', language)}</p>
-            </div>
-          </CardBody>
-        </Card>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl bg-white px-5 py-3.5 shadow-card">
+        {[
+          { label: t('Expired', 'منتهي', language), value: summary ? summary.expired : '—', icon: ShieldAlert, cls: 'text-error' },
+          { label: t('Expiring soon', 'ينتهي قريباً', language), value: summary ? summary.expiring : '—', icon: BellRing, cls: 'text-warning' },
+          { label: t('Requires action', 'يتطلب إجراء', language), value: summary ? summary.total : '—', icon: UserRound, cls: 'text-primary' },
+        ].map((s2, i) => (
+          <div key={s2.label} className={`flex items-center gap-2 ${i > 0 ? 'sm:border-s sm:border-gray-100 sm:ps-6' : ''}`}>
+            <s2.icon className={`h-4 w-4 ${s2.cls}`} />
+            <span className="text-lg font-bold leading-none text-gray-900">{s2.value}</span>
+            <span className="text-xs text-gray-500">{s2.label}</span>
+          </div>
+        ))}
       </div>
 
       <Card>

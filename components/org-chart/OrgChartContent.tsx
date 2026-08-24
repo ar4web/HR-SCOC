@@ -64,7 +64,7 @@ function DepartmentCard({ dept, employees }: { dept: string; employees: MergedEm
               </div>
               <div className="mt-2 space-y-1 border-l-2 border-gray-200 pl-4">
                 {reports.map((rep) => (
-                  <div key={rep.id} className="flex items-center gap-2 rounded-lg border border-gray-100 bg-white px-3 py-1.5">
+                  <div key={rep.id} className="flex items-center gap-2 rounded-lg bg-white px-3 py-1.5">
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-200 text-[11px] font-bold text-gray-700">
                       {initials(language === 'ar' ? rep.fullNameAr || rep.fullName : rep.fullName)}
                     </div>

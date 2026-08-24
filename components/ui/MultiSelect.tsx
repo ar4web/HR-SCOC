@@ -57,7 +57,7 @@ export function MultiSelect({ label, labelAr, options, value, onChange, locale =
         <ChevronDown className={cn('h-3.5 w-3.5 text-gray-400 shrink-0 transition-transform', open && 'rotate-180')} />
       </button>
       {open && (
-        <div className="absolute z-30 mt-1.5 w-56 rounded-lg border border-gray-100 bg-white shadow-xl shadow-gray-200/60 py-1.5 max-h-72 overflow-y-auto">
+        <div className="absolute z-30 mt-1.5 w-56 rounded-lg bg-white shadow-xl shadow-gray-200/60 py-1.5 max-h-72 overflow-y-auto">
           {options.map((opt) => {
             const selected = value.includes(opt.value);
             return (

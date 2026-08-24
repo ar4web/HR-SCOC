@@ -446,8 +446,8 @@ export function CommunicationContent() {
           )}
           <div className={`relative rounded-2xl px-3.5 py-2 text-sm shadow-sm ${
             deleted
-              ? 'bg-gray-100 text-gray-400 italic border border-gray-100'
-              : mine ? 'bg-primary text-white rounded-br-md' : 'bg-white text-gray-800 border border-gray-100 rounded-bl-md'
+              ? 'bg-gray-100 text-gray-400 italic'
+              : mine ? 'bg-primary text-white rounded-br-md' : 'bg-white shadow-sm text-gray-800 rounded-bl-md'
           }`}>
             {!deleted && m.attachment?.type === 'image' && (
               <Image
@@ -545,7 +545,7 @@ export function CommunicationContent() {
                   <Smile className="h-3.5 w-3.5" />
                 </button>
                 {reactMenuId === m.id && (
-                  <div className={`absolute bottom-full mb-1 z-20 flex gap-1 bg-white border border-gray-100 rounded-full shadow-lg px-2 py-1 ${mine ? 'right-0 rtl:left-0' : 'left-0 rtl:right-0'}`}>
+                  <div className={`absolute bottom-full mb-1 z-20 flex gap-1 bg-white rounded-full shadow-lg px-2 py-1 ${mine ? 'right-0 rtl:left-0' : 'left-0 rtl:right-0'}`}>
                     {['👍', '❤️', '😂', '🎉', '🔥', '👏'].map((e) => (
                       <button key={e} onClick={() => handleReact(m, e)} className="text-base hover:scale-125 transition-transform">
                         {e}
@@ -967,7 +967,7 @@ export function CommunicationContent() {
                 </p>
               ) : (
                 announcements.map((a) => (
-                  <div key={a.id} className="rounded-xl border border-gray-100 p-4 space-y-1">
+                  <div key={a.id} className="rounded-xl bg-white shadow-card p-4 space-y-1">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         {a.priority === 'urgent' && <Megaphone className="h-4 w-4 text-error" />}

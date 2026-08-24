@@ -262,9 +262,15 @@ export function PayrollContent() {
               </p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setTsExpanded(!tsExpanded)}>
-            {tsExpanded ? t('Hide', 'إخفاء', language) : t('Show', 'إظهار', language)}
-          </Button>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setTsCreateOpen(true)}>
+              <FilePlus2 className="h-4 w-4" />
+              {t('New Timesheet', 'جدول عمل جديد', language)}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setTsExpanded(!tsExpanded)}>
+              {tsExpanded ? t('Hide options', 'إخفاء الخيارات', language) : t('Options', 'خيارات', language)}
+            </Button>
+          </div>
         </CardHeader>
         {tsExpanded && (
           <CardBody className="p-4 sm:p-6 space-y-5">

@@ -34,7 +34,7 @@ function Panel({ icon: Icon, title, sub, right, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white shadow-card">
+    <section className="rounded-2xl bg-white shadow-card">
       <header className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-3">
         <div className="flex items-center gap-2">
           <Icon className="h-4 w-4 text-gray-400" />
@@ -58,7 +58,7 @@ function StatCard({ icon: Icon, label, value, sub, accent }: {
   accent?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white shadow-card p-4">
+    <div className="rounded-2xl bg-white shadow-card p-4">
       <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
         <Icon className="h-3.5 w-3.5 text-gray-400" />
         {label}
@@ -101,13 +101,13 @@ export function EmployeeReport({ employeeId }: { employeeId: string }) {
       <div className="grid grid-cols-1 gap-4">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-2xl border border-gray-100 bg-gray-100/60 shadow-card" />
+            <div key={i} className="h-24 animate-pulse rounded-2xl bg-gray-100/60 shadow-card" />
           ))}
         </div>
-        <div className="h-64 animate-pulse rounded-2xl border border-gray-100 bg-gray-100/60 shadow-card" />
+        <div className="h-64 animate-pulse rounded-2xl bg-gray-100/60 shadow-card" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="h-64 animate-pulse rounded-2xl border border-gray-100 bg-gray-100/60 shadow-card" />
-          <div className="h-64 animate-pulse rounded-2xl border border-gray-100 bg-gray-100/60 shadow-card" />
+          <div className="h-64 animate-pulse rounded-2xl bg-gray-100/60 shadow-card" />
+          <div className="h-64 animate-pulse rounded-2xl bg-gray-100/60 shadow-card" />
         </div>
       </div>
     );
