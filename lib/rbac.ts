@@ -23,7 +23,9 @@ export type Permission =
   | 'dashboard:read'
   | 'reports:read'
   | 'contracts:read'
-  | 'contracts:write';
+  | 'contracts:write'
+  | 'invoice:read'
+  | 'invoice:write';
 
 const PERMISSION_ROLES: Record<Permission, UserRole[]> = {
   'employee:view_all': ['admin', 'hr_manager'],
@@ -41,6 +43,8 @@ const PERMISSION_ROLES: Record<Permission, UserRole[]> = {
   'reports:read': ['admin', 'hr_manager', 'manager'],
   'contracts:read': ['admin', 'hr_manager', 'manager'],
   'contracts:write': ['admin', 'hr_manager'],
+  'invoice:read': ['admin', 'hr_manager', 'manager'],
+  'invoice:write': ['admin', 'hr_manager'],
 };
 
 export function hasPermission(role: UserRole | undefined, permission: Permission): boolean {
@@ -83,6 +87,13 @@ export function getRoleLabel(role: UserRole | undefined, language: 'en' | 'ar'):
 
 export function authFromRequest(req: Request): AuthPayload | null {
   const auth = req.headers.get('authorization');
-  const token = auth?.startsWith('Bearer ') ? auth.slice(7) : null;
+  let token = auth?.startsWith('Bearer ') ? auth.slice(7) : null;
+  // Fallback: direct browser navigations (e.g. opening a payslip link in a
+  // new tab) carry no Authorization header — accept the session cookie too.
+  if (!token) {
+    const cookie = req.headers.get('cookie');
+    const m = cookie?.match(/(?:^|;\s*)scos_token=([^;]+)/);
+    if (m?.[1]) token = decodeURIComponent(m[1]);
+  }
   return decodeToken(token);
 }

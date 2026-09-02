@@ -4,7 +4,7 @@ import React from 'react';
 import { useLanguageStore } from '@/stores/language-store';
 import { Card } from '@/components/ui/Card';
 import {
-  CalendarDays, Wallet, SearchX, Activity, UserCheck, Timer, FileWarning, PiggyBank, Coins, Landmark,
+  CalendarDays, Wallet, SearchX, Activity, UserCheck, Timer, PiggyBank, Coins, Landmark, TrendingUp, Medal,
 } from 'lucide-react';
 import { Chart } from '@/engines/chart-engine';
 import { useChartTheme } from '@/lib/chart-theme';
@@ -16,6 +16,9 @@ interface ReportData {
   attendanceTrend: { label: string; present: number; late: number; absent: number; half_day: number; total: number }[];
   leave: { annualAllowed: number; used: number; remaining: number; byType: Record<string, number>; totalRequests: number; pending: number };
   payroll: { count: number; latest: { period: string; net: number; gross: number } | null; grossTotal: number; average: number };
+  payTrend: { period: string; gross: number; net: number; gosi: number }[];
+  gosi: { isSaudi: boolean; applicableWage: number; employeeShare: number; employerShare: number; total: number };
+  tenureMonths: number;
   salary: { basic: number; housing: number; transportation: number; otherAllowances: number; total: number };
   attendanceRate: number;
 }
@@ -34,7 +37,7 @@ function Panel({ icon: Icon, title, sub, right, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl bg-white shadow-card">
+    <section className="rounded-md bg-white shadow-card">
       <header className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-3">
         <div className="flex items-center gap-2">
           <Icon className="h-4 w-4 text-gray-400" />
@@ -50,20 +53,22 @@ function Panel({ icon: Icon, title, sub, right, children }: {
   );
 }
 
-function StatCard({ icon: Icon, label, value, sub, accent }: {
+function StatCard({ icon: Icon, label, value, sub, chip }: {
   icon: React.ElementType;
   label: string;
   value: string;
   sub?: string;
-  accent?: string;
+  chip?: string;
 }) {
   return (
-    <div className="rounded-2xl bg-white shadow-card p-4">
-      <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
-        <Icon className="h-3.5 w-3.5 text-gray-400" />
-        {label}
+    <div className="rounded-md bg-white p-4 shadow-card">
+      <div className="flex items-center gap-2.5">
+        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${chip || 'bg-primary/10 text-primary'}`}>
+          <Icon className="h-4 w-4" />
+        </div>
+        <p className="text-xs font-medium text-gray-500">{label}</p>
       </div>
-      <p className={`mt-1.5 text-xl font-semibold tracking-tight text-gray-900 ${accent || ''}`}>{value}</p>
+      <p className="mt-2 text-xl font-bold tracking-tight text-gray-900">{value}</p>
       {sub && <p className="mt-0.5 text-xs text-gray-400">{sub}</p>}
     </div>
   );
@@ -99,15 +104,15 @@ export function EmployeeReport({ employeeId }: { employeeId: string }) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 gap-4">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-2xl bg-gray-100/60 shadow-card" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-24 animate-pulse rounded-md bg-gray-100/60 shadow-card" />
           ))}
         </div>
-        <div className="h-64 animate-pulse rounded-2xl bg-gray-100/60 shadow-card" />
+        <div className="h-64 animate-pulse rounded-md bg-gray-100/60 shadow-card" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="h-64 animate-pulse rounded-2xl bg-gray-100/60 shadow-card" />
-          <div className="h-64 animate-pulse rounded-2xl bg-gray-100/60 shadow-card" />
+          <div className="h-64 animate-pulse rounded-md bg-gray-100/60 shadow-card" />
+          <div className="h-64 animate-pulse rounded-md bg-gray-100/60 shadow-card" />
         </div>
       </div>
     );
@@ -136,6 +141,12 @@ export function EmployeeReport({ employeeId }: { employeeId: string }) {
     ? Math.round((data.leave.used / data.leave.annualAllowed) * 100)
     : 0;
   const attendanceColor = data.attendanceRate >= 90 ? theme.ok : data.attendanceRate >= 75 ? theme.warn : theme.err;
+  const tenureYears = Math.floor(data.tenureMonths / 12);
+  const tenureRem = data.tenureMonths % 12;
+  const tenureLabel = tenureYears > 0
+    ? `${tenureYears}${t('y', 'س', language)} ${tenureRem}${t('m', 'ش', language)}`
+    : `${data.tenureMonths} ${t('months', 'شهر', language)}`;
+  const gosiPct = data.gosi.applicableWage > 0 ? Math.round((data.gosi.total / data.gosi.applicableWage) * 1000) / 10 : 0;
 
   const statCards = [
     {
@@ -143,38 +154,72 @@ export function EmployeeReport({ employeeId }: { employeeId: string }) {
       label: t('Attendance Rate', 'نسبة الحضور', language),
       value: data.attendanceRate > 0 ? `${data.attendanceRate}%` : '—',
       sub: t('last 3 months', 'آخر ٣ أشهر', language),
-      accent: 'text-success',
+      chip: 'bg-success/10 text-success',
+    },
+    {
+      icon: Medal,
+      label: t('Tenure', 'مدة الخدمة', language),
+      value: tenureLabel,
+      sub: t('since hire date', 'منذ التعيين', language),
+      chip: 'bg-secondary/10 text-secondary',
     },
     {
       icon: CalendarDays,
       label: t('Remaining Leave', 'الإجازة المتبقية', language),
       value: `${data.leave.remaining} ${t('days', 'يوم', language)}`,
       sub: `${data.leave.used} ${t('of', 'من', language)} ${data.leave.annualAllowed} ${t('used', 'مستخدمة', language)}`,
-      accent: 'text-info',
+      chip: 'bg-info/10 text-info',
     },
     {
       icon: Wallet,
       label: t('Last Net Pay', 'آخر صافي راتب', language),
       value: data.payroll.latest ? formatCurrency(data.payroll.latest.net) : '—',
       sub: data.payroll.latest ? `${data.payroll.latest.period}` : '',
-      accent: 'text-info',
+      chip: 'bg-primary/10 text-primary',
     },
     {
       icon: PiggyBank,
       label: t('Avg. Net (6m)', 'متوسط صافي (٦ش)', language),
       value: data.payroll.average ? formatCurrency(data.payroll.average) : '—',
       sub: `${data.payroll.count} ${t('payrolls', 'رواتب', language)}`,
-      accent: 'text-amber-600',
+      chip: 'bg-warning/10 text-warning',
     },
   ];
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
         {statCards.map((s) => (
           <StatCard key={s.label} {...s} />
         ))}
       </div>
+
+      {/* Pay trend — full width */}
+      {data.payTrend.length > 1 && (
+        <Panel
+          icon={TrendingUp}
+          title={t('Pay History', 'سجل الرواتب', language)}
+          sub={t('Gross vs net per processed period', 'الإجمالي مقابل الصافي لكل فترة', language)}
+          right={
+            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+              {data.payTrend.length} {t('periods', 'فترات', language)}
+            </span>
+          }
+        >
+          <Chart
+            type="bar"
+            height={230}
+            colors={[theme.brand, theme.ok]}
+            series={[
+              { name: t('Gross', 'إجمالي', language), data: data.payTrend.map((p) => p.gross) },
+              { name: t('Net', 'صافي', language), data: data.payTrend.map((p) => p.net) },
+            ]}
+            categories={data.payTrend.map((p) => MONTH_LABEL(p.period, language))}
+            dir={dir}
+            locale={language}
+          />
+        </Panel>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Panel
@@ -259,7 +304,7 @@ export function EmployeeReport({ employeeId }: { employeeId: string }) {
           title={t('Salary Composition', 'مكونات الراتب', language)}
           sub={t('Monthly breakdown', 'التحليل الشهري', language)}
           right={
-            <div className="text-right">
+            <div className="text-end">
               <p className="text-sm font-bold text-gray-900">{formatCurrency(data.salary.total)}</p>
               <p className="text-[10px] text-gray-400">{t('Total', 'إجمالي', language)}</p>
             </div>
@@ -286,18 +331,60 @@ export function EmployeeReport({ employeeId }: { employeeId: string }) {
         </Panel>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {/* GOSI + request stats */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Panel
+          icon={Landmark}
+          title={t('GOSI Contributions', 'اشتراكات التأمينات', language)}
+          sub={t(
+            data.gosi.isSaudi ? 'Saudi rates incl. SANED' : 'Non-Saudi rates (excl. SANED)',
+            data.gosi.isSaudi ? 'نسب السعوديين شاملة ساند' : 'نسب غير السعوديين (بدون ساند)',
+            language
+          )}
+          right={
+            <span className="rounded-full bg-secondary/10 px-2.5 py-0.5 text-[11px] font-semibold text-secondary">
+              {gosiPct}% {t('of wage', 'من الأجر', language)}
+            </span>
+          }
+        >
+          <div className="space-y-3">
+            {[
+              { label: t('Employee share', 'حصة الموظف', language), value: data.gosi.employeeShare, hex: theme.err },
+              { label: t('Employer share', 'حصة صاحب العمل', language), value: data.gosi.employerShare, hex: theme.info },
+            ].map((row) => {
+              const pct = data.gosi.total > 0 ? Math.round((row.value / data.gosi.total) * 100) : 0;
+              return (
+                <div key={row.label}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="text-gray-600">{row.label}</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(row.value)}</span>
+                  </div>
+                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+                    <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: row.hex }} />
+                  </div>
+                </div>
+              );
+            })}
+            <div className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2.5">
+              <span className="text-sm font-medium text-gray-600">{t('Total monthly', 'الإجمالي الشهري', language)}</span>
+              <span className="text-sm font-bold text-gray-900">{formatCurrency(data.gosi.total)}</span>
+            </div>
+          </div>
+        </Panel>
+
         <StatCard
-          icon={FileWarning}
+          icon={CalendarDays}
           label={t('Pending Requests', 'طلبات معلقة', language)}
           value={String(data.leave.pending)}
-          sub={t('Leaves', 'إجازات', language)}
+          sub={t('Leaves awaiting decision', 'إجازات بانتظار القرار', language)}
+          chip="bg-warning/10 text-warning"
         />
         <StatCard
-          icon={Landmark}
+          icon={Activity}
           label={t('Total Requests', 'إجمالي الطلبات', language)}
           value={String(data.leave.totalRequests)}
-          sub={`${leaveUsedPct}% ${t('used', 'مستخدم', language)}`}
+          sub={`${leaveUsedPct}% ${t('of annual leave used', 'من الإجازة السنوية مستخدم', language)}`}
+          chip="bg-info/10 text-info"
         />
       </div>
     </div>

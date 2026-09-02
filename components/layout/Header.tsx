@@ -45,7 +45,7 @@ export function Header() {
 
   return (
     <header className="flex h-16 items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 sm:gap-4 sm:px-6">
-      <div className="flex items-center gap-3 md:w-56">
+      <div className="flex items-center gap-3 lg:w-56">
         <button
           onClick={toggleMobileSidebar}
           className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden"
@@ -62,10 +62,10 @@ export function Header() {
           {sidebarCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
         </button>
       </div>
-      <div className="hidden flex-1 items-center md:flex">
+      <div className="flex min-w-0 flex-1 items-center">
         <GlobalSearch />
       </div>
-      <div className="flex items-center gap-3 md:w-56 md:justify-end">
+      <div className="flex items-center gap-3 lg:w-56 lg:justify-end">
         <NotificationsDropdown />
 
         {/* Profile menu (top-right avatar) */}

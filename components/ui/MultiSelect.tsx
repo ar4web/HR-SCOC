@@ -42,8 +42,8 @@ export function MultiSelect({ label, labelAr, options, value, onChange, locale =
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          'flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:border-gray-300 transition-colors max-w-[260px]',
-          open && 'border-primary ring-2 ring-primary/10'
+          'flex items-center justify-between gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm text-gray-700 hover:bg-gray-200 transition-colors max-w-[260px]',
+          open && 'bg-white ring-2 ring-primary/40'
         )}
       >
         <span className="truncate">

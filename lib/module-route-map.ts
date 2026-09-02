@@ -11,6 +11,8 @@ export const MODULE_ROUTE_MAP: Record<string, string> = {
   '/reports': 'reports',
   '/administration': 'administration',
   '/contracts': 'contracts',
+  '/invoicing': 'invoicing',
+  '/doc-printer': 'doc-printer',
 };
 
 export const MODULE_STATES_COOKIE = 'scos_modules';

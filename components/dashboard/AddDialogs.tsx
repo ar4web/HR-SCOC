@@ -9,7 +9,7 @@ import { t } from '@/lib/utils';
 import { ListTodo, AlarmClock, X } from 'lucide-react';
 
 const inputCls =
-  'block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary';
+  'block w-full rounded-md border-0 bg-gray-100 px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/40';
 const labelCls = 'mb-1.5 block text-xs font-medium text-gray-600';
 
 function FormHeader({ icon: Icon, iconCls, title, sub, onClose }: {
@@ -75,7 +75,7 @@ export function AddTodoDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-md bg-white shadow-modal" onClick={(e) => e.stopPropagation()}>
         <FormHeader
           icon={ListTodo}
           iconCls="bg-info/10 text-info"
@@ -162,7 +162,7 @@ export function AddReminderDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-md bg-white shadow-modal" onClick={(e) => e.stopPropagation()}>
         <FormHeader
           icon={AlarmClock}
           iconCls="bg-warning/10 text-warning"

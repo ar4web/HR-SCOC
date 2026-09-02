@@ -25,9 +25,13 @@ import {
   MessageAttachment,
   Contract,
   ManualReminder,
+  ZatcaInvoice,
+  ZatcaSettings,
+  DocPrinterAssets,
 } from '@/types';
 import { generateId, formatEmployeeId } from './utils';
 import { loadPersistedData, savePersisted, PersistedState } from './persistence';
+import { demoIdCardImage, demoPdf, demoTextFile } from './demo-files';
 import { hashPassword, shouldRehash } from './passwords';
 
 let persistenceEnabled = false;
@@ -56,6 +60,9 @@ function persist(): void {
     lifecycles: Array.from(lifecycles.values()),
     contracts: Array.from(contracts.values()),
     manualReminders: [...manualReminders],
+    zatcaInvoices: Array.from(zatcaInvoiceStore.values()),
+    zatcaSettings: { ...zatcaSettingsStore },
+    docPrinterAssets: { ...docPrinterAssetsStore },
   };
   savePersisted(state);
 }
@@ -105,9 +112,10 @@ const demoCompany: Company = {
     wpsEnabled: true,
   },
   branding: {
-    primaryColor: '#009B77',
-    secondaryColor: '#00205B',
-    accentColor: '#FFC72C',
+    // Atlas Navy — the app's default corporate palette (matches :root CSS).
+    primaryColor: '#1b3a5f',
+    secondaryColor: '#0c1c30',
+    accentColor: '#c4a35a',
     theme: 'light',
   },
   moduleStates: {
@@ -192,6 +200,65 @@ export let contractCounter = 0;
 
 export let manualReminders: ManualReminder[] = [];
 
+/* ---------------- ZATCA e-invoicing store ---------------- */
+
+export const DEFAULT_ZATCA_SETTINGS: ZatcaSettings = {
+  sellerName: 'Saudi Corporation',
+  sellerNameAr: 'الشركة السعودية',
+  vatNumber: '310123456700003',
+  crNumber: '1010-456789',
+  address: 'King Fahd Road',
+  addressAr: 'طريق الملك فهد',
+  city: 'Riyadh',
+  postalCode: '12345',
+  buildingNumber: '7235',
+  district: 'Al Olaya',
+  invoicePrefix: 'INV',
+  defaultVatRate: 15,
+  defaultPaymentTerms: 'Net 30',
+};
+
+let zatcaInvoiceStore: Map<string, ZatcaInvoice> = new Map();
+let zatcaSettingsStore: ZatcaSettings = { ...DEFAULT_ZATCA_SETTINGS };
+
+export function zatcaInvoices(): Map<string, ZatcaInvoice> {
+  return zatcaInvoiceStore;
+}
+
+export function zatcaSettings(): ZatcaSettings {
+  return { ...zatcaSettingsStore };
+}
+
+export function saveZatcaSettings(settings: ZatcaSettings): void {
+  zatcaSettingsStore = { ...settings };
+  persist();
+}
+
+export function addZatcaInvoice(inv: ZatcaInvoice): void {
+  zatcaInvoiceStore.set(inv.id, inv);
+  persist();
+}
+
+/** Pass null to just trigger a persist (e.g. after a raw map delete). */
+export function updateZatcaInvoice(inv: ZatcaInvoice | null): void {
+  if (inv) zatcaInvoiceStore.set(inv.id, inv);
+  persist();
+}
+
+/* ---------------- Doc Printer assets store ---------------- */
+
+let docPrinterAssetsStore: DocPrinterAssets = {};
+
+export function docPrinterAssets(): DocPrinterAssets {
+  return { ...docPrinterAssetsStore };
+}
+
+export function saveDocPrinterAssets(patch: Partial<DocPrinterAssets>): DocPrinterAssets {
+  docPrinterAssetsStore = { ...docPrinterAssetsStore, ...patch };
+  persist();
+  return { ...docPrinterAssetsStore };
+}
+
 export function addManualReminder(data: { name: string; nameAr?: string; dueDate: string }): ManualReminder {
   const reminder: ManualReminder = { id: generateId(), name: data.name, nameAr: data.nameAr, dueDate: data.dueDate };
   manualReminders.push(reminder);
@@ -266,10 +333,10 @@ export const moduleDefinitions: ModuleDefinition[] = [
   },
   {
     id: 'todo-management',
-    name: 'To-Do Management',
-    nameAr: 'إدارة المهام',
-    description: 'Track tasks, deadlines, and priorities',
-    descriptionAr: 'تتبع المهام والمواعيد والأولويات',
+    name: 'Tasks & Reminders',
+    nameAr: 'المهام والتذكيرات',
+    description: 'Track tasks, deadlines, priorities and expiry reminders',
+    descriptionAr: 'تتبع المهام والمواعيد والأولويات وتذكيرات الانتهاء',
     icon: 'ListTodo',
     dependencies: [],
     enabled: true,
@@ -340,6 +407,28 @@ export const moduleDefinitions: ModuleDefinition[] = [
     dependencies: ['employee-management'],
     enabled: false,
     route: '/contracts',
+  },
+  {
+    id: 'doc-printer',
+    name: 'Doc Printer',
+    nameAr: 'طابعة المستندات',
+    description: 'Bilingual HR document generator — contracts, letters and certificates with logo & seal',
+    descriptionAr: 'مولد مستندات الموارد البشرية ثنائي اللغة — عقود وخطابات وشهادات مع الشعار والختم',
+    icon: 'FileSignature',
+    dependencies: ['employee-management'],
+    enabled: true,
+    route: '/doc-printer',
+  },
+  {
+    id: 'invoicing',
+    name: 'ZATCA Invoicing',
+    nameAr: 'الفوترة الإلكترونية',
+    description: 'Saudi e-invoicing (Fatoora) — VAT invoices with ZATCA-compliant QR codes and hash chaining',
+    descriptionAr: 'الفوترة الإلكترونية السعودية (فاتورة) — فواتير ضريبية برمز QR متوافق مع هيئة الزكاة والضريبة والجمارك',
+    icon: 'ReceiptText',
+    dependencies: [],
+    enabled: true,
+    route: '/invoicing',
   },
 ];
 
@@ -1052,6 +1141,21 @@ const demoEmployees: {
     description: 'Official CR certificate from the Ministry of Commerce.',
     fileName: 'commercial-registration.pdf',
     fileSize: 245000,
+    mimeType: 'application/pdf',
+    fileData: demoPdf('Commercial Registration Certificate', [
+      'Ministry of Commerce - Kingdom of Saudi Arabia',
+      '',
+      'CR Number: 1010-456789',
+      'Company: SCOS Corp for Information Technology',
+      'Legal form: Limited Liability Company (LLC)',
+      'Capital: SAR 5,000,000',
+      'City: Riyadh',
+      '',
+      'This certificate confirms the registration of the company in the',
+      'commercial register. Renewal is required before the expiry date.',
+      '',
+      'DEMO SPECIMEN - generated for the SCOS HR demo environment.',
+    ]),
     expiryDate: daysFromNow(200),
     remindDaysBefore: 30,
     owner: 'SCOS Corp',
@@ -1066,6 +1170,21 @@ const demoEmployees: {
     description: 'Riyadh office lease agreement with building management.',
     fileName: 'office-lease.pdf',
     fileSize: 890000,
+    mimeType: 'application/pdf',
+    fileData: demoPdf('Office Lease Agreement', [
+      'Lessor: Riyadh Towers Real Estate Co.',
+      'Lessee: SCOS Corp for Information Technology',
+      '',
+      'Premises: Floor 12, King Fahd Road, Riyadh',
+      'Area: 850 sqm',
+      'Annual rent: SAR 720,000 payable quarterly',
+      'Term: 24 months, renewable by mutual agreement',
+      '',
+      'The lessee shall maintain the premises in good condition and',
+      'return them at the end of the term in the same state.',
+      '',
+      'DEMO SPECIMEN - generated for the SCOS HR demo environment.',
+    ]),
     expiryDate: daysFromNow(12),
     remindDaysBefore: 30,
     owner: 'SCOS Corp',
@@ -1078,8 +1197,10 @@ const demoEmployees: {
     nameAr: 'إقامة أحمد',
     category: 'id_iqama',
     description: 'Resident identity card for Ahmed Al-Saud.',
-    fileName: 'ahmed-iqama.jpg',
+    fileName: 'ahmed-iqama.svg',
     fileSize: 120000,
+    mimeType: 'image/svg+xml',
+    fileData: demoIdCardImage({ name: 'Ahmed Al-Saud', nameAr: 'أحمد آل سعود', idNumber: '2345678901', expiry: daysFromNow(25), accent: '#0F766E' }),
     expiryDate: daysFromNow(25),
     remindDaysBefore: 30,
     owner: 'Ahmed Al-Saud',
@@ -1092,8 +1213,10 @@ const demoEmployees: {
     nameAr: 'إقامة سارة',
     category: 'id_iqama',
     description: 'Resident identity card for Sara Al-Qahtani.',
-    fileName: 'sara-iqama.jpg',
+    fileName: 'sara-iqama.svg',
     fileSize: 118000,
+    mimeType: 'image/svg+xml',
+    fileData: demoIdCardImage({ name: 'Sara Al-Qahtani', nameAr: 'سارة القحطاني', idNumber: '2456789012', expiry: daysFromNow(40), accent: '#7C3AED' }),
     expiryDate: daysFromNow(40),
     remindDaysBefore: 30,
     owner: 'Sara Al-Qahtani',
@@ -1108,6 +1231,21 @@ const demoEmployees: {
     description: 'Group medical insurance policy for all employees.',
     fileName: 'health-policy.pdf',
     fileSize: 540000,
+    mimeType: 'application/pdf',
+    fileData: demoPdf('Group Health Insurance Policy', [
+      'Insurer: Bupa Arabia (demo)',
+      'Policyholder: SCOS Corp for Information Technology',
+      '',
+      'Class: VIP for managers, Class A for staff',
+      'Covered members: all active employees and dependents',
+      'Network: comprehensive KSA network',
+      'Annual limit: SAR 500,000 per member',
+      '',
+      'This policy has EXPIRED and must be renewed immediately to keep',
+      'employee coverage active.',
+      '',
+      'DEMO SPECIMEN - generated for the SCOS HR demo environment.',
+    ]),
     expiryDate: daysFromNow(-4),
     remindDaysBefore: 30,
     owner: 'SCOS Corp',
@@ -1120,8 +1258,18 @@ const demoEmployees: {
     nameAr: 'سياسة أمن البيانات',
     category: 'other',
     description: 'Internal data security and confidentiality policy.',
-    fileName: 'security-policy.docx',
+    fileName: 'security-policy.txt',
     fileSize: 76000,
+    mimeType: 'text/plain',
+    fileData: demoTextFile('Data Security Policy', [
+      '1. All employee data is classified as confidential.',
+      '2. Access to HR systems requires unique credentials; sharing accounts is prohibited.',
+      '3. Documents containing personal data must be stored in the HR document vault only.',
+      '4. External sharing of employee records requires written HR approval.',
+      '5. Report suspected data incidents to it-security@scos.sa within 24 hours.',
+      '',
+      'DEMO SPECIMEN - generated for the SCOS HR demo environment.',
+    ]),
     remindDaysBefore: 0,
     owner: 'SCOS Corp',
     department: 'IT',
@@ -1257,6 +1405,93 @@ const demoEmployees: {
   }
 }
 
+/**
+ * Migration: older persisted demo documents were metadata-only (no file
+ * bytes). Attach generated demo file content so the files-manager gallery
+ * and viewer have something real to render. User-uploaded docs untouched.
+ */
+function backfillDemoDocumentFiles(): void {
+  const backfills: Record<string, () => Pick<HRDocument, 'mimeType' | 'fileData' | 'fileName'>> = {
+    'commercial-registration.pdf': () => ({
+      fileName: 'commercial-registration.pdf',
+      mimeType: 'application/pdf',
+      fileData: demoPdf('Commercial Registration Certificate', [
+        'Ministry of Commerce - Kingdom of Saudi Arabia',
+        '',
+        'CR Number: 1010-456789',
+        'Company: SCOS Corp for Information Technology',
+        'Legal form: Limited Liability Company (LLC)',
+        'Capital: SAR 5,000,000',
+        'City: Riyadh',
+        '',
+        'This certificate confirms the registration of the company in the',
+        'commercial register. Renewal is required before the expiry date.',
+        '',
+        'DEMO SPECIMEN - generated for the SCOS HR demo environment.',
+      ]),
+    }),
+    'office-lease.pdf': () => ({
+      fileName: 'office-lease.pdf',
+      mimeType: 'application/pdf',
+      fileData: demoPdf('Office Lease Agreement', [
+        'Lessor: Riyadh Towers Real Estate Co.',
+        'Lessee: SCOS Corp for Information Technology',
+        '',
+        'Premises: Floor 12, King Fahd Road, Riyadh',
+        'Area: 850 sqm',
+        'Annual rent: SAR 720,000 payable quarterly',
+        'Term: 24 months, renewable by mutual agreement',
+        '',
+        'DEMO SPECIMEN - generated for the SCOS HR demo environment.',
+      ]),
+    }),
+    'ahmed-iqama.jpg': () => ({
+      fileName: 'ahmed-iqama.svg',
+      mimeType: 'image/svg+xml',
+      fileData: demoIdCardImage({ name: 'Ahmed Al-Saud', nameAr: 'أحمد آل سعود', idNumber: '2345678901', expiry: '2026-09-27', accent: '#0F766E' }),
+    }),
+    'sara-iqama.jpg': () => ({
+      fileName: 'sara-iqama.svg',
+      mimeType: 'image/svg+xml',
+      fileData: demoIdCardImage({ name: 'Sara Al-Qahtani', nameAr: 'سارة القحطاني', idNumber: '2456789012', expiry: '2026-10-12', accent: '#7C3AED' }),
+    }),
+    'health-policy.pdf': () => ({
+      fileName: 'health-policy.pdf',
+      mimeType: 'application/pdf',
+      fileData: demoPdf('Group Health Insurance Policy', [
+        'Insurer: Bupa Arabia (demo)',
+        'Policyholder: SCOS Corp for Information Technology',
+        '',
+        'Class: VIP for managers, Class A for staff',
+        'Covered members: all active employees and dependents',
+        'Annual limit: SAR 500,000 per member',
+        '',
+        'This policy has EXPIRED and must be renewed immediately.',
+        '',
+        'DEMO SPECIMEN - generated for the SCOS HR demo environment.',
+      ]),
+    }),
+    'security-policy.docx': () => ({
+      fileName: 'security-policy.txt',
+      mimeType: 'text/plain',
+      fileData: demoTextFile('Data Security Policy', [
+        '1. All employee data is classified as confidential.',
+        '2. Access to HR systems requires unique credentials; sharing accounts is prohibited.',
+        '3. Documents containing personal data must be stored in the HR document vault only.',
+        '4. External sharing of employee records requires written HR approval.',
+        '5. Report suspected data incidents to it-security@scos.sa within 24 hours.',
+        '',
+        'DEMO SPECIMEN - generated for the SCOS HR demo environment.',
+      ]),
+    }),
+  };
+  for (const [id, doc] of Array.from(documents.entries())) {
+    if (doc.fileData || !doc.fileName) continue;
+    const make = backfills[doc.fileName];
+    if (make) documents.set(id, { ...doc, ...make() });
+  }
+}
+
 export function resetDemoData(): void {
   users = new Map([
     ['user-1', { ...demoAdmin, password: 'Password123!' }],
@@ -1282,6 +1517,9 @@ export function resetDemoData(): void {
   contracts = new Map();
   contractCounter = 0;
   manualReminders = [];
+  zatcaInvoiceStore = new Map();
+  zatcaSettingsStore = { ...DEFAULT_ZATCA_SETTINGS };
+  docPrinterAssetsStore = {};
   seedDemoData();
   persistenceEnabled = true;
   persist();
@@ -1309,6 +1547,7 @@ export function ensureHydrated(): void {
     auditLogs = new Map(persisted.auditLogs?.map((l) => [l.id, l]) ?? []);
     todos = new Map(persisted.todos?.map((t) => [t.id, t]) ?? []);
     documents = new Map(persisted.documents?.map((d) => [d.id, d]) ?? []);
+    backfillDemoDocumentFiles();
     emailTemplates = new Map(persisted.emailTemplates?.map((t) => [t.id, t]) ?? []);
     emailOutbox = new Map(persisted.emailOutbox?.map((o) => [o.id, o]) ?? []);
     expenses = new Map(persisted.expenses?.map((e) => [e.id, e]) ?? []);
@@ -1317,6 +1556,9 @@ export function ensureHydrated(): void {
     contractCounter = contracts.size;
     manualReminders = persisted.manualReminders ?? [];
     if (persisted.emailSettings) emailSettings = { ...persisted.emailSettings };
+    zatcaInvoiceStore = new Map(persisted.zatcaInvoices?.map((i) => [i.id, i]) ?? []);
+    if (persisted.zatcaSettings) zatcaSettingsStore = { ...DEFAULT_ZATCA_SETTINGS, ...persisted.zatcaSettings };
+    if (persisted.docPrinterAssets) docPrinterAssetsStore = { ...persisted.docPrinterAssets };
   } else {
     seedDemoData();
   }

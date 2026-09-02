@@ -26,6 +26,7 @@ interface ChartEngineProps {
   width?: number | string;
   colors?: string[];
   donutSize?: string;
+  stacked?: boolean;
   showLegend?: boolean;
   showToolbar?: boolean;
   showDataLabels?: boolean;
@@ -98,6 +99,7 @@ function buildOptions(props: ChartEngineProps, palette: string[], muted: string,
     width,
     colors = palette,
     donutSize = '60%',
+    stacked = false,
     showLegend = true,
     showToolbar = false,
     showDataLabels = false,
@@ -117,6 +119,7 @@ function buildOptions(props: ChartEngineProps, palette: string[], muted: string,
       foreColor: muted,
       fontFamily: FONT_FAMILY[locale] || FONT_FAMILY.en,
       toolbar: { show: showToolbar },
+      stacked,
       animations: { enabled: true, speed: 300 },
       parentHeightOffset: 0,
       defaultLocale: locale,
@@ -201,6 +204,7 @@ export function Chart(props: ChartEngineProps) {
         props.height,
         props.width,
         props.donutSize,
+        props.stacked,
         props.showLegend,
         props.showToolbar,
         props.showDataLabels,
@@ -221,6 +225,7 @@ export function Chart(props: ChartEngineProps) {
       props.height,
       props.width,
       props.donutSize,
+      props.stacked,
       props.showLegend,
       props.showToolbar,
       props.showDataLabels,

@@ -6,12 +6,13 @@ import { useRouter } from 'next/navigation';
 import { useLanguageStore } from '@/stores/language-store';
 import { Card, CardBody } from '@/components/ui/Card';
 import { DashboardTile } from '@/components/ui/DashboardTile';
-import { Button } from '@/components/ui/Button';
 import { DataTable, Column } from '@/engines/table-engine';
 import { ColumnPicker } from '@/components/ui/ColumnPicker';
 import { employeeService } from '@/modules/employee-management/service';
 import { ModuleSettingsMenu } from '@/components/module-settings/ModuleSettingsMenu';
-import PageHeader from '@/components/layout/PageHeader';
+import PageHeader, { HeaderAction } from '@/components/layout/PageHeader';
+import { usePageSearch } from '@/stores/search-store';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Employee, ColumnPickerColumn } from '@/types';
 import { t, formatCurrency, formatDate, getContractTypeLabel, getStatusLabel } from '@/lib/utils';
 import { useToast } from '@/components/ui/Toast';
@@ -19,6 +20,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { hasPermission } from '@/lib/rbac';
 import { Users, Plus, Eye, Trash2, Upload, Download, DollarSign } from 'lucide-react';
 import { EmployeeImportDialog } from '@/components/employees/EmployeeImportDialog';
+import { getStoredToken } from '@/lib/client-token';
 
 const STORAGE_KEY = 'hrscoc-employee-columns';
 
@@ -76,6 +78,17 @@ export default function EmployeesPage() {
     }
   });
   const [importOpen, setImportOpen] = React.useState(false);
+  const search = usePageSearch('/employees', 'Search employees…', 'ابحث عن موظفين…');
+  const searchedEmployees = React.useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return employees;
+    return employees.filter((e) =>
+      [e.fullName, e.fullNameAr, e.email, e.employeeId, e.department, e.position, e.nationalId]
+        .join(' ')
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [employees, search]);
 
   React.useEffect(() => {
     loadEmployees();
@@ -94,8 +107,10 @@ export default function EmployeesPage() {
     setLoading(false);
   };
 
+  const [confirmTarget, setConfirmTarget] = React.useState<Employee | null>(null);
+
   const handleDelete = async (emp: Employee) => {
-    if (!window.confirm(t(`Delete ${emp.fullName}?`, `حذف ${emp.fullNameAr || emp.fullName}؟`, language))) return;
+    setConfirmTarget(null);
     setDeleting(emp.id);
     const res = await employeeService.remove(emp.id);
     if (res.success) {
@@ -281,7 +296,7 @@ export default function EmployeesPage() {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleDelete(emp);
+              setConfirmTarget(emp);
             }}
             disabled={deleting === emp.id || !hasPermission(user?.role, 'employee:manage')}
             className="inline-flex items-center gap-1 text-sm text-error hover:text-error-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -314,6 +329,7 @@ export default function EmployeesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={Users}
         title={t('Employee Management', 'إدارة الموظفين', language)}
         subtitle={t('Manage your workforce', 'إدارة القوى العاملة لديك', language)}
         actions={
@@ -325,15 +341,12 @@ export default function EmployeesPage() {
           />
           {hasPermission(user?.role, 'employee:manage') && (
             <>
-              <Button variant="outline" title={t('Import', 'استيراد', language)} aria-label={t('Import', 'استيراد', language)} onClick={() => setImportOpen(true)}>
-                <Upload className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                title={t('Export', 'تصدير', language)}
-                aria-label={t('Export', 'تصدير', language)}
+              <HeaderAction icon={Upload} label={t('Import', 'استيراد', language)} onClick={() => setImportOpen(true)} />
+              <HeaderAction
+                icon={Download}
+                label={t('Export', 'تصدير', language)}
                 onClick={async () => {
-                  const token = localStorage.getItem('scos_token');
+                  const token = getStoredToken();
                   const res = await fetch('/api/employees/export', {
                     headers: { Authorization: `Bearer ${token}` },
                   });
@@ -346,13 +359,9 @@ export default function EmployeesPage() {
                   a.click();
                   URL.revokeObjectURL(url);
                 }}
-              >
-                <Download className="h-4 w-4" />
-              </Button>
+              />
               <Link href="/employees/new">
-                <Button title={t('Add Employee', 'إضافة موظف', language)} aria-label={t('Add Employee', 'إضافة موظف', language)}>
-                  <Plus className="h-4 w-4" />
-                </Button>
+                <HeaderAction icon={Plus} label={t('Add Employee', 'إضافة موظف', language)} primary />
               </Link>
             </>
           )}
@@ -372,7 +381,7 @@ export default function EmployeesPage() {
         <CardBody className="p-4 sm:p-6">
           <DataTable<Employee>
             columns={visibleColumns}
-            data={employees}
+            data={searchedEmployees}
             loading={loading}
             locale={language}
             dir={dir}
@@ -417,6 +426,24 @@ export default function EmployeesPage() {
         open={importOpen}
         onClose={() => setImportOpen(false)}
         onImported={loadEmployees}
+      />
+
+      <ConfirmDialog
+        open={!!confirmTarget}
+        title={t('Delete employee?', 'حذف الموظف؟', language)}
+        message={
+          confirmTarget
+            ? t(
+                `${confirmTarget.fullName} will be permanently removed.`,
+                `سيتم حذف ${confirmTarget.fullNameAr || confirmTarget.fullName} نهائياً.`,
+                language
+              )
+            : undefined
+        }
+        confirmLabel={t('Delete', 'حذف', language)}
+        loading={!!deleting}
+        onConfirm={() => confirmTarget && handleDelete(confirmTarget)}
+        onClose={() => setConfirmTarget(null)}
       />
     </div>
   );

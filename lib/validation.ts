@@ -138,7 +138,61 @@ export const documentCreateSchema = z.object({
   status: z.string().max(20).optional(),
   uploadedAt: z.string().max(40).optional(),
   uploadedBy: z.string().max(120).optional(),
+  fileName: z.string().max(255).optional(),
+  fileSize: z.number().int().min(0).max(10 * 1024 * 1024).optional(),
+  mimeType: z.string().max(120).optional(),
+  // base64 data URL; ~7MB of encoded text ≈ 5MB file — hard cap to protect the JSON store
+  fileData: z.string().startsWith('data:').max(7 * 1024 * 1024).optional(),
 }).passthrough();
+
+const invoicePartySchema = z.object({
+  name: z.string().min(1).max(200),
+  nameAr: z.string().max(200).optional(),
+  vatNumber: z.string().max(20).optional(),
+  crNumber: z.string().max(40).optional(),
+  address: z.string().max(300).optional(),
+  addressAr: z.string().max(300).optional(),
+  city: z.string().max(80).optional(),
+  postalCode: z.string().max(12).optional(),
+  buildingNumber: z.string().max(12).optional(),
+  district: z.string().max(120).optional(),
+});
+
+export const invoiceCreateSchema = z.object({
+  type: z.enum(['standard', 'simplified']),
+  buyer: invoicePartySchema,
+  lines: z.array(z.object({
+    description: z.string().min(1).max(500),
+    descriptionAr: z.string().max(500).optional(),
+    quantity: z.number().positive().max(1_000_000),
+    unitPrice: z.number().min(0).max(1_000_000_000),
+    discount: z.number().min(0).max(1_000_000_000).optional(),
+    vatRate: z.number().optional(),
+  })).min(1).max(200),
+  discount: z.number().min(0).max(1_000_000_000).optional(),
+  dueDate: z.string().max(30).optional(),
+  supplyDate: z.string().max(30).optional(),
+  paymentTerms: z.string().max(120).optional(),
+  notes: z.string().max(2000).optional(),
+  notesAr: z.string().max(2000).optional(),
+  issueNow: z.boolean().optional(),
+});
+
+export const zatcaSettingsSchema = z.object({
+  sellerName: z.string().min(1).max(200).optional(),
+  sellerNameAr: z.string().max(200).optional(),
+  vatNumber: z.string().max(20).optional(),
+  crNumber: z.string().max(40).optional(),
+  address: z.string().max(300).optional(),
+  addressAr: z.string().max(300).optional(),
+  city: z.string().max(80).optional(),
+  postalCode: z.string().max(12).optional(),
+  buildingNumber: z.string().max(12).optional(),
+  district: z.string().max(120).optional(),
+  invoicePrefix: z.string().min(1).max(12).optional(),
+  defaultVatRate: z.number().optional(),
+  defaultPaymentTerms: z.string().max(120).optional(),
+});
 
 export function parseWith<T>(schema: z.ZodType<T>, body: unknown):
   { ok: true; data: T } | { ok: false; error: string } {

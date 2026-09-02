@@ -516,6 +516,10 @@ export interface HRDocument {
   description?: string;
   fileName?: string;
   fileSize?: number;
+  /** MIME type of the stored file (e.g. image/png, application/pdf) */
+  mimeType?: string;
+  /** File content as a base64 data URL — enables real preview/download */
+  fileData?: string;
   expiryDate?: string;
   remindDaysBefore: number;
   owner?: string;
@@ -620,4 +624,110 @@ export interface ExpenseCategory {
   name: string;
   nameAr: string;
   icon?: string;
+}
+
+// ZATCA e-invoicing module (Fatoora — Saudi VAT compliance)
+export type InvoiceType = 'standard' | 'simplified';
+export type InvoiceStatus = 'draft' | 'issued' | 'reported' | 'cancelled';
+
+export interface InvoiceLine {
+  id: string;
+  description: string;
+  descriptionAr?: string;
+  quantity: number;
+  unitPrice: number;
+  /** Per-line discount amount (SAR, before VAT) */
+  discount: number;
+  /** VAT rate as a percentage: 15, 5 or 0 */
+  vatRate: number;
+  /** quantity * unitPrice - discount */
+  netAmount: number;
+  vatAmount: number;
+  totalAmount: number;
+}
+
+export interface InvoiceParty {
+  name: string;
+  nameAr?: string;
+  /** 15-digit Saudi VAT registration number (starts and ends with 3) */
+  vatNumber?: string;
+  /** Commercial registration number */
+  crNumber?: string;
+  address?: string;
+  addressAr?: string;
+  city?: string;
+  postalCode?: string;
+  /** National short address / building number etc. */
+  buildingNumber?: string;
+  district?: string;
+}
+
+export interface ZatcaInvoice {
+  id: string;
+  /** Sequential display number, e.g. INV-2026-0001 */
+  invoiceNumber: string;
+  /** ZATCA UUID for the invoice */
+  uuid: string;
+  type: InvoiceType;
+  status: InvoiceStatus;
+  issueDate: string;   // ISO datetime of issue
+  dueDate?: string;
+  supplyDate?: string;
+  seller: InvoiceParty;
+  buyer: InvoiceParty;
+  lines: InvoiceLine[];
+  /** Sum of line net amounts (before VAT, after discounts) */
+  subtotal: number;
+  /** Invoice-level discount */
+  discount: number;
+  taxableAmount: number;
+  vatTotal: number;
+  grandTotal: number;
+  currency: 'SAR';
+  paymentTerms?: string;
+  notes?: string;
+  notesAr?: string;
+  /** Base64 TLV payload per ZATCA Phase-1 QR spec (tags 1..5 + hash) */
+  qrTlv: string;
+  /** SHA-256 hash of the invoice (hex) — chained: includes previous invoice hash */
+  invoiceHash: string;
+  /** Hash of the previous invoice in the chain (ZATCA ICV chaining) */
+  previousInvoiceHash: string;
+  /** Invoice counter value — monotonically increasing per ZATCA */
+  icv: number;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  cancelledAt?: string;
+  cancelReason?: string;
+}
+
+export interface ZatcaSettings {
+  sellerName: string;
+  sellerNameAr: string;
+  vatNumber: string;
+  crNumber: string;
+  address: string;
+  addressAr: string;
+  city: string;
+  postalCode: string;
+  buildingNumber: string;
+  district: string;
+  /** Prefix for generated invoice numbers */
+  invoicePrefix: string;
+  defaultVatRate: number;
+  defaultPaymentTerms: string;
+}
+
+// Doc Printer module — bilingual HR document generator
+export interface DocPrinterAssets {
+  /** Company logo (base64 data URL) shown in the letterhead */
+  logo?: string;
+  /** Official round seal / stamp (base64 data URL) */
+  seal?: string;
+  /** Signature image (base64 data URL) */
+  signature?: string;
+  signatoryName?: string;
+  signatoryTitle?: string;
+  signatoryTitleAr?: string;
 }

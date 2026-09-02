@@ -1,7 +1,69 @@
-import { employees, leaves, attendanceRecords, expenses, todos, documents, notifications, messages } from '@/lib/mock-data';
+import { employees, leaves, attendanceRecords, expenses, todos, documents, notifications, messages, payrolls } from '@/lib/mock-data';
 import { Attendance } from '@/types';
 
-export function getDashboardData() {
+export interface PayrollAnalyticsRow {
+  period: string;
+  employeeId: string;
+  name: string;
+  nameAr: string;
+  department: string;
+  nationality: string;
+  isSaudi: boolean;
+  basic: number;
+  housing: number;
+  transportation: number;
+  other: number;
+  /** Variable pay: overtime/bonus additions (excludes employer GOSI). */
+  extras: number;
+  /** Non-GOSI deductions (absence, advances…). */
+  otherDeductions: number;
+  /** Fixed salary components + variable pay. */
+  gross: number;
+  gosiEmployee: number;
+  gosiEmployer: number;
+  net: number;
+}
+
+export interface PayrollAnalytics {
+  periods: string[];
+  rows: PayrollAnalyticsRow[];
+}
+
+export function getPayrollAnalytics(): PayrollAnalytics {
+  const rows: PayrollAnalyticsRow[] = [];
+  for (const p of Array.from(payrolls.values())) {
+    if (p.status !== 'completed') continue;
+    const emp = employees.get(p.employeeId);
+    const gosiEmployee = p.deductions.filter((d) => d.type === 'gosi_employee').reduce((s, d) => s + d.amount, 0);
+    const gosiEmployer = p.additions.filter((a) => a.type === 'gosi_employer').reduce((s, a) => s + a.amount, 0);
+    const extras = p.additions.filter((a) => a.type !== 'gosi_employer').reduce((s, a) => s + a.amount, 0);
+    const otherDeductions = p.deductions.filter((d) => d.type !== 'gosi_employee').reduce((s, d) => s + d.amount, 0);
+    const gross = p.salary.basic + p.salary.housing + p.salary.transportation + p.salary.otherAllowances + extras;
+    rows.push({
+      period: p.period,
+      employeeId: p.employeeId,
+      name: emp?.fullName || p.employeeId,
+      nameAr: emp?.fullNameAr || emp?.fullName || p.employeeId,
+      department: emp?.department || 'Other',
+      nationality: emp?.nationality || 'Other',
+      isSaudi: (emp?.nationality || '').toLowerCase() === 'saudi',
+      basic: p.salary.basic,
+      housing: p.salary.housing,
+      transportation: p.salary.transportation,
+      other: p.salary.otherAllowances,
+      extras,
+      otherDeductions,
+      gross,
+      gosiEmployee,
+      gosiEmployer,
+      net: p.netPay,
+    });
+  }
+  const periods = Array.from(new Set(rows.map((r) => r.period))).sort();
+  return { periods, rows };
+}
+
+export function getDashboardData(includePayrollAnalytics = false) {
   const empList = Array.from(employees.values());
   const leaveList = Array.from(leaves.values());
   const attList = Array.from(attendanceRecords.values());
@@ -336,6 +398,7 @@ export function getDashboardData() {
       attachment: m.attachment,
       timestamp: m.timestamp,
     })),
+    payrollAnalytics: includePayrollAnalytics ? getPayrollAnalytics() : null,
   };
 }
 

@@ -163,7 +163,7 @@ export default function SalarySetupPage() {
                                   type="number"
                                   value={draft[key]}
                                   onChange={(e) => updateDraft(key, e.target.value)}
-                                  className="w-24 rounded-lg border border-gray-300 px-2 py-1.5 text-right text-sm focus:ring-2 focus:ring-primary"
+                                  className="w-24 rounded-md border-0 bg-gray-100 px-2 py-1.5 text-right text-sm focus:ring-2 focus:ring-primary"
                                 />
                               </td>
                             ))}
@@ -189,7 +189,7 @@ export default function SalarySetupPage() {
                               value={draft.iban}
                               onChange={(e) => updateDraft('iban', e.target.value)}
                               placeholder="SA00 0000 0000 0000 0000 0000"
-                              className="w-44 rounded-lg border border-gray-300 px-2 py-1.5 text-sm focus:ring-2 focus:ring-primary"
+                              className="w-44 rounded-md border-0 bg-gray-100 px-2 py-1.5 text-sm focus:ring-2 focus:ring-primary"
                             />
                           ) : (
                             <div className="flex items-center gap-1.5">

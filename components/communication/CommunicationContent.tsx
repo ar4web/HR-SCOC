@@ -14,9 +14,11 @@ import { clearApiCache } from '@/lib/api';
 import Image from 'next/image';
 import { t, formatDate, getPriorityLabel } from '@/lib/utils';
 import {
-  MessageSquare, Megaphone, Send, Paperclip, Image as ImageIcon, Camera, Search,
-  ChevronLeft, FileText, X, Smile, Hash, Pencil, Trash2,
+  MessageSquare, Megaphone, Send, Paperclip, Image as ImageIcon, Camera, ChevronLeft, FileText, X, Smile, Hash, Pencil, Trash2,
 } from 'lucide-react';
+import PageHeader from '@/components/layout/PageHeader';
+import { usePageSearch } from '@/stores/search-store';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface Contact {
   id: string;
@@ -76,7 +78,7 @@ export function CommunicationContent() {
   const [draft, setDraft] = React.useState('');
   const [sending, setSending] = React.useState(false);
   const [pendingAtt, setPendingAtt] = React.useState<MessageAttachment | null>(null);
-  const [contactSearch, setContactSearch] = React.useState('');
+  const contactSearch = usePageSearch('/communication', 'Search people…', 'ابحث عن أشخاص…');
   const [mobileThread, setMobileThread] = React.useState(false);
   const [showEmoji, setShowEmoji] = React.useState(false);
 
@@ -354,8 +356,10 @@ export function CommunicationContent() {
     }
   };
 
+  const [confirmTarget, setConfirmTarget] = React.useState<Message | null>(null);
+
   const handleDelete = async (m: Message) => {
-    if (!window.confirm(t('Delete this message?', 'حذف هذه الرسالة؟', language))) return;
+    setConfirmTarget(null);
     const res = await communicationService.deleteMessage(m.id);
     if (res.success && res.data) {
       clearApiCache('/communication');
@@ -564,7 +568,7 @@ export function CommunicationContent() {
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
                   <button
-                    onClick={() => handleDelete(m)}
+                    onClick={() => setConfirmTarget(m)}
                     className="p-0.5 rounded text-gray-400 hover:text-error hover:bg-gray-100"
                     title={t('Delete', 'حذف', language)}
                   >
@@ -581,51 +585,41 @@ export function CommunicationContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">{t('Chat', 'الدردشة', language)}</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {t('Team messaging with images and file attachments', 'مراسلة الفريق مع الصور ومرفقات الملفات', language)}
-          </p>
-        </div>
-        <div className="flex gap-2 items-center">
-          <ModuleSettingsMenu module={t('Communication', 'التواصل', language)} />
-          <button
-            onClick={() => setTab('chat')}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              tab === 'chat' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            <MessageSquare className="h-4 w-4 inline me-1" />
-            {t('Chat', 'الدردشة', language)}
-          </button>
-          <button
-            onClick={() => setTab('announcements')}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              tab === 'announcements' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            <Megaphone className="h-4 w-4 inline me-1" />
-            {t('Announcements', 'الإعلانات', language)}
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        icon={MessageSquare}
+        title={t('Chat', 'الدردشة', language)}
+        subtitle={t('Team messaging with images and file attachments', 'مراسلة الفريق مع الصور ومرفقات الملفات', language)}
+        actions={
+          <>
+            <ModuleSettingsMenu module={t('Communication', 'التواصل', language)} />
+            <button
+              onClick={() => setTab('chat')}
+              title={t('Chat', 'الدردشة', language)}
+              aria-label={t('Chat', 'الدردشة', language)}
+              className={`rounded-md p-2 transition-colors ${
+                tab === 'chat' ? 'bg-primary/10 text-primary' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+              }`}
+            >
+              <MessageSquare className="h-[18px] w-[18px]" />
+            </button>
+            <button
+              onClick={() => setTab('announcements')}
+              title={t('Announcements', 'الإعلانات', language)}
+              aria-label={t('Announcements', 'الإعلانات', language)}
+              className={`rounded-md p-2 transition-colors ${
+                tab === 'announcements' ? 'bg-primary/10 text-primary' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+              }`}
+            >
+              <Megaphone className="h-[18px] w-[18px]" />
+            </button>
+          </>
+        }
+      />
 
       {tab === 'chat' ? (
         <Card className="overflow-hidden">
           <div className="flex h-[calc(100dvh-200px)] min-h-[360px] md:h-[calc(100dvh-260px)] md:min-h-[480px]">
             <div className={`w-full md:w-80 lg:w-96 border-r border-gray-100 rtl:border-r-0 rtl:border-l flex flex-col ${mobileThread ? 'hidden md:flex' : 'flex'}`}>
-              <div className="p-3 border-b border-gray-100">
-                <div className="relative">
-                  <Search className="h-4 w-4 absolute left-3 rtl:left-auto rtl:right-3 top-3 text-gray-400" />
-                  <input
-                    value={contactSearch}
-                    onChange={(e) => setContactSearch(e.target.value)}
-                    placeholder={t('Search people...', 'ابحث عن أشخاص...', language)}
-                    className="w-full rounded-full border border-gray-200 pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-              </div>
               <div className="flex-1 overflow-y-auto py-2">
                 {channels.length > 0 && (
                   <div className="px-3 pt-1 pb-2">
@@ -872,7 +866,7 @@ export function CommunicationContent() {
                     }}
                     disabled={!activeId && !activeChannel}
                     placeholder={activeId || activeChannel ? t('Type a message...', 'اكتب رسالة...', language) : t('Select a conversation first', 'اختر محادثة أولاً', language)}
-                    className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                    className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-50"
                   />
                   <button
                     onClick={handleSend}
@@ -906,13 +900,13 @@ export function CommunicationContent() {
                   value={annForm.title}
                   onChange={(e) => setAnnForm({ ...annForm, title: e.target.value })}
                   placeholder={t('Title (English)', 'العنوان (إنجليزي)', language)}
-                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="block w-full rounded-md border-0 bg-gray-100 px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
                 <input
                   value={annForm.titleAr}
                   onChange={(e) => setAnnForm({ ...annForm, titleAr: e.target.value })}
                   placeholder={t('Title (Arabic)', 'العنوان (عربي)', language)}
-                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="block w-full rounded-md border-0 bg-gray-100 px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -921,14 +915,14 @@ export function CommunicationContent() {
                   onChange={(e) => setAnnForm({ ...annForm, content: e.target.value })}
                   rows={3}
                   placeholder={t('Content (English)', 'المحتوى (إنجليزي)', language)}
-                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="block w-full rounded-md border-0 bg-gray-100 px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
                 <textarea
                   value={annForm.contentAr}
                   onChange={(e) => setAnnForm({ ...annForm, contentAr: e.target.value })}
                   rows={3}
                   placeholder={t('Content (Arabic)', 'المحتوى (عربي)', language)}
-                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="block w-full rounded-md border-0 bg-gray-100 px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
               <div className="flex items-end justify-between gap-4">
@@ -937,7 +931,7 @@ export function CommunicationContent() {
                   <select
                     value={annForm.priority}
                     onChange={(e) => setAnnForm({ ...annForm, priority: e.target.value as Announcement['priority'] })}
-                    className="block rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="block rounded-md border-0 bg-gray-100 px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
                   >
                     <option value="normal">{t('Normal', 'عادية', language)}</option>
                     <option value="high">{t('High', 'عالية', language)}</option>
@@ -993,6 +987,15 @@ export function CommunicationContent() {
           </Card>
         </>
       )}
+
+      <ConfirmDialog
+        open={!!confirmTarget}
+        title={t('Delete message?', 'حذف الرسالة؟', language)}
+        message={t('This message will be removed from the channel.', 'سيتم حذف هذه الرسالة من القناة.', language)}
+        confirmLabel={t('Delete', 'حذف', language)}
+        onConfirm={() => confirmTarget && handleDelete(confirmTarget)}
+        onClose={() => setConfirmTarget(null)}
+      />
     </div>
   );
 }

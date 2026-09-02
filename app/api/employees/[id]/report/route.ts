@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { authFromRequest, hasPermission } from '@/lib/rbac';
 import { employees, attendanceRecords, leaves, payrolls } from '@/lib/mock-data';
 import { getPolicy } from '@/lib/leave-policy-engine';
+import { calculateGOSI } from '@/lib/payroll-engine';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
@@ -71,6 +72,25 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const latest = empPayrolls[0];
   const grossTotal = empPayrolls.reduce((s, p) => s + (p.timesheet?.grossPay ?? p.salary?.total ?? 0), 0);
 
+  // Net/gross per period (oldest → newest) for the pay trend chart.
+  const payTrend = [...empPayrolls]
+    .sort((a, b) => (a.period > b.period ? 1 : -1))
+    .map((p) => ({
+      period: p.period,
+      gross: p.timesheet?.grossPay ?? p.salary?.total ?? 0,
+      net: p.netPay ?? 0,
+      gosi: p.deductions?.filter((d) => d.type === 'gosi_employee').reduce((s, d) => s + d.amount, 0) ?? 0,
+    }));
+
+  // GOSI breakdown on the current fixed wage.
+  const isSaudi = (target.nationality || '').toLowerCase() === 'saudi';
+  const wage = target.salary.basic + target.salary.housing + target.salary.transportation + target.salary.otherAllowances;
+  const gosi = calculateGOSI(wage, isSaudi);
+
+  // Service tenure in months.
+  const hireTs = target.hireDate ? new Date(target.hireDate).getTime() : NaN;
+  const tenureMonths = Number.isFinite(hireTs) ? Math.max(0, Math.round((Date.now() - hireTs) / (1000 * 60 * 60 * 24 * 30))) : 0;
+
   return NextResponse.json({
     employee: { id: target.id, fullName: target.fullName, fullNameAr: target.fullNameAr, department: target.department, position: target.position },
     attendanceTrend: months,
@@ -88,6 +108,15 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       grossTotal,
       average: empPayrolls.length ? Math.round(grossTotal / empPayrolls.length) : 0,
     },
+    payTrend,
+    gosi: {
+      isSaudi,
+      applicableWage: gosi.applicableWage,
+      employeeShare: gosi.totalEmployee,
+      employerShare: gosi.totalEmployer,
+      total: gosi.total,
+    },
+    tenureMonths,
     salary: target.salary,
     attendanceRate: monthsTotal ? Math.round((presence / monthsTotal) * 100) : 0,
   });

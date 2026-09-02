@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth-store';
 import { useCompanyStore } from '@/stores/company-store';
 import { useModuleStore } from '@/stores/module-store';
@@ -11,6 +12,8 @@ import { FloatingChat } from '@/components/layout/FloatingChat';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, checkAuth, user } = useAuthStore();
+  const pathname = usePathname();
+  const router = useRouter();
   const { setLanguage } = useLanguageStore();
   const { fetchCompany } = useCompanyStore();
   const { fetchModules } = useModuleStore();
@@ -20,6 +23,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   React.useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Client-side auth gate: when the middleware cookie check cannot run (e.g.
+  // embedded previews where third-party cookies are blocked), make sure
+  // unauthenticated visitors still end up on /login.
+  React.useEffect(() => {
+    if (!isLoading && !isAuthenticated && pathname !== '/login') {
+      router.replace('/login');
+    }
+  }, [isLoading, isAuthenticated, pathname, router]);
 
   React.useEffect(() => {
     if (isAuthenticated) {

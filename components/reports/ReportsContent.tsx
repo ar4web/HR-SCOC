@@ -15,6 +15,7 @@ import {
   CalendarRange,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import PageHeader, { HeaderAction } from '@/components/layout/PageHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Chart } from '@/engines/chart-engine';
 import { useChartTheme, statusHexMap, leafHexMap } from '@/lib/chart-theme';
@@ -217,40 +218,31 @@ export function ReportsContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">
-            {t('Reports & Analytics', 'التقارير والتحليلات', language)}
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {t('HR analytics and report generation', 'تحليلات الموارد البشرية وإعداد التقارير', language)}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2">
-            <Filter className="h-4 w-4 text-gray-400" />
-            <select
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="bg-transparent text-sm text-gray-700 focus:outline-none"
-              aria-label={t('Filter by department', 'تصفية حسب القسم', language)}
-            >
-              <option value="all">{t('All Departments', 'كل الأقسام', language)}</option>
-              {departments.map((d) => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
-          </div>
-          <button
-            onClick={exportCsv}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark transition-colors"
-          >
-            <Download className="h-4 w-4" />
-            {t('Export CSV', 'تصدير CSV', language)}
-          </button>
-          <ModuleSettingsMenu module={t('Reports', 'التقارير', language)} onExport={exportCsv} />
-        </div>
-      </div>
+      <PageHeader
+        icon={BarChart3}
+        title={t('Reports & Analytics', 'التقارير والتحليلات', language)}
+        subtitle={t('HR analytics and report generation', 'تحليلات الموارد البشرية وإعداد التقارير', language)}
+        actions={
+          <>
+            <label className="flex items-center gap-1.5 rounded-md p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus-within:bg-gray-100">
+              <Filter className="h-[18px] w-[18px]" />
+              <select
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                className="max-w-[9rem] cursor-pointer bg-transparent text-sm text-gray-600 focus:outline-none"
+                aria-label={t('Filter by department', 'تصفية حسب القسم', language)}
+              >
+                <option value="all">{t('All Departments', 'كل الأقسام', language)}</option>
+                {departments.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </label>
+            <ModuleSettingsMenu module={t('Reports', 'التقارير', language)} onExport={exportCsv} />
+            <HeaderAction icon={Download} label={t('Export CSV', 'تصدير CSV', language)} primary onClick={exportCsv} />
+          </>
+        }
+      />
 
       {department !== 'all' && (
         <div className="rounded-xl border border-primary/10 bg-primary/5 p-3 text-sm text-gray-600">

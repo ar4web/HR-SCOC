@@ -31,9 +31,9 @@ export function ModuleSettingsMenu({ module, moduleAr, onExport, href }: ModuleS
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={t('Module settings', 'إعدادات الوحدة', language)}
-        className="h-9 w-9 p-0 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-primary hover:border-primary/30 transition-colors"
+        className="rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
       >
-        <Settings2 className="h-4 w-4" />
+        <Settings2 className="h-[18px] w-[18px]" />
       </button>
 
       {open && (

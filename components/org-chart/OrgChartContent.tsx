@@ -6,7 +6,9 @@ import { api } from '@/lib/api';
 import { Employee } from '@/types';
 import { t } from '@/lib/utils';
 import { useLanguageStore } from '@/stores/language-store';
-import { Network, Users, UserRound } from 'lucide-react';
+import { Network, Users } from 'lucide-react';
+import PageHeader from '@/components/layout/PageHeader';
+import { usePageSearch } from '@/stores/search-store';
 import { useToast } from '@/components/ui/Toast';
 import { ModuleSettingsMenu } from '@/components/module-settings/ModuleSettingsMenu';
 
@@ -89,6 +91,7 @@ export default function OrgChartContent() {
   const { language } = useLanguageStore();
   const { addToast } = useToast();
   const [employees, setEmployees] = React.useState<MergedEmployee[]>([]);
+  const search = usePageSearch('/organization', 'Search the org chart…', 'ابحث في الهيكل التنظيمي…');
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -105,13 +108,19 @@ export default function OrgChartContent() {
   }, [addToast, language]);
 
   const deptsGrouped = React.useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const list = !q
+      ? employees
+      : employees.filter((e) =>
+          [e.fullName, e.fullNameAr, e.position, e.department, e.employeeId].join(' ').toLowerCase().includes(q)
+        );
     const by = new Map<string, MergedEmployee[]>();
-    for (const emp of employees) {
+    for (const emp of list) {
       if (!by.has(emp.department)) by.set(emp.department, []);
       by.get(emp.department)!.push(emp);
     }
     return Array.from(by.entries());
-  }, [employees]);
+  }, [employees, search]);
 
   if (loading) {
     return (
@@ -123,27 +132,18 @@ export default function OrgChartContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <UserRound className="h-5 w-5" />
+      <PageHeader
+        icon={Network}
+        title={t('Organization Chart', 'الهيكل التنظيمي', language)}
+        subtitle={t('Team hierarchy by department', 'التسلسل الهرمي للفريق حسب الإدارة', language)}
+        badge={
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+            <Users className="h-3.5 w-3.5" />
+            {employees.length} {t('employees', 'موظفًا', language)} · {deptsGrouped.length} {t('departments', 'أقسام', language)}
           </span>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900 sm:text-xl">
-              {t('Organization Chart', 'الهيكل التنظيمي', language)}
-            </h1>
-            <p className="text-sm text-gray-500">
-              {t('Team hierarchy by department', 'التسلسل الهرمي للفريق حسب الإدارة', language)}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Users className="h-4 w-4 text-primary" />
-          {employees.length} {t('employees across', 'موظفًا في', language)} {deptsGrouped.length}{' '}
-          {t('departments', 'أقسام', language)}
-        </div>
-        <ModuleSettingsMenu module={t('Organization', 'الهيكل التنظيمي', language)} />
-      </div>
+        }
+        actions={<ModuleSettingsMenu module={t('Organization', 'الهيكل التنظيمي', language)} />}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         {deptsGrouped.map(([dept, emps]) => (

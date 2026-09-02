@@ -71,13 +71,16 @@ module.exports = {
       fontFamily: {
         sans: ['Inter', ...fontFamily.sans],
       },
+      // Design rule: no corner radius above 5px anywhere (rounded-full stays
+      // reserved for circles: avatars, dots, pills).
       borderRadius: {
-        sm: '0.25rem',
-        DEFAULT: '0.375rem',
-        md: '0.5rem',
-        lg: '0.625rem',
-        xl: '0.75rem',
-        '2xl': '0.875rem',
+        sm: '3px',
+        DEFAULT: '4px',
+        md: '5px',
+        lg: '5px',
+        xl: '5px',
+        '2xl': '5px',
+        '3xl': '5px',
       },
       boxShadow: {
         card: '0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04)',

@@ -19,9 +19,11 @@ export function useModuleGate() {
     if (!matched) return;
 
     const [, moduleId] = matched;
-    const enabled = moduleStates[moduleId];
 
-    if (!enabled) {
+    // Only redirect when the module is EXPLICITLY disabled. An unknown/missing
+    // state (e.g. newer modules absent from a stale default map, or a failed
+    // modules fetch) must not bounce the user off the page.
+    if (moduleStates[moduleId] === false) {
       router.replace('/');
     }
   }, [pathname, moduleStates, isLoading, router]);

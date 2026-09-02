@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { useLanguageStore } from '@/stores/language-store';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -15,6 +16,7 @@ import { t, formatCurrency, formatDate } from '@/lib/utils';
 import { Wallet, Play, Download, Eye, FileSpreadsheet, Upload, ClipboardList, AlertCircle, FilePlus2 } from 'lucide-react';
 import { TimesheetCreateDialog } from '@/components/payroll/TimesheetCreateDialog';
 import { Badge } from '@/components/ui/Badge';
+import { getStoredToken } from '@/lib/client-token';
 
 export function PayrollContent() {
   const { language } = useLanguageStore();
@@ -81,7 +83,7 @@ export function PayrollContent() {
 
   const downloadTimesheetTemplate = async () => {
     try {
-      const token = localStorage.getItem('scos_token');
+      const token = getStoredToken();
       const res = await fetch(payrollService.getTimesheetTemplateUrl(), {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -180,7 +182,7 @@ export function PayrollContent() {
             type="month"
             value={period}
             onChange={(e) => setPeriod(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
+            className="rounded-md border-0 bg-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
           />
           {canManage && (
             <>
@@ -192,7 +194,7 @@ export function PayrollContent() {
                 title={t('Export', 'تصدير', language)}
                 aria-label={t('Export', 'تصدير', language)}
                 onClick={async () => {
-                  const token = localStorage.getItem('scos_token');
+                  const token = getStoredToken();
                   const res = await fetch(`/api/payroll/export?period=${encodeURIComponent(period || 'all')}`, {
                     headers: { Authorization: `Bearer ${token}` },
                   });
@@ -283,7 +285,7 @@ export function PayrollContent() {
                   type="month"
                   value={tsPeriod}
                   onChange={(e) => setTsPeriod(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-md border-0 bg-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                 />
               </div>
               <div>
@@ -296,7 +298,7 @@ export function PayrollContent() {
                   step="0.1"
                   value={otMultiplier}
                   onChange={(e) => setOtMultiplier(Number(e.target.value) || 1.5)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-md border-0 bg-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                 />
                 <p className="text-xs text-gray-400 mt-1">
                   {t('OT rate = (daily salary / 8h) × multiplier', 'سعر الإضافي = (الراتب اليومي / 8 ساعات) × المضاعف', language)}
@@ -309,7 +311,7 @@ export function PayrollContent() {
                 <select
                   value={dailyRateMode}
                   onChange={(e) => setDailyRateMode(e.target.value as 'auto' | 'custom')}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-md border-0 bg-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                 >
                   <option value="auto">{t('Auto (monthly salary / 30)', 'تلقائي (الراتب الشهري / 30)', language)}</option>
                   <option value="custom">{t('Custom rate for all employees', 'سعر مخصص لجميع الموظفين', language)}</option>
@@ -326,7 +328,7 @@ export function PayrollContent() {
                     step="0.01"
                     value={customDailyRate}
                     onChange={(e) => setCustomDailyRate(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
+                    className="w-full rounded-md border-0 bg-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                   />
                 </div>
               )}
@@ -340,7 +342,7 @@ export function PayrollContent() {
                   step="0.01"
                   value={customOtRate}
                   onChange={(e) => setCustomOtRate(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-md border-0 bg-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                 />
               </div>
               <div className="flex items-end gap-2">
@@ -533,10 +535,10 @@ export function PayrollContent() {
               language
             )}
           </div>
-          <a href="/payroll/wps" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary-dark">
+          <Link href="/payroll/wps" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary-dark">
             <Download className="h-4 w-4" />
             {t('Generate WPS File', 'إنشاء ملف WPS', language)}
-          </a>
+          </Link>
         </CardBody>
       </Card>
       <TimesheetCreateDialog

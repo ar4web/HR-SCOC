@@ -78,7 +78,7 @@ export default function BillingPage() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-3">
                 <div className="p-3 rounded-lg bg-gray-50 text-center">
                   <p className="text-lg font-bold text-gray-900">{plan.employees}</p>
                   <p className="text-xs text-gray-500">{t('Employees', 'الموظفون', language)}</p>

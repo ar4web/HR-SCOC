@@ -1,4 +1,4 @@
-const CACHE = 'scos-shell-v5';
+const CACHE = 'scos-shell-v7';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -21,39 +21,19 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
 
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(event.request)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((cache) => cache.put(event.request, copy));
-          return res;
-        })
-        .catch(() => caches.match(event.request))
-    );
-    return;
-  }
-
-  const isDocument = event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html');
-
-  if (isDocument) {
-    event.respondWith(
-      fetch(event.request)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((cache) => cache.put(event.request, copy));
-          return res;
-        })
-        .catch(() => caches.match(event.request))
-    );
-    return;
-  }
+  // NEVER intercept or cache API/auth traffic. Serving a stale or errored
+  // API response (e.g. a cached 401) makes pages render empty or bounce the
+  // user to the login page even though their session is valid.
+  if (url.pathname.startsWith('/api/')) return;
 
   event.respondWith(
     fetch(event.request)
       .then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        // Only cache successful, basic (same-origin, non-redirect) responses.
+        if (res.ok && res.type === 'basic') {
+          const copy = res.clone();
+          caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        }
         return res;
       })
       .catch(() => caches.match(event.request))

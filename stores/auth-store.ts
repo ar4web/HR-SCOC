@@ -1,32 +1,7 @@
 import { create } from 'zustand';
 import { User } from '@/types';
 import { authService } from '@/modules/auth/service';
-
-const TOKEN_KEY = 'scos_token';
-
-function getTokenFromStorage(): string | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    return localStorage.getItem(TOKEN_KEY);
-  } catch {
-    return null;
-  }
-}
-
-function setTokenCookie(token: string) {
-  if (typeof window === 'undefined') return;
-  document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=86400; SameSite=Lax`;
-}
-
-function clearToken() {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.removeItem(TOKEN_KEY);
-  } catch {
-    // ignore storage errors
-  }
-  document.cookie = `${TOKEN_KEY}=; path=/; max-age=0; SameSite=Lax`;
-}
+import { storeToken, getStoredToken, clearStoredToken } from '@/lib/client-token';
 
 interface AuthState {
   user: User | null;
@@ -49,12 +24,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     const res = await authService.login(email, password);
     if (res.success && res.data) {
       const { user, token } = res.data;
-      try {
-        localStorage.setItem(TOKEN_KEY, token);
-      } catch {
-        // ignore storage errors
-      }
-      setTokenCookie(token);
+      storeToken(token);
       set({ user, token, isAuthenticated: true });
       return { success: true };
     }
@@ -62,14 +32,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: () => {
-    clearToken();
+    clearStoredToken();
     set({ user: null, token: null, isAuthenticated: false });
   },
 
   setUser: (user: User) => set({ user }),
 
   checkAuth: async () => {
-    const token = getTokenFromStorage();
+    const token = getStoredToken();
     if (!token) {
       set({ isLoading: false });
       return;
@@ -77,8 +47,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     const res = await authService.me();
     if (res.success && res.data) {
       set({ user: res.data.user, token, isAuthenticated: true, isLoading: false });
+    } else if (res.error === 'Network error') {
+      // Transient failure (server restart, flaky connection): keep the token
+      // and the session alive instead of silently logging the user out.
+      set({ token, isAuthenticated: true, isLoading: false });
     } else {
-      clearToken();
+      clearStoredToken();
       set({ isLoading: false });
     }
   },

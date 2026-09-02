@@ -1,16 +1,12 @@
 import { ApiResponse } from '@/types';
+import { getStoredToken } from '@/lib/client-token';
 
 const BASE_URL = '/api';
 const cache = new Map<string, { data: ApiResponse<unknown>; timestamp: number }>();
 const CACHE_TTL = 30_000;
 
 async function getToken(): Promise<string | null> {
-  if (typeof window === 'undefined') return null;
-  try {
-    return localStorage.getItem('scos_token');
-  } catch {
-    return null;
-  }
+  return getStoredToken();
 }
 
 async function request<T>(

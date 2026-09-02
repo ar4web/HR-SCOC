@@ -11,8 +11,10 @@ import { t, formatDate, formatNumber } from '@/lib/utils';
 import { contractsService } from '@/modules/contracts/service';
 import { CONTRACT_TYPES } from '@/lib/contracts-engine';
 import type { Contract, ContractStatus } from '@/types';
-import { FileText, Plus, Trash2, Search, AlertTriangle, CheckCircle2, XCircle, Clock } from 'lucide-react';
-import PageHeader from '@/components/layout/PageHeader';
+import { FileText, Plus, Trash2, AlertTriangle, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import PageHeader, { HeaderAction } from '@/components/layout/PageHeader';
+import { Toolbar, ToolbarChips, ToolbarSpacer, ToolbarCount } from '@/components/layout/Toolbar';
+import { usePageSearch } from '@/stores/search-store';
 
 const FILTERS: Array<{ value: ContractStatus | 'all'; en: string; ar: string }> = [
   { value: 'all', en: 'All', ar: 'الكل' },
@@ -52,7 +54,7 @@ export function ContractsContent() {
   });
   const [loading, setLoading] = React.useState(true);
   const [filter, setFilter] = React.useState<ContractStatus | 'all'>('all');
-  const [search, setSearch] = React.useState('');
+  const search = usePageSearch('/contracts', 'Search contracts…', 'ابحث عن عقود…');
   const [showForm, setShowForm] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [form, setForm] = React.useState({
@@ -142,16 +144,16 @@ export function ContractsContent() {
 return (
     <div className="space-y-6">
       <PageHeader
+        icon={FileText}
         title={t('Contracts & Agreements', 'العقود والاتفاقيات', language)}
         subtitle={t('Employment contracts, service agreements and NDAs with expiry tracking', 'عقود العمل واتفاقيات الخدمة واتفاقيات عدم الإفصاح مع تتبع انتهاء الصلاحية', language)}
         actions={
-          <Button
+          <HeaderAction
+            icon={Plus}
+            label={t('New Contract', 'عقد جديد', language)}
+            primary
             onClick={() => setShowForm((s) => !s)}
-            title={t('New Contract', 'عقد جديد', language)}
-            aria-label={t('New Contract', 'عقد جديد', language)}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+          />
         }
       />
 
@@ -178,7 +180,7 @@ return (
                 <select
                   value={form.contractType}
                   onChange={(e) => setForm({ ...form, contractType: e.target.value })}
-                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="block w-full rounded-md border-0 bg-gray-100 px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
                 >
                   {CONTRACT_TYPES.map((c) => (
                     <option key={c.value} value={c.value}>
@@ -192,7 +194,7 @@ return (
                 <select
                   value={form.employeeId}
                   onChange={(e) => setForm({ ...form, employeeId: e.target.value })}
-                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="block w-full rounded-md border-0 bg-gray-100 px-3 py-2 text-sm text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
                 >
                   <option value="">{t('— none —', '— لا شيء —', language)}</option>
                   {employees.map((emp) => (
@@ -265,32 +267,16 @@ return (
       )}
 
       <Card>
-        <CardHeader className="flex items-center flex-wrap gap-3">
-          <div className="flex flex-wrap gap-1">
-            {FILTERS.map((f) => (
-              <button
-                key={f.value}
-                onClick={() => setFilter(f.value)}
-                className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
-                  filter === f.value
-                    ? 'border-primary bg-primary text-white'
-                    : 'border-gray-200 text-gray-500 hover:border-primary/40 hover:text-primary'
-                }`}
-              >
-                {language === 'ar' ? f.ar : f.en}
-              </button>
-            ))}
-          </div>
-          <div className="flex-1" />
-          <div className="relative">
-            <Search className="h-4 w-4 absolute left-3 rtl:left-auto rtl:right-3 top-2.5 text-gray-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t('Search contracts...', 'ابحث عن عقود...', language)}
-              className="block w-full sm:w-56 rounded-lg border border-gray-300 pl-9 pr-3 rtl:pl-3 rtl:pr-9 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary"
+        <CardHeader>
+          <Toolbar>
+            <ToolbarChips
+              value={filter}
+              onChange={(v) => setFilter(v as ContractStatus | 'all')}
+              options={FILTERS.map((f) => ({ value: f.value, label: language === 'ar' ? f.ar : f.en }))}
             />
-          </div>
+            <ToolbarSpacer />
+            <ToolbarCount>{t(`${contracts.length} contract(s)`, `${contracts.length} عقد`, language)}</ToolbarCount>
+          </Toolbar>
         </CardHeader>
         <CardBody className="p-0">
           {loading ? (

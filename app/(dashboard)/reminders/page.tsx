@@ -1,16 +1,6 @@
-'use client';
-import dynamic from 'next/dynamic';
-import { Suspense } from 'react';
+import { redirect } from 'next/navigation';
 
-const RemindersContent = dynamic(
-  () => import('@/components/reminders/RemindersContent').then((m) => m.RemindersContent),
-  { ssr: false, loading: () => <div className="animate-pulse h-64 bg-gray-100 rounded" /> }
-);
-
+/** Reminders now live inside the merged Tasks & Reminders page. */
 export default function RemindersPage() {
-  return (
-    <Suspense fallback={<div className="animate-pulse h-64 bg-gray-100 rounded" />}>
-      <RemindersContent />
-    </Suspense>
-  );
+  redirect('/todos?tab=reminders');
 }

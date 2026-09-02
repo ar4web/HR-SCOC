@@ -74,7 +74,7 @@ export default function WPSPage() {
                 type="month"
                 value={period}
                 onChange={(e) => setPeriod(e.target.value)}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
+                className="rounded-md border-0 bg-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
               />
             </div>
             <Button onClick={handleGenerate} loading={loading} title={t(content === null ? 'Generate' : 'Regenerate', content === null ? 'إنشاء' : 'إعادة إنشاء', language)} aria-label={t(content === null ? 'Generate' : 'Regenerate', content === null ? 'إنشاء' : 'إعادة إنشاء', language)}>
