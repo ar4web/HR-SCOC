@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Notification } from '@/types';
+import { getStoredToken } from '@/lib/client-token';
 
 export const markReadRemote = (id: string) =>
   fetch('/api/notifications', {
@@ -47,7 +48,7 @@ export const useNotificationStore = create<NotificationState>((set) => ({
   },
 
   markAsRead: (id) => {
-    const token = localStorage.getItem('scos_token');
+    const token = getStoredToken();
     fetch('/api/notifications', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -66,7 +67,7 @@ export const useNotificationStore = create<NotificationState>((set) => ({
   },
 
   markAllAsRead: () => {
-    const token = localStorage.getItem('scos_token');
+    const token = getStoredToken();
     fetch('/api/notifications', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },

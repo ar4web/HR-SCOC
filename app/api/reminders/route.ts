@@ -64,7 +64,7 @@ export async function POST(req: Request) {
       messageAr: `${item.status === 'expired' ? 'انتهى في' : 'ينتهي خلال'} ${item.status === 'expired' ? item.dueDate : `${item.daysLeft} يوماً`} — ${item.name}`,
       type: item.status === 'expired' ? 'error' : 'warning',
       read: false,
-      link: '/reminders',
+      link: '/todos?tab=reminders',
     });
     created.push(userId);
   };

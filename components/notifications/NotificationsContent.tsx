@@ -2,9 +2,7 @@
 
 import React from 'react';
 import { useLanguageStore } from '@/stores/language-store';
-import { useAuthStore } from '@/stores/auth-store';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { TableSkeleton } from '@/components/ui/Skeleton';
 import { api } from '@/lib/api';
@@ -16,6 +14,9 @@ import {
   Bell, Info, CheckCircle, AlertTriangle, AlertCircle,
   Inbox, ExternalLink, Download, Check,
 } from 'lucide-react';
+import PageHeader, { HeaderAction } from '@/components/layout/PageHeader';
+import { Toolbar, ToolbarChips, ToolbarSpacer, ToolbarCount } from '@/components/layout/Toolbar';
+import { usePageSearch } from '@/stores/search-store';
 
 const typeMeta: Record<NotificationType, { icon: React.ElementType; classes: string }> = {
   info: { icon: Info, classes: 'bg-info/10 text-info' },
@@ -35,12 +36,19 @@ const FILTERS: { value: string; en: string; ar: string }[] = [
 
 export function NotificationsContent() {
   const { language } = useLanguageStore();
-  const { user } = useAuthStore();
   const { addToast } = useToast();
   const [items, setItems] = React.useState<Notification[]>([]);
   const [total, setTotal] = React.useState(0);
   const [filter, setFilter] = React.useState('all');
   const [loading, setLoading] = React.useState(true);
+  const search = usePageSearch('/notifications', 'Search notifications…', 'ابحث في الإشعارات…');
+  const shown = React.useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((n) =>
+      [n.title, n.titleAr || '', n.message || '', n.messageAr || '', n.type].join(' ').toLowerCase().includes(q)
+    );
+  }, [items, search]);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -87,71 +95,48 @@ export function NotificationsContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">
-            {t('Notifications', 'الإشعارات', language)}
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {t('Approval updates, reminders and system activity', 'تحديثات الموافقات والتذكيرات ونشاط النظام', language)}
-          </p>
-        </div>
-        <div className="flex gap-2 items-center">
-          <Button variant="outline" onClick={handleMarkAll} disabled={items.length === 0} title={t('Mark all read', 'تحديد الكل كمقروء', language)} aria-label={t('Mark all read', 'تحديد الكل كمقروء', language)}>
-            <Check className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" onClick={exportCsv} title={t('Export CSV', 'تصدير CSV', language)} aria-label={t('Export CSV', 'تصدير CSV', language)}>
-            <Download className="h-4 w-4" />
-          </Button>
-          <ModuleSettingsMenu
-            module={t('Notifications', 'الإشعارات', language)}
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {FILTERS.map((f) => (
-          <button
-            key={f.value}
-            onClick={() => setFilter(f.value)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              filter === f.value ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {t(f.en, f.ar, language)}
-          </button>
-        ))}
-      </div>
+      <PageHeader
+        icon={Bell}
+        title={t('Notifications', 'الإشعارات', language)}
+        subtitle={t('Approval updates, reminders and system activity', 'تحديثات الموافقات والتذكيرات ونشاط النظام', language)}
+        actions={
+          <>
+            <HeaderAction icon={Download} label={t('Export CSV', 'تصدير CSV', language)} onClick={exportCsv} />
+            <ModuleSettingsMenu
+              module={t('Notifications', 'الإشعارات', language)}
+            />
+            <HeaderAction icon={Check} label={t('Mark all read', 'تحديد الكل كمقروء', language)} primary onClick={handleMarkAll} disabled={items.length === 0} />
+          </>
+        }
+      />
 
       <Card>
-        <CardHeader className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-              <Bell className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold">
-                {t('Activity Feed', 'سجل النشاط', language)}
-              </h2>
-              <p className="text-xs text-gray-400">
-                {items.length} {t('shown', 'معروض', language)} • {total} {t('total for', 'إجمالي لـ', language)} {user?.email || ''}
-              </p>
-            </div>
-          </div>
+        <CardHeader>
+          <Toolbar>
+            <ToolbarChips
+              value={filter}
+              onChange={setFilter}
+              options={FILTERS.map((f) => ({ value: f.value, label: t(f.en, f.ar, language) }))}
+            />
+            <ToolbarSpacer />
+            <ToolbarCount>
+              {shown.length} {t('shown', 'معروض', language)} • {total} {t('total', 'إجمالي', language)}
+            </ToolbarCount>
+          </Toolbar>
         </CardHeader>
         <CardBody className="p-0">
           {loading ? (
             <div className="p-6">
               <TableSkeleton rows={5} cols={3} />
             </div>
-          ) : items.length === 0 ? (
+          ) : shown.length === 0 ? (
             <div className="p-12 text-center">
               <Inbox className="mx-auto h-10 w-10 text-gray-300" />
               <p className="mt-3 text-sm text-gray-400">{t('No notifications in this view', 'لا توجد إشعارات في هذا العرض', language)}</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-50">
-              {items.map((n) => {
+              {shown.map((n) => {
                 const meta = typeMeta[n.type] || typeMeta.info;
                 const Icon = meta.icon;
                 return (

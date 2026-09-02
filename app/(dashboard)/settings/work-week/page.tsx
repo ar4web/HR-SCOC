@@ -90,7 +90,7 @@ export default function WorkWeekPage() {
                 type="time"
                 value={startHour}
                 onChange={(e) => setStartHour(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
+                className="w-full rounded-md border-0 bg-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
               />
             </div>
             <div>
@@ -101,7 +101,7 @@ export default function WorkWeekPage() {
                 type="time"
                 value={endHour}
                 onChange={(e) => setEndHour(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
+                className="w-full rounded-md border-0 bg-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
               />
             </div>
           </div>

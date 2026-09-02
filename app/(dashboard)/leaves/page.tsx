@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLanguageStore } from '@/stores/language-store';
 import { useAuthStore } from '@/stores/auth-store';
-import { Card, CardBody, CardHeader } from '@/components/ui/Card';
+import { Card, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { DataTable, Column } from '@/engines/table-engine';
@@ -15,7 +15,10 @@ import { LeaveCalendar } from '@/components/modules/LeaveCalendar';
 import { api } from '@/lib/api';
 import { downloadCsv } from '@/lib/csv';
 import { ModuleSettingsMenu } from '@/components/module-settings/ModuleSettingsMenu';
-import PageHeader from '@/components/layout/PageHeader';
+import PageHeader, { HeaderAction } from '@/components/layout/PageHeader';
+import { Toolbar, ToolbarSegments, ToolbarChips, ToolbarSpacer } from '@/components/layout/Toolbar';
+import { usePageSearch } from '@/stores/search-store';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Employee, LeaveRequest } from '@/types';
 import { t, formatDate, getLeaveTypeLabel } from '@/lib/utils';
 import { Calendar, Plus, CheckCircle2, XCircle, List, Clock, Loader2, Trash2, Download } from 'lucide-react';
@@ -27,6 +30,7 @@ export default function LeavesPage() {
   const { addToast } = useToast();
   const [leaves, setLeaves] = React.useState<LeaveRequest[]>([]);
   const [employees, setEmployees] = React.useState<Map<string, Employee>>(new Map());
+  const search = usePageSearch('/leaves', 'Search leave requests…', 'ابحث في طلبات الإجازة…');
   const [loading, setLoading] = React.useState(true);
   const [actionLoading, setActionLoading] = React.useState<string | null>(null);
   const [tab, setTab] = React.useState<'list' | 'calendar'>('list');
@@ -77,8 +81,10 @@ export default function LeavesPage() {
     setActionLoading(null);
   };
 
+  const [confirmTarget, setConfirmTarget] = React.useState<LeaveRequest | null>(null);
+
   const handleDelete = async (leave: LeaveRequest) => {
-    if (!window.confirm(t('Delete this leave request?', 'حذف طلب الإجازة هذا؟', language))) return;
+    setConfirmTarget(null);
     setActionLoading(leave.id);
     const res = await api.delete(`/leaves?id=${leave.id}`);
     if (res.success) {
@@ -156,7 +162,7 @@ export default function LeavesPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDelete(leave);
+                      setConfirmTarget(leave);
                     }}
                     disabled={actionLoading === leave.id}
                     className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-error transition-colors disabled:opacity-50"
@@ -177,7 +183,17 @@ export default function LeavesPage() {
   ];
 
   const pendingCount = leaves.filter((l) => l.status === 'pending').length;
-  const filteredLeaves = statusFilter === 'all' ? leaves : leaves.filter((l) => l.status === statusFilter);
+  const statusLeaves = statusFilter === 'all' ? leaves : leaves.filter((l) => l.status === statusFilter);
+  const q = search.trim().toLowerCase();
+  const filteredLeaves = !q
+    ? statusLeaves
+    : statusLeaves.filter((l) => {
+        const emp = employees.get(l.employeeId);
+        return [emp?.fullName || '', emp?.fullNameAr || '', emp?.employeeId || '', l.type, l.status, l.reason || '']
+          .join(' ')
+          .toLowerCase()
+          .includes(q);
+      });
 
   const exportCsv = () => {
     downloadCsv(
@@ -209,18 +225,15 @@ export default function LeavesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={Calendar}
         title={t('Leave Management', 'إدارة الإجازات', language)}
         subtitle={t('Manage leave requests and approvals', 'إدارة طلبات الإجازات والموافقات', language)}
         actions={
           <>
+          <HeaderAction icon={Download} label={t('Export CSV', 'تصدير CSV', language)} onClick={exportCsv} />
           <Link href="/leaves/new">
-            <Button title={t('Request Leave', 'طلب إجازة', language)} aria-label={t('Request Leave', 'طلب إجازة', language)}>
-              <Plus className="h-4 w-4" />
-            </Button>
+            <HeaderAction icon={Plus} label={t('Request Leave', 'طلب إجازة', language)} primary />
           </Link>
-          <Button variant="ghost" onClick={exportCsv} title={t('Export CSV', 'تصدير CSV', language)} aria-label={t('Export CSV', 'تصدير CSV', language)}>
-            <Download className="h-4 w-4" />
-          </Button>
           <ModuleSettingsMenu
             module={t('Leaves', 'الإجازات', language)}
             onExport={exportCsv}
@@ -230,50 +243,33 @@ export default function LeavesPage() {
       />
 
       <Card>
-        <CardHeader className="flex items-center justify-between">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setTab('list')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                tab === 'list' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              <List className="h-4 w-4 inline me-1" />
-              {t('All Requests', 'كل الطلبات', language)}
-            </button>
-            <button
-              onClick={() => setTab('calendar')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                tab === 'calendar' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              <Calendar className="h-4 w-4 inline me-1" />
-              {t('Calendar View', 'عرض التقويم', language)}
-            </button>
-          </div>
-          {pendingCount > 0 && (
-            <div className="flex items-center gap-1.5 text-xs text-warning font-medium">
-              <Clock className="h-3.5 w-3.5" />
-              {t(`${pendingCount} pending`, `${pendingCount} قيد الانتظار`, language)}
-            </div>
-          )}
-        </CardHeader>
+        <CardBody className="space-y-4 pb-0">
+          <Toolbar>
+            <ToolbarSegments
+              value={tab}
+              onChange={setTab}
+              options={[
+                { value: 'list', label: t('All Requests', 'كل الطلبات', language), icon: List },
+                { value: 'calendar', label: t('Calendar View', 'عرض التقويم', language), icon: Calendar },
+              ]}
+            />
+            {tab === 'list' && (
+              <ToolbarChips
+                value={statusFilter}
+                onChange={(v) => setStatusFilter(v as 'all' | LeaveRequest['status'])}
+                options={statusTabs.map((s) => ({ value: s.value, label: t(s.label.en, s.label.ar, language) }))}
+              />
+            )}
+            <ToolbarSpacer />
+            {pendingCount > 0 && (
+              <div className="flex items-center gap-1.5 text-xs text-warning font-medium">
+                <Clock className="h-3.5 w-3.5" />
+                {t(`${pendingCount} pending`, `${pendingCount} قيد الانتظار`, language)}
+              </div>
+            )}
+          </Toolbar>
+        </CardBody>
         <CardBody className="p-0">
-          {tab === 'list' && (
-            <div className="flex flex-wrap gap-2 border-b border-gray-100 px-4 py-3 bg-gray-50/50">
-              {statusTabs.map((s) => (
-                <button
-                  key={s.value}
-                  onClick={() => setStatusFilter(s.value)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    statusFilter === s.value ? 'bg-primary text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
-                  }`}
-                >
-                  {t(s.label.en, s.label.ar, language)}
-                </button>
-              ))}
-            </div>
-          )}
           {tab === 'calendar' ? (
             <LeaveCalendar leaves={leaves} employees={employees} locale={language} dir={dir} />
           ) : filteredLeaves.length === 0 && !loading ? (
@@ -312,6 +308,16 @@ export default function LeavesPage() {
           )}
         </CardBody>
       </Card>
+
+      <ConfirmDialog
+        open={!!confirmTarget}
+        title={t('Delete leave request?', 'حذف طلب الإجازة؟', language)}
+        message={t('This leave request will be permanently removed.', 'سيتم حذف طلب الإجازة هذا نهائياً.', language)}
+        confirmLabel={t('Delete', 'حذف', language)}
+        loading={!!actionLoading}
+        onConfirm={() => confirmTarget && handleDelete(confirmTarget)}
+        onClose={() => setConfirmTarget(null)}
+      />
     </div>
   );
 }

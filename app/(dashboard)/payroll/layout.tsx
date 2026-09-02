@@ -31,13 +31,11 @@ export default function PayrollLayout({ children }: { children: React.ReactNode 
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-          <DollarSign className="h-5 w-5 text-primary" />
-          <PageHeader
-            title={t('Payroll', 'الرواتب', language)}
-            subtitle={t('Process payroll, manage salaries, GOSI, WPS files and payslips', 'معالجة الرواتب وإدارة الأجور والتأمينات وملفات WPS وقسائم الرواتب', language)}
-          />
-        </div>
+      <PageHeader
+        icon={DollarSign}
+        title={t('Payroll', 'الرواتب', language)}
+        subtitle={t('Process payroll, manage salaries, GOSI, WPS files and payslips', 'معالجة الرواتب وإدارة الأجور والتأمينات وملفات WPS وقسائم الرواتب', language)}
+      />
 
       <div className="flex flex-col gap-6 lg:flex-row">
         <nav

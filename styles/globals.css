@@ -27,11 +27,12 @@
     --faint: #8b95a8;
     --line: #e2e6ee;
     --line-2: #c9d0dc;
-    --radius-sm: 0.25rem;
-    --radius: 0.5rem;
-    --radius-md: 0.75rem;
-    --radius-lg: 1rem;
-    --radius-xl: 1.25rem;
+    /* Design rule: max corner radius 5px */
+    --radius-sm: 3px;
+    --radius: 4px;
+    --radius-md: 5px;
+    --radius-lg: 5px;
+    --radius-xl: 5px;
     --transition-base: 150ms cubic-bezier(0.25, 0.8, 0.25, 1);
     --transition-medium: 200ms cubic-bezier(0.25, 0.8, 0.25, 1);
   }
@@ -199,5 +200,28 @@
 
   .bg-gray-100\/60 {
     background-color: color-mix(in srgb, var(--card-2, #f1ede2) 60%, transparent);
+  }
+}
+
+/* ---------------- print: ZATCA invoice A4 output ---------------- */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .no-print {
+    display: none !important;
   }
 }

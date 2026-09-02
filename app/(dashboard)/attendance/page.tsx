@@ -14,6 +14,7 @@ import { employeeService } from '@/modules/employee-management/service';
 import { Attendance, Employee } from '@/types';
 import { t, formatDate } from '@/lib/utils';
 import PageHeader from '@/components/layout/PageHeader';
+import { Toolbar, ToolbarSelect, ToolbarInput } from '@/components/layout/Toolbar';
 import { downloadCsv } from '@/lib/csv';
 import { Clock, LogIn, LogOut, ClipboardList, UserCheck, AlarmClock, UserX, CalendarClock, Filter, MapPin, Download } from 'lucide-react';
 
@@ -245,6 +246,7 @@ export default function AttendancePage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={Clock}
         title={t('Attendance', 'الحضور والانصراف', language)}
         subtitle={t('Track attendance and working hours', 'تتبع الحضور والانصراف وساعات العمل', language)}
       />
@@ -255,38 +257,40 @@ export default function AttendancePage() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-2 rounded-xl bg-white p-3 shadow-card">
-        <Filter className="h-4 w-4 text-gray-400" />
-        <input
-          type="date"
-          value={dateFilter}
-          onChange={(e) => setDateFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
-          aria-label={t('Filter by date', 'تصفية حسب التاريخ', language)}
-        />
-        <select
-          value={departmentFilter}
-          onChange={(e) => setDepartmentFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-gray-700 focus:ring-2 focus:ring-primary"
-          aria-label={t('Filter by department', 'تصفية حسب القسم', language)}
-        >
-          <option value="all">{t('All Departments', 'كل الأقسام', language)}</option>
-          {departments.map((d) => (
-            <option key={d} value={d}>{d}</option>
-          ))}
-        </select>
-        {(dateFilter || departmentFilter !== 'all') && (
-          <button
-            onClick={() => {
-              setDateFilter('');
-              setDepartmentFilter('all');
-            }}
-            className="px-3 py-2 text-xs font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors"
-          >
-            {t('Clear', 'مسح', language)}
-          </button>
-        )}
-      </div>
+      <Card>
+        <CardBody className="py-3">
+          <Toolbar>
+            <Filter className="h-4 w-4 text-gray-400" />
+            <ToolbarInput
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              aria-label={t('Filter by date', 'تصفية حسب التاريخ', language)}
+            />
+            <ToolbarSelect
+              value={departmentFilter}
+              onChange={(e) => setDepartmentFilter(e.target.value)}
+              aria-label={t('Filter by department', 'تصفية حسب القسم', language)}
+            >
+              <option value="all">{t('All Departments', 'كل الأقسام', language)}</option>
+              {departments.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </ToolbarSelect>
+            {(dateFilter || departmentFilter !== 'all') && (
+              <button
+                onClick={() => {
+                  setDateFilter('');
+                  setDepartmentFilter('all');
+                }}
+                className="rounded-md px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/5"
+              >
+                {t('Clear', 'مسح', language)}
+              </button>
+            )}
+          </Toolbar>
+        </CardBody>
+      </Card>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {summaryCards.map((s) => {

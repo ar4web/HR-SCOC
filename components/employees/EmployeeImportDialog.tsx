@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { t } from '@/lib/utils';
 import { Download, Upload, FileSpreadsheet, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { getStoredToken } from '@/lib/client-token';
 
 interface ImportPreviewRow {
   rowNumber: number;
@@ -53,7 +54,7 @@ export function EmployeeImportDialog({ open, onClose, onImported }: EmployeeImpo
 
   const downloadTemplate = async () => {
     try {
-      const token = localStorage.getItem('scos_token');
+      const token = getStoredToken();
       const res = await fetch('/api/employees/template', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -86,7 +87,7 @@ export function EmployeeImportDialog({ open, onClose, onImported }: EmployeeImpo
     form.set('file', f);
     form.set('action', 'preview');
     try {
-      const token = localStorage.getItem('scos_token');
+      const token = getStoredToken();
       const res = await fetch('/api/employees/import', {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -113,7 +114,7 @@ export function EmployeeImportDialog({ open, onClose, onImported }: EmployeeImpo
     form.set('file', file);
     form.set('action', 'import');
     try {
-      const token = localStorage.getItem('scos_token');
+      const token = getStoredToken();
       const res = await fetch('/api/employees/import', {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -147,7 +148,7 @@ export function EmployeeImportDialog({ open, onClose, onImported }: EmployeeImpo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
       <div
-        className="w-full max-w-2xl rounded-2xl bg-white shadow-xl"
+        className="max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-md bg-white shadow-modal"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -227,7 +228,7 @@ export function EmployeeImportDialog({ open, onClose, onImported }: EmployeeImpo
                 </span>
               </div>
 
-              <div className="max-h-56 overflow-y-auto rounded-xl border border-gray-200">
+              <div className="max-h-56 overflow-auto rounded-xl border border-gray-200">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 bg-gray-50/50">

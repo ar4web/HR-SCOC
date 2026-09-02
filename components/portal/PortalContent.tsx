@@ -147,7 +147,7 @@ export function PortalContent() {
           label={label('Latest Payslip', 'أحدث كشف راتب')}
           value={data.payslips[0] ? formatCurrency(data.payslips[0].netPay) : '—'}
           sub={data.payslips[0]?.period ? `${data.payslips[0].period} · ${data.payslips[0].status}` : label('no payslip yet', 'لا يوجد كشف راتب بعد')}
-          href={data.payslips[0] ? `/api/payroll/payslip/${data.payslips[0].id}` : undefined}
+          onClick={data.payslips[0] ? () => window.open(`/api/payroll/payslip/${data.payslips[0].id}`, '_blank', 'noopener') : undefined}
         />
       </div>
 

@@ -45,11 +45,20 @@ function isValidToken(token: string): boolean {
   return verifyToken(token) !== null;
 }
 
+// Pages are prerendered with `s-maxage=31536000`, which lets intermediary
+// proxies/CDNs (including hosted-preview proxies) cache stale HTML for up to a
+// year and keep serving old builds. Hashed /_next/static assets stay cacheable
+// (excluded by the matcher); page documents must always revalidate.
+function withNoStore(res: NextResponse): NextResponse {
+  res.headers.set('Cache-Control', 'no-store, must-revalidate');
+  return res;
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (publicPaths.some((p) => pathname.startsWith(p))) {
-    return NextResponse.next();
+    return withNoStore(NextResponse.next());
   }
 
   if (publicApiPaths.some((p) => pathname.startsWith(p))) {
@@ -65,6 +74,14 @@ export function middleware(request: NextRequest) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
+    // Preview-only escape hatch: embedded previews (cross-site iframes) may
+    // block ALL cookies, so the cookie gate would loop users back to /login
+    // even after a successful login. When this flag is set, let page shells
+    // through and rely on the client-side auth gate (dashboard layout) plus
+    // Bearer-token enforcement on every /api route. Never set in production.
+    if (process.env.ALLOW_CLIENT_AUTH_FALLBACK === '1') {
+      return withNoStore(NextResponse.next());
+    }
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
@@ -77,7 +94,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  return NextResponse.next();
+  return withNoStore(NextResponse.next());
 }
 
 export const config = {

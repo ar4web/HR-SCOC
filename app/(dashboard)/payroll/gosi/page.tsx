@@ -42,7 +42,7 @@ export default function GOSIPage() {
                   max={100000}
                   value={wage}
                   onChange={(e) => setWage(Number(e.target.value) || 0)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-md border-0 bg-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                 />
                 <p className="text-xs text-gray-400 mt-1">
                   {t(`Contribution cap is ${GOSI_WAGE_CAP.toLocaleString()} per month`, `سقف الاشتراك ${GOSI_WAGE_CAP.toLocaleString()} ريال شهرياً`, language)}
@@ -57,7 +57,7 @@ export default function GOSIPage() {
                   <button
                     onClick={() => setIsSaudi(true)}
                     className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      isSaudi ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      isSaudi ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
                     }`}
                   >
                     {t('Saudi', 'سعودي', language)}
@@ -65,7 +65,7 @@ export default function GOSIPage() {
                   <button
                     onClick={() => setIsSaudi(false)}
                     className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      !isSaudi ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      !isSaudi ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
                     }`}
                   >
                     {t('Non-Saudi', 'غير سعودي', language)}

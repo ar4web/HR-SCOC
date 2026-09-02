@@ -1,14 +1,29 @@
 'use client';
 
+/**
+ * The ONE search bar for the whole app (lives in the header).
+ *
+ * Two behaviors, automatically switched:
+ *  1. Page scope active (page registered via usePageSearch): typing filters
+ *     that page live — the page consumes the query from the search store.
+ *  2. No scope (or results wanted app-wide): a navigator dropdown searches
+ *     employees / leaves / payroll / todos across the app.
+ *     With a scope active, the dropdown still opens with cross-app results
+ *     below a "on this page" hint, so both purposes are always served.
+ *
+ * ⌘K / Ctrl-K focuses it from anywhere. Esc clears + blurs.
+ */
+
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useLanguageStore } from '@/stores/language-store';
+import { useSearchStore } from '@/stores/search-store';
 import { t } from '@/lib/utils';
 import { employeeService } from '@/modules/employee-management/service';
 import { payrollService } from '@/modules/payroll/service';
 import { api } from '@/lib/api';
 import { Employee, LeaveRequest, Payroll, Todo } from '@/types';
-import { Search, Briefcase, CalendarDays, Users, ListTodo, CornerDownLeft } from 'lucide-react';
+import { Search, Briefcase, CalendarDays, Users, ListTodo, CornerDownLeft, X, TextCursorInput } from 'lucide-react';
 
 interface ResultItem {
   key: string;
@@ -27,8 +42,9 @@ const GROUP_META: Record<ResultItem['group'], { label: string; labelAr: string; 
 
 export function GlobalSearch() {
   const router = useRouter();
+  const pathname = usePathname();
   const { language } = useLanguageStore();
-  const [query, setQuery] = React.useState('');
+  const { query, setQuery, scope } = useSearchStore();
   const [open, setOpen] = React.useState(false);
   const [focused, setFocused] = React.useState(0);
 
@@ -36,44 +52,56 @@ export function GlobalSearch() {
   const leavesRef = React.useRef<LeaveRequest[]>([]);
   const payrollRef = React.useRef<Payroll[]>([]);
   const todosRef = React.useRef<Todo[]>([]);
+  const loadedRef = React.useRef(false);
 
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
+  /* clear query on navigation so a filter never leaks between pages */
   React.useEffect(() => {
-    let cancelled = false;
+    setQuery('');
+    setOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  /* lazy-load the cross-app index on first focus */
+  const ensureIndex = React.useCallback(() => {
+    if (loadedRef.current) return;
+    loadedRef.current = true;
     Promise.all([
       employeeService.list({ page: 1, pageSize: 1000 }),
       api.get<{ data: LeaveRequest[] }>('/leaves'),
       payrollService.list({}),
       api.get<{ data: Todo[] }>('/todos'),
     ]).then(([empsRes, leavesRes, payrollRes, todosRes]) => {
-      if (cancelled) return;
       if (empsRes.success && empsRes.data) employeesRef.current = empsRes.data.data;
       if (leavesRes.success && Array.isArray(leavesRes.data?.data)) leavesRef.current = leavesRes.data.data;
       if (payrollRes.success && payrollRes.data) payrollRef.current = payrollRes.data.data;
       if (todosRes.success && Array.isArray(todosRes.data?.data)) todosRef.current = todosRes.data.data;
     });
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
+  /* ⌘K / Ctrl-K focuses the bar from anywhere */
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        inputRef.current?.focus();
+        ensureIndex();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [ensureIndex]);
+
+  /* close dropdown on outside click / Esc */
   React.useEffect(() => {
     if (!open) return;
     const onClick = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', onClick);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onClick);
-      document.removeEventListener('keydown', onKey);
-    };
+    return () => document.removeEventListener('mousedown', onClick);
   }, [open]);
 
   const empById = React.useCallback(
@@ -165,43 +193,78 @@ export function GlobalSearch() {
     return map;
   }, [results]);
 
+  const placeholder = scope
+    ? t(scope.placeholder, scope.placeholderAr, language)
+    : t('Search anything…', 'ابحث عن أي شيء…', language);
+
+  /* with a scope: dropdown only opens when there are cross-app hits */
+  const showDropdown = open && query.trim().length > 0 && (!scope || results.length > 0);
+
   return (
     <div ref={containerRef} className="relative w-full max-w-md">
       <div className="relative">
-        <Search
-          className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 ${language === 'ar' ? 'right-3' : 'left-3'}`}
-        />
+        <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
             setOpen(true);
+            ensureIndex();
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            ensureIndex();
+            if (!scope) setOpen(true);
+          }}
           onKeyDown={(e) => {
-            if (e.key === 'ArrowDown') {
+            if (e.key === 'Escape') {
+              setQuery('');
+              setOpen(false);
+              (e.target as HTMLInputElement).blur();
+            } else if (showDropdown && e.key === 'ArrowDown') {
               e.preventDefault();
               setFocused((i) => Math.min(i + 1, results.length - 1));
-            } else if (e.key === 'ArrowUp') {
+            } else if (showDropdown && e.key === 'ArrowUp') {
               e.preventDefault();
               setFocused((i) => Math.max(i - 1, 0));
-            } else if (e.key === 'Enter') {
+            } else if (showDropdown && e.key === 'Enter' && !scope) {
               e.preventDefault();
               go(results[focused]);
             }
           }}
-          placeholder={t('Search employees, leaves, payroll...', 'ابحث في الموظفين والإجازات والرواتب...', language)}
-          aria-label={t('Global search', 'البحث العام', language)}
-          className={`w-full px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm focus:ring-2 focus:ring-primary focus:border-primary focus:bg-white ${language === 'ar' ? 'pr-10' : 'pl-10'}`}
+          placeholder={placeholder}
+          aria-label={t('Search', 'بحث', language)}
+          className="w-full rounded-md border-0 bg-gray-100 py-2 pe-16 ps-9 text-sm text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
+        <span className="pointer-events-none absolute end-3 top-1/2 hidden -translate-y-1/2 items-center gap-1 md:flex">
+          {query ? null : (
+            <kbd className="rounded-sm bg-gray-200/70 px-1.5 py-0.5 text-[10px] font-medium text-gray-400">⌘K</kbd>
+          )}
+        </span>
+        {query && (
+          <button
+            type="button"
+            onClick={() => { setQuery(''); setOpen(false); inputRef.current?.focus(); }}
+            className="absolute end-2.5 top-1/2 -translate-y-1/2 rounded-sm p-0.5 text-gray-400 hover:text-gray-600"
+            aria-label={t('Clear', 'مسح', language)}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
-      {open && query.trim() && (
+      {showDropdown && (
         <div
-          className="absolute top-full mt-2 w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-left shadow-lg z-50"
+          className="absolute top-full z-50 mt-2 w-full overflow-hidden rounded-md border border-gray-100 bg-white text-left shadow-dropdown animate-fade-in"
           role="listbox"
         >
+          {scope && (
+            <div className="flex items-center gap-2 border-b border-gray-50 bg-gray-50/60 px-4 py-2 text-[11px] text-gray-400">
+              <TextCursorInput className="h-3.5 w-3.5" />
+              {t('Filtering this page — app-wide matches below', 'تصفية هذه الصفحة — نتائج التطبيق أدناه', language)}
+            </div>
+          )}
           {results.length === 0 ? (
             <div className="px-4 py-6 text-center text-sm text-gray-500">
               {t(`No results for “${query.trim()}”`, `لا توجد نتائج لـ "${query.trim()}"`, language)}
@@ -213,10 +276,10 @@ export function GlobalSearch() {
                 if (items.length === 0) return null;
                 return (
                   <div key={g}>
-                    <div className="flex items-center gap-2 px-4 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                    <div className="flex items-center gap-2 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
                       {GROUP_META[g].icon}
                       {t(GROUP_META[g].label, GROUP_META[g].labelAr, language)}
-                      <span className="ml-auto text-gray-300">{items.length}</span>
+                      <span className="ms-auto text-gray-300">{items.length}</span>
                     </div>
                     {items.map((r) => (
                       <button

@@ -1,4 +1,4 @@
-import { User, Company, Employee, LeaveRequest, Notification, Message, Channel, Announcement, AuditLog, Attendance, Payroll, Todo, HRDocument, EmailTemplate, EmailSettings, EmailOutbox, Expense, EmployeeLifecycle, Contract, ManualReminder } from '@/types';
+import { User, Company, Employee, LeaveRequest, Notification, Message, Channel, Announcement, AuditLog, Attendance, Payroll, Todo, HRDocument, EmailTemplate, EmailSettings, EmailOutbox, Expense, EmployeeLifecycle, Contract, ManualReminder, ZatcaInvoice, ZatcaSettings, DocPrinterAssets } from '@/types';
 
 export type PersistedUser = User & { password?: string };
 
@@ -24,6 +24,9 @@ export interface PersistedState {
   lifecycles: EmployeeLifecycle[];
   contracts: Contract[];
   manualReminders?: ManualReminder[];
+  zatcaInvoices?: ZatcaInvoice[];
+  zatcaSettings?: ZatcaSettings;
+  docPrinterAssets?: DocPrinterAssets;
 }
 
 interface FsLike {

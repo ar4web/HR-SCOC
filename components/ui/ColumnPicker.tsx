@@ -3,7 +3,7 @@
 import React from 'react';
 import { useLanguageStore } from '@/stores/language-store';
 import { t } from '@/lib/utils';
-import { Columns3, Check, ChevronDown } from 'lucide-react';
+import { Columns3, Check } from 'lucide-react';
 import type { ColumnPickerColumn } from '@/types';
 
 interface ColumnPickerProps {
@@ -69,12 +69,11 @@ export function ColumnPicker({ columns, visibleKeys, onChange }: ColumnPickerPro
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+        title={t('Columns', 'الأعمدة', language)}
+        aria-label={t('Columns', 'الأعمدة', language)}
+        className="rounded-md p-2 inline-flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
       >
-        <Columns3 className="h-4 w-4" />
-        {t('Columns', 'الأعمدة', language)}
-        <span className="ml-1 rounded-full bg-primary/10 px-1.5 text-xs text-primary">{visibleKeys.length}</span>
-        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <Columns3 className="h-[18px] w-[18px]" />
       </button>
 
       {open && (
@@ -84,7 +83,7 @@ export function ColumnPicker({ columns, visibleKeys, onChange }: ColumnPickerPro
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('Search columns...', 'بحث في الأعمدة...', language)}
-              className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
 

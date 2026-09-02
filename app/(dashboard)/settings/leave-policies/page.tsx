@@ -123,7 +123,7 @@ export default function LeavePoliciesPage() {
                         max={365}
                         value={policy.daysPerYear}
                         onChange={(e) => updatePolicy(meta.type, { daysPerYear: parseInt(e.target.value) || 0 })}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
+                        className="w-full rounded-md border-0 bg-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                       />
                     </div>
                     <div>
@@ -136,7 +136,7 @@ export default function LeavePoliciesPage() {
                         max={365}
                         value={policy.carryoverDays}
                         onChange={(e) => updatePolicy(meta.type, { carryoverDays: parseInt(e.target.value) || 0 })}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
+                        className="w-full rounded-md border-0 bg-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-primary"
                       />
                     </div>
                   </div>

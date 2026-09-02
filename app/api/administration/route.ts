@@ -65,8 +65,9 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
-  if (!adminOnly(req)) {
-    return NextResponse.json({ error: 'Forbidden: admin only' }, { status: 403 });
+  const auth = authFromRequest(req);
+  if (!auth) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   let body: { userId?: string; role?: UserRole; name?: string; nameAr?: string; language?: 'en' | 'ar' };
@@ -78,6 +79,13 @@ export async function PUT(req: Request) {
 
   if (!body.userId) {
     return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+  }
+
+  // Any signed-in user may update their OWN name/language (settings/profile).
+  // Changing roles or other users' accounts still requires user:manage.
+  const isSelfProfileUpdate = body.userId === auth.sub && !body.role;
+  if (!isSelfProfileUpdate && !hasPermission(auth.role, 'user:manage')) {
+    return NextResponse.json({ error: 'Forbidden: admin only' }, { status: 403 });
   }
 
   const result = body.role

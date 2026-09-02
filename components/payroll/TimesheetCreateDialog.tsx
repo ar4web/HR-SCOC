@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/Toast';
 import { employeeService } from '@/modules/employee-management/service';
 import { t } from '@/lib/utils';
 import { FilePlus2, Plus, Trash2, X, Download, Play } from 'lucide-react';
+import { getStoredToken } from '@/lib/client-token';
 const Trash2Icon = Trash2;
 
 interface DraftRow {
@@ -95,7 +96,7 @@ export function TimesheetCreateDialog({ open, period, onPeriodChange, onUpload, 
     }
     setGenerating(true);
     try {
-      const token = localStorage.getItem('scos_token');
+      const token = getStoredToken();
       const res = await fetch('/api/payroll/timesheet/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -158,7 +159,7 @@ export function TimesheetCreateDialog({ open, period, onPeriodChange, onUpload, 
           <div className="flex flex-wrap items-end gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('Payroll Period', 'فترة الرواتب', language)}</label>
-              <input type="month" value={period} onChange={(e) => onPeriodChange(e.target.value)} className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary" />
+              <input type="month" value={period} onChange={(e) => onPeriodChange(e.target.value)} className="rounded-md border-0 bg-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-primary" />
             </div>
             <div className="min-w-[260px] flex-1">
               <label className="block text-xs font-medium text-gray-600 mb-1.5">{t('Employees (for auto-fill)', 'الموظفون (للتعبئة التلقائية)', language)}</label>
@@ -205,7 +206,7 @@ export function TimesheetCreateDialog({ open, period, onPeriodChange, onUpload, 
                         <select
                           value={r.employeeId}
                           onChange={(e) => setRow(r.uid, { employeeId: e.target.value })}
-                          className="w-44 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm focus:ring-2 focus:ring-primary"
+                          className="w-44 rounded-md border-0 bg-gray-100 px-2 py-1.5 text-sm focus:ring-2 focus:ring-primary"
                         >
                           <option value="">{t('Select…', 'اختر…', language)}</option>
                           <option value="__all">{t('All selected employees', 'جميع الموظفين المحددين', language)}</option>
@@ -217,16 +218,16 @@ export function TimesheetCreateDialog({ open, period, onPeriodChange, onUpload, 
                         </select>
                       </td>
                       <td className="px-3 py-1.5">
-                        <input type="date" value={r.date} onChange={(e) => setRow(r.uid, { date: e.target.value })} className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm" />
+                        <input type="date" value={r.date} onChange={(e) => setRow(r.uid, { date: e.target.value })} className="rounded-md border-0 bg-gray-100 px-2 py-1.5 text-sm" />
                       </td>
                       <td className="px-3 py-1.5">
-                        <input type="time" value={r.clockIn} onChange={(e) => setRow(r.uid, { clockIn: e.target.value })} className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm" />
+                        <input type="time" value={r.clockIn} onChange={(e) => setRow(r.uid, { clockIn: e.target.value })} className="rounded-md border-0 bg-gray-100 px-2 py-1.5 text-sm" />
                       </td>
                       <td className="px-3 py-1.5">
-                        <input type="time" value={r.clockOut} onChange={(e) => setRow(r.uid, { clockOut: e.target.value })} className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm" />
+                        <input type="time" value={r.clockOut} onChange={(e) => setRow(r.uid, { clockOut: e.target.value })} className="rounded-md border-0 bg-gray-100 px-2 py-1.5 text-sm" />
                       </td>
                       <td className="px-3 py-1.5">
-                        <input type="number" min="0" step="0.5" value={r.otHours} onChange={(e) => setRow(r.uid, { otHours: e.target.value })} className="w-16 rounded-lg border border-gray-300 px-2 py-1.5 text-sm" />
+                        <input type="number" min="0" step="0.5" value={r.otHours} onChange={(e) => setRow(r.uid, { otHours: e.target.value })} className="w-16 rounded-md border-0 bg-gray-100 px-2 py-1.5 text-sm" />
                       </td>
                       <td className="px-3 py-1.5 text-right">
                         <button onClick={() => removeRow(r.uid)} className="p-1 text-gray-400 hover:text-error" title={t('Remove', 'حذف', language)} aria-label={t('Remove', 'حذف', language)}>

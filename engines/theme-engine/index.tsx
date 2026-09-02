@@ -18,10 +18,12 @@ export interface ThemeContextValue {
 
 const ThemeContext = React.createContext<ThemeContextValue | null>(null);
 
+// Atlas Navy — matches the :root CSS tokens so the first paint and the
+// post-fetch branding are identical (no green flash from the old defaults).
 const DEFAULT_BRANDING: Branding = {
-  primaryColor: '#009B77',
-  secondaryColor: '#00205B',
-  accentColor: '#FFC72C',
+  primaryColor: '#1b3a5f',
+  secondaryColor: '#0c1c30',
+  accentColor: '#c4a35a',
   theme: 'light',
 };
 
@@ -45,7 +47,7 @@ function shade(hex: string, percent: number): string {
 }
 
 function toRgbTriplet(hex: string): string {
-  return hexToRgb(hex) || '0 155 119';
+  return hexToRgb(hex) || '27 58 95';
 }
 
 function resolveDark(theme: ThemeVariant): boolean {

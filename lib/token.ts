@@ -148,7 +148,8 @@ function decodeB64(input: string): string {
 
 export function signToken(payload: Omit<TokenPayload, 'exp'> & { exp?: number }): string {
   const body = encodeB64(
-    JSON.stringify({ ...payload, exp: payload.exp ?? Date.now() + 86400000 })
+    // 7-day session lifetime — short TTLs silently log users out mid-week.
+    JSON.stringify({ ...payload, exp: payload.exp ?? Date.now() + 7 * 86400000 })
   );
   const sig = toHex(hmac(getTokenSecret(), body));
   return `${body}.${sig}`;
